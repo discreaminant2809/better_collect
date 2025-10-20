@@ -1,4 +1,4 @@
-use core::ops::ControlFlow;
+use std::ops::ControlFlow;
 
 use crate::RefCollector;
 
@@ -35,7 +35,7 @@ impl<C: RefCollector> RefCollector for FuseByRef<C> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: &mut Self::Item) -> core::ops::ControlFlow<()> {
+    fn collect(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect(item))
     }
 

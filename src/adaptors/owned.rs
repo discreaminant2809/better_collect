@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 use crate::{Collector, RefCollector};
 
 pub struct Owned<C: RefCollector> {
@@ -16,7 +18,7 @@ impl<C: RefCollector> Collector for Owned<C> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, mut item: Self::Item) -> core::ops::ControlFlow<()> {
+    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
         self.collector.collect(&mut item)
     }
 
@@ -26,10 +28,7 @@ impl<C: RefCollector> Collector for Owned<C> {
     }
 
     #[inline]
-    fn collect_many(
-        &mut self,
-        items: impl IntoIterator<Item = Self::Item>,
-    ) -> core::ops::ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collector.collect_many(items)
     }
 }
