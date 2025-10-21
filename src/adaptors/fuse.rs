@@ -1,15 +1,15 @@
 use std::ops::ControlFlow;
 
-use crate::RefCollector;
+use crate::{Collector, RefCollector};
 
-pub(super) struct FuseByRef<C: RefCollector> {
+pub struct Fuse<C> {
     collector: C,
     finished: bool,
 }
 
-impl<C: RefCollector> FuseByRef<C> {
+impl<C> Fuse<C> {
     #[inline]
-    pub(super) fn new(collector: C) -> Self {
+    pub(crate) fn new(collector: C) -> Self {
         Self {
             collector,
             finished: false,
@@ -29,13 +29,13 @@ impl<C: RefCollector> FuseByRef<C> {
     }
 }
 
-impl<C: RefCollector> RefCollector for FuseByRef<C> {
+impl<C: Collector> Collector for Fuse<C> {
     type Item = C::Item;
 
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect(item))
     }
 
@@ -47,5 +47,12 @@ impl<C: RefCollector> RefCollector for FuseByRef<C> {
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_many(items))
+    }
+}
+
+impl<C: RefCollector> RefCollector for Fuse<C> {
+    #[inline]
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+        self.collect_impl(|collector| collector.collect_ref(item))
     }
 }
