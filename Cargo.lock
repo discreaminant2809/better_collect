@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "better_collector"
+name = "better_collect"
 version = "0.1.0"
