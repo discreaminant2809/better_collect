@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, Then, assert_collector};
+use crate::{Collector, Funnel, Then, assert_collector, assert_ref_collector};
 
 pub trait RefCollector: Collector {
     /// Returns a [`ControlFlow`] to command whether to stop the collection.
@@ -11,8 +11,11 @@ pub trait RefCollector: Collector {
         assert_collector(Then::new(self, other))
     }
 
-    // #[inline]
-    // fn owned(self) -> Owned<Self> {
-    //     assert_collector(Owned::new(self))
-    // }
+    #[inline]
+    fn funnel<E, F>(self, func: F) -> Funnel<Self, E, F>
+    where
+        F: FnMut(&mut E) -> &mut Self::Item,
+    {
+        assert_ref_collector(Funnel::new(self, func))
+    }
 }

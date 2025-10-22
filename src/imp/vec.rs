@@ -24,9 +24,20 @@ impl<T> Collector for Vec<T> {
     }
 
     #[inline]
+    fn reserve(&mut self, additional_min: usize, _additional_max: Option<usize>) {
+        self.reserve(additional_min);
+    }
+
+    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.extend(items);
         ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        self.extend(items);
+        self
     }
 }
 

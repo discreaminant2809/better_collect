@@ -1,14 +1,14 @@
 use std::{marker::PhantomData, ops::ControlFlow};
 
-use crate::Collector;
+use crate::{Collector, assert_collector};
 
 #[inline]
 pub fn fold<A, E, F: FnMut(&mut A, E) -> ControlFlow<()>>(accum: A, f: F) -> Fold<A, E, F> {
-    Fold {
+    assert_collector(Fold {
         accum,
         f,
         _marker: PhantomData,
-    }
+    })
 }
 
 pub struct Fold<A, E, F: FnMut(&mut A, E) -> ControlFlow<()>> {

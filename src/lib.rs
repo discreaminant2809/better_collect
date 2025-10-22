@@ -20,7 +20,7 @@ fn assert_collector<C: Collector>(collector: C) -> C {
 }
 
 #[inline(always)]
-fn assert_collector_by_ref<C: RefCollector>(collector: C) -> C {
+fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
     collector
 }
 

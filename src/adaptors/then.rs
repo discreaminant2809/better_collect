@@ -54,6 +54,28 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
         // If any of them breaks, the `return` path will've been taken instead.
         ControlFlow::Continue(())
     }
+
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        let mut items = items.into_iter();
+
+        while let Some(mut item) = items.next() {
+            if self.collector1.collect_ref(&mut item).is_break() {
+                return (
+                    self.collector1.finish(),
+                    self.collector2.collect_then_finish(items),
+                );
+            }
+
+            if self.collector2.collect(item).is_break() {
+                return (
+                    self.collector1.collect_then_finish(items),
+                    self.collector2.finish(),
+                );
+            }
+        }
+
+        self.finish()
+    }
 }
 
 impl<CR: RefCollector, C: RefCollector<Item = CR::Item>> RefCollector for Then<CR, C> {

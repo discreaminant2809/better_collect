@@ -5,7 +5,7 @@ use std::ops::ControlFlow;
 pub struct Cloned<C>(C);
 
 impl<C> Cloned<C> {
-    pub fn new(collector: C) -> Self {
+    pub(crate) fn new(collector: C) -> Self {
         Self(collector)
     }
 }
@@ -28,6 +28,10 @@ impl<C: Collector> Collector for Cloned<C> {
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.0.collect_many(items)
+    }
+
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        self.0.collect_then_finish(items)
     }
 }
 

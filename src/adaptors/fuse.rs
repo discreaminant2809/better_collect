@@ -48,6 +48,15 @@ impl<C: Collector> Collector for Fuse<C> {
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_many(items))
     }
+
+    #[inline]
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        if self.finished {
+            self.finish()
+        } else {
+            self.collector.collect_then_finish(items)
+        }
+    }
 }
 
 impl<C: RefCollector> RefCollector for Fuse<C> {
