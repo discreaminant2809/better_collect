@@ -45,6 +45,22 @@ impl<C: Collector> Collector for Fuse<C> {
     }
 
     #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.finished {
+            (0, Some(0))
+        } else {
+            self.collector.size_hint()
+        }
+    }
+
+    #[inline]
+    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
+        if !self.finished {
+            self.collector.reserve(additional_min, additional_max);
+        }
+    }
+
+    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_many(items))
     }

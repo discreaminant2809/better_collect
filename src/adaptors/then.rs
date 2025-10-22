@@ -38,6 +38,37 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
         (self.collector1.finish(), self.collector2.finish())
     }
 
+    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
+        let (lower1, upper1) = self.collector1.size_hint();
+
+        // Both have the same theme: the 2nd collector reserves the left-over amount.
+        let (reserve_lower1, reserve_lower2) = if additional_min > lower1 {
+            (lower1, additional_min - lower1)
+        } else {
+            (additional_min, 0)
+        };
+
+        let (reserve_upper1, reserve_upper2) = match (additional_max, upper1) {
+            (Some(additional_max), Some(upper1)) if additional_max > upper1 => {
+                (Some(upper1), Some(additional_max - upper1))
+            }
+            (additional_max, _) => (additional_max, Some(0)),
+        };
+
+        self.collector1.reserve(reserve_lower1, reserve_upper1);
+        self.collector2.reserve(reserve_lower2, reserve_upper2);
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (lower1, upper1) = self.collector1.size_hint();
+        let (lower2, upper2) = self.collector2.size_hint();
+
+        (
+            lower1.saturating_add(lower2),
+            (|| upper1?.checked_add(upper2?))(),
+        )
+    }
+
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         let mut items = items.into_iter();
 
@@ -78,7 +109,7 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
     }
 }
 
-impl<CR: RefCollector, C: RefCollector<Item = CR::Item>> RefCollector for Then<CR, C> {
+impl<C1: RefCollector, C2: RefCollector<Item = C1::Item>> RefCollector for Then<C1, C2> {
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         match (

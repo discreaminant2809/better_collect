@@ -23,7 +23,16 @@ pub trait Collector: Sized {
 
     #[inline]
     #[allow(unused_variables)]
-    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {}
+    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
+        // Default implementation does nothing.
+    }
+
+    /// Hint of how many items can still be collected
+    /// before [`collect`](Collector::collect) returns [`ControlFlow::Break`]?
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, None)
+    }
 
     /// Also returns how many items were collected.
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

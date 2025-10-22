@@ -11,6 +11,7 @@ impl<T: Ord> Collector for Max<T> {
 
     type Output = Option<T>;
 
+    #[inline]
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         // Because it's `Max`, if `max` is a `None` then it's always smaller than a `Some`.
         // Doesn't work on `Min`, however.
@@ -18,8 +19,14 @@ impl<T: Ord> Collector for Max<T> {
         ControlFlow::Continue(())
     }
 
+    #[inline]
     fn finish(self) -> Self::Output {
         self.max
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (usize::MAX, None)
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
@@ -28,5 +35,9 @@ impl<T: Ord> Collector for Max<T> {
         } else {
             ControlFlow::Continue(())
         }
+    }
+
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        items.into_iter().chain(self.max).max()
     }
 }

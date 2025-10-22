@@ -32,6 +32,18 @@ impl<C: Collector, F: FnMut(&C::Item) -> bool> Collector for Filter<C, F> {
         self.collector.finish()
     }
 
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        // See: https://doc.rust-lang.org/1.90.0/src/core/iter/adapters/filter.rs.html#117-121
+        (0, self.collector.size_hint().1)
+    }
+
+    #[inline]
+    fn reserve(&mut self, _additional_min: usize, additional_max: Option<usize>) {
+        // See: https://doc.rust-lang.org/1.90.0/src/core/iter/adapters/filter.rs.html#117-121
+        self.collector.reserve(0, additional_max);
+    }
+
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().filter(&mut self.pred))

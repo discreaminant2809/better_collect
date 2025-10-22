@@ -24,6 +24,11 @@ impl<T> Collector for Vec<T> {
     }
 
     #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (usize::MAX, None)
+    }
+
+    #[inline]
     fn reserve(&mut self, additional_min: usize, _additional_max: Option<usize>) {
         self.reserve(additional_min);
     }
