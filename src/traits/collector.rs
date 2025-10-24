@@ -1,6 +1,8 @@
 use std::ops::ControlFlow;
 
-use crate::{Cloned, Filter, Fuse, Map, MapRef, Take, assert_collector, assert_ref_collector};
+use crate::{
+    Cloned, Filter, Fuse, Map, MapRef, Partition, Take, assert_collector, assert_ref_collector,
+};
 
 pub trait Collector: Sized {
     /// Type of items it can collect.
@@ -21,29 +23,62 @@ pub trait Collector: Sized {
     // NO, because the compiler will hit an evaluation recursion limit. This approach fails.
     fn finish(self) -> Self::Output;
 
-    #[inline]
-    #[allow(unused_variables)]
-    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
-        // Default implementation does nothing.
-    }
+    // #[inline]
+    // fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
+    //     let _ = (additional_min, additional_max);
+    //     // Default implementation does nothing.
+    // }
 
-    /// Hint of how many items can still be collected
-    /// before [`collect`](Collector::collect) returns [`ControlFlow::Break`]?
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, None)
-    }
+    // /// Hint of how many items can still be collected
+    // /// before [`collect`](Collector::collect) returns [`ControlFlow::Break`]?
+    // #[inline]
+    // fn size_hint(&self) -> (usize, Option<usize>) {
+    //     (0, None)
+    // }
+
+    // /// Returns minimum amount of items to be collected before it's active again.
+    // /// `None` means it's GUARANTEED to be permanently inactive.
+    // ///
+    // /// It only requires the best effort. The collector is allowed to be permanently inactive
+    // /// even tho this method returns `Some(0)`. However, if the method returns `None`, the collector
+    // /// is guaranteed to be permanently inactive.
+    // ///
+    // /// It's a hint for some adaptors (e.g. [`then`](crate::RefCollector::then)) for optimization.
+    // /// However, it's up to the user to return correctly.
+    // ///
+    // /// The default implementation always returns `Some(0)`, meaning that the collector is
+    // /// conservatively always active.
+    // ///
+    // /// [`Filter`] always returns `Some(0)` even though it may have inactivity periods.
+    // /// It can't be confident about whether its predicate returns `true` or not for subsequent items.
+    // #[inline]
+    // fn inactivity_hint(&self) -> Option<usize> {
+    //     Some(0)
+    // }
+
+    // /// Skips the item collection until it's active again. Skips at most `max` items.
+    // ///
+    // /// It should be used with [`inactive_for`](Collector::inactive_for),
+    // /// and should be consistent with it.
+    // #[inline]
+    // fn skip_till_active(&mut self, max: Option<usize>) {
+    //     let _ = max;
+    //     // Default implementation does nothing.
+    // }
 
     /// Also returns how many items were collected.
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        let mut items = items.into_iter();
+        // let (additional_min, additional_max) = items.size_hint();
+        // self.reserve(additional_min, additional_max);
 
-        let (additional_min, additional_max) = items.size_hint();
-        self.reserve(additional_min, additional_max);
+        // // Block the collection beforehand. We can't affort wasting items on an inactive collector.
+        // if self.inactivity_hint().is_none() {
+        //     return ControlFlow::Break(());
+        // }
 
         // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
         // (e.g. `skip`, `chain`, etc.)
-        items.try_for_each(|item| self.collect(item))
+        items.into_iter().try_for_each(|item| self.collect(item))
     }
 
     /// Can be overriden to optimize, such as [`take`](Collector::take).
@@ -98,4 +133,13 @@ pub trait Collector: Sized {
     // fn take_while()
 
     // fn skip()
+
+    #[inline]
+    fn partition<F, C>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>
+    where
+        C: Collector<Item = Self::Item>,
+        F: FnMut(&mut Self::Item) -> bool,
+    {
+        assert_collector(Partition::new(self, other_if_false, pred))
+    }
 }

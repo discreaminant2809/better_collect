@@ -26,16 +26,6 @@ impl<C: Collector> Collector for Cloned<C> {
     }
 
     #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.0.size_hint()
-    }
-
-    #[inline]
-    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
-        self.0.reserve(additional_min, additional_max);
-    }
-
-    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.0.collect_many(items)
     }

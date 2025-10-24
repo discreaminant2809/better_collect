@@ -16,6 +16,12 @@ impl<C> Fuse<C> {
         }
     }
 
+    /// Returns whether the collector is "fisnished" and will not accept more items.
+    #[inline]
+    pub fn finished(&self) -> bool {
+        self.finished
+    }
+
     #[inline]
     fn collect_impl(&mut self, f: impl FnOnce(&mut C) -> ControlFlow<()>) -> ControlFlow<()> {
         if self.finished {
@@ -42,22 +48,6 @@ impl<C: Collector> Collector for Fuse<C> {
     #[inline]
     fn finish(self) -> Self::Output {
         self.collector.finish()
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        if self.finished {
-            (0, Some(0))
-        } else {
-            self.collector.size_hint()
-        }
-    }
-
-    #[inline]
-    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
-        if !self.finished {
-            self.collector.reserve(additional_min, additional_max);
-        }
     }
 
     #[inline]

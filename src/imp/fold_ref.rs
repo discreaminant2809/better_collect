@@ -2,23 +2,22 @@ use std::{marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector, assert_ref_collector};
 
-#[inline]
-pub fn fold_ref<A, E, F: FnMut(&mut A, &mut E) -> ControlFlow<()>>(
-    accum: A,
-    f: F,
-) -> FoldRef<A, E, F> {
-    assert_ref_collector(FoldRef {
-        accum,
-        f,
-        _marker: PhantomData,
-    })
-}
-
 pub struct FoldRef<A, E, F: FnMut(&mut A, &mut E) -> ControlFlow<()>> {
     accum: A,
     f: F,
     // Since `E` appears in one of the parameters of `F`.
     _marker: PhantomData<fn(E)>,
+}
+
+impl<A, E, F: FnMut(&mut A, &mut E) -> ControlFlow<()>> FoldRef<A, E, F> {
+    #[inline]
+    pub fn new(accum: A, f: F) -> Self {
+        assert_ref_collector(FoldRef {
+            accum,
+            f,
+            _marker: PhantomData,
+        })
+    }
 }
 
 impl<A, E, F: FnMut(&mut A, &mut E) -> ControlFlow<()>> Collector for FoldRef<A, E, F> {

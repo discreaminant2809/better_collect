@@ -26,8 +26,13 @@ fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
 
 #[cfg(test)]
 mod tests {
+    #[allow(unused_imports)]
     use crate::{BetterCollect, Collector, RefCollector};
 
+    #[cfg(all(feature = "alloc", not(feature = "std")))]
+    use alloc::{string::String, vec};
+
+    #[cfg(feature = "alloc")]
     #[test]
     fn then() {
         let arr = [1, 2, 3];

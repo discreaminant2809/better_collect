@@ -47,22 +47,22 @@ impl<C: Collector> Collector for Take<C> {
         self.collector.finish()
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let (lower, upper) = self.collector.size_hint();
-        (
-            lower.min(self.remaining),
-            upper.map(|u| u.min(self.remaining)),
-        )
-    }
+    // fn size_hint(&self) -> (usize, Option<usize>) {
+    //     let (lower, upper) = self.collector.size_hint();
+    //     (
+    //         lower.min(self.remaining),
+    //         upper.map(|u| u.min(self.remaining)),
+    //     )
+    // }
 
-    fn reserve(&mut self, mut additional_min: usize, mut additional_max: Option<usize>) {
-        additional_min = additional_min.min(self.remaining);
-        additional_max = Some(additional_max.map_or(self.remaining, |additional_max| {
-            additional_max.min(self.remaining)
-        }));
+    // fn reserve(&mut self, mut additional_min: usize, mut additional_max: Option<usize>) {
+    //     additional_min = additional_min.min(self.remaining);
+    //     additional_max = Some(additional_max.map_or(self.remaining, |additional_max| {
+    //         additional_max.min(self.remaining)
+    //     }));
 
-        self.collector.reserve(additional_min, additional_max);
-    }
+    //     self.collector.reserve(additional_min, additional_max);
+    // }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collector.collect_many(

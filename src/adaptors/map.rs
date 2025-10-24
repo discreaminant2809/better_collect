@@ -33,16 +33,6 @@ impl<E, C: Collector, F: FnMut(E) -> C::Item> Collector for Map<C, E, F> {
         self.collector.finish()
     }
 
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.collector.size_hint()
-    }
-
-    #[inline]
-    fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
-        self.collector.reserve(additional_min, additional_max);
-    }
-
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().map(&mut self.f))

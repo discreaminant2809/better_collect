@@ -2,6 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::Collector;
 
+#[derive(Debug)]
 pub struct Max<T> {
     max: Option<T>,
 }
@@ -24,11 +25,6 @@ impl<T: Ord> Collector for Max<T> {
         self.max
     }
 
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (usize::MAX, None)
-    }
-
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         if let Some(max) = items.into_iter().max() {
             self.collect(max)
@@ -38,6 +34,6 @@ impl<T: Ord> Collector for Max<T> {
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        items.into_iter().chain(self.max).max()
+        items.into_iter().max().max(self.max)
     }
 }
