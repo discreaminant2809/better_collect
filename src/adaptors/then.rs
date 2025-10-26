@@ -131,11 +131,11 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
                 ControlFlow::Continue(())
             }
         }) {
+            ControlFlow::Continue(_) => ControlFlow::Continue(()),
             ControlFlow::Break(Which::First(item)) => self
                 .collector2
                 .collect_many(Some(item).into_iter().chain(items)),
             ControlFlow::Break(Which::Second) => self.collector1.collect_many(items),
-            ControlFlow::Continue(_) => ControlFlow::Continue(()),
         }
 
         // loop {
@@ -213,6 +213,7 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
                 ControlFlow::Continue(())
             }
         }) {
+            ControlFlow::Continue(_) => self.finish(),
             ControlFlow::Break(Which::First(item)) => (
                 self.collector1.finish(),
                 self.collector2
@@ -222,7 +223,6 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
                 self.collector1.collect_then_finish(items),
                 self.collector2.finish(),
             ),
-            ControlFlow::Continue(_) => self.finish(),
         }
     }
 }

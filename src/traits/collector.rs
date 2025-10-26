@@ -1,7 +1,8 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Cloned, Filter, Fuse, Map, MapRef, Partition, Take, assert_collector, assert_ref_collector,
+    Cloned, Filter, Fuse, Map, MapRef, Partition, Take, Unzip, assert_collector,
+    assert_ref_collector,
 };
 
 pub trait Collector: Sized {
@@ -82,11 +83,15 @@ pub trait Collector: Sized {
     }
 
     /// Can be overriden to optimize, such as [`take`](Collector::take).
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        // Do this instead of putting `mut` in `self` since some IDEs are stupid
+        // and just put `mut self` in every generated code.
+        let mut this = self;
+
         // We don't care whether the collector breaks or not, since if it doesn't it'll have
         // completely depleted the iterator so... we just finish--nothing changed.
-        let _ = self.collect_many(items);
-        self.finish()
+        let _ = this.collect_many(items);
+        this.finish()
     }
 
     #[inline]
@@ -141,5 +146,10 @@ pub trait Collector: Sized {
         F: FnMut(&mut Self::Item) -> bool,
     {
         assert_collector(Partition::new(self, other_if_false, pred))
+    }
+
+    #[inline]
+    fn unzip<C: Collector>(self, other: C) -> Unzip<Self, C> {
+        assert_collector(Unzip::new(self, other))
     }
 }

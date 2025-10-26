@@ -1,3 +1,4 @@
+mod chain;
 mod cloned;
 mod filter;
 mod funnel;
@@ -7,7 +8,9 @@ mod map_ref;
 mod partition;
 mod take;
 mod then;
+mod unzip;
 
+pub use chain::*;
 pub use cloned::*;
 pub use filter::*;
 pub use funnel::*;
@@ -17,3 +20,4 @@ pub use map_ref::*;
 pub use partition::*;
 pub use take::*;
 pub use then::*;
+pub use unzip::*;

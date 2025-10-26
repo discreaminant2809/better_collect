@@ -2,11 +2,11 @@ use std::{marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector, assert_ref_collector};
 
-pub struct FoldRef<A, E, F: FnMut(&mut A, &mut E) -> ControlFlow<()>> {
+pub struct FoldRef<A, E, F> {
     accum: A,
     f: F,
     // Since `E` appears in one of the parameters of `F`.
-    _marker: PhantomData<fn(E)>,
+    _marker: PhantomData<fn(&mut E)>,
 }
 
 impl<A, E, F: FnMut(&mut A, &mut E) -> ControlFlow<()>> FoldRef<A, E, F> {

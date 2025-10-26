@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, Funnel, Then, assert_collector, assert_ref_collector};
+use crate::{Chain, Collector, Funnel, Then, assert_collector, assert_ref_collector};
 
 pub trait RefCollector: Collector {
     /// Returns a [`ControlFlow`] to command whether to stop the collection.
@@ -9,6 +9,11 @@ pub trait RefCollector: Collector {
     #[inline]
     fn then<C: Collector<Item = Self::Item>>(self, other: C) -> Then<Self, C> {
         assert_collector(Then::new(self, other))
+    }
+
+    #[inline]
+    fn chain<C: Collector<Item = Self::Item>>(self, other: C) -> Chain<Self, C> {
+        assert_collector(Chain::new(self, other))
     }
 
     #[inline]

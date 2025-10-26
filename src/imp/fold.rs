@@ -2,10 +2,9 @@ use std::{marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, assert_collector};
 
-pub struct Fold<A, E, F: FnMut(&mut A, E) -> ControlFlow<()>> {
+pub struct Fold<A, E, F> {
     accum: A,
     f: F,
-    // Since `E` appears in one of the parameters of `F`.
     _marker: PhantomData<fn(E)>,
 }
 

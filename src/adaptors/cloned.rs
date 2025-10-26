@@ -36,6 +36,7 @@ impl<C: Collector> Collector for Cloned<C> {
 }
 
 impl<C: Collector<Item: Clone>> RefCollector for Cloned<C> {
+    #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.0.collect(item.clone())
     }
