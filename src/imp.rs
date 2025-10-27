@@ -3,6 +3,7 @@ mod count;
 mod fold;
 mod fold_ref;
 mod last;
+pub mod num;
 #[cfg(feature = "alloc")]
 mod vec;
 

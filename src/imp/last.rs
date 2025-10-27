@@ -9,7 +9,7 @@ pub struct Last<T> {
 
 impl<T> Last<T> {
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Last { value: None }
     }
 }
@@ -33,6 +33,7 @@ impl<T> Collector for Last<T> {
         // We need a bit complication here since we may risk assigning `None` to `self.value` being `Some`.
         match (&mut self.value, items.into_iter().last()) {
             (Some(value), Some(last)) => *value = last,
+            // DO NOT update here. `items` don't have a value to "inherit" the last spot.
             (Some(_), None) => {}
             (None, last) => self.value = last,
         }

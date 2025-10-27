@@ -139,6 +139,8 @@ pub trait Collector: Sized {
 
     // fn skip()
 
+    // fn step_by()
+
     #[inline]
     fn partition<F, C>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>
     where

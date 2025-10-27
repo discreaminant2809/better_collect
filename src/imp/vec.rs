@@ -7,6 +7,7 @@ use std::ops::ControlFlow;
 use alloc::vec::Vec;
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<T> Collector for Vec<T> {
     type Item = T;
 
@@ -24,16 +25,6 @@ impl<T> Collector for Vec<T> {
     }
 
     #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (usize::MAX, None)
-    }
-
-    #[inline]
-    fn reserve(&mut self, additional_min: usize, _additional_max: Option<usize>) {
-        self.reserve(additional_min);
-    }
-
-    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.extend(items);
         ControlFlow::Continue(())
@@ -47,6 +38,7 @@ impl<T> Collector for Vec<T> {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<T: Copy> RefCollector for Vec<T> {
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {

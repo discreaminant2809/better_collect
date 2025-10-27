@@ -7,6 +7,20 @@ pub struct Max<T> {
     max: Option<T>,
 }
 
+impl<T> Max<T> {
+    #[inline]
+    pub const fn new() -> Self {
+        Max { max: None }
+    }
+}
+
+impl<T> Default for Max<T> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Ord> Collector for Max<T> {
     type Item = T;
 

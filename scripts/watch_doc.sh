@@ -1,0 +1,1 @@
+RUSTDOCFLAGS="--cfg docsrs" cargo watch -w src/lib.rs -x "+nightly doc --all-features --no-deps"
