@@ -13,13 +13,11 @@ impl<C, F> Filter<C, F> {
     }
 }
 
-impl<C: Collector, F: FnMut(&C::Item) -> bool> Collector for Filter<C, F> {
-    type Item = C::Item;
-
+impl<T, C: Collector<T>, F: FnMut(&T) -> bool> Collector<T> for Filter<C, F> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         if (self.pred)(&item) {
             self.collector.collect(item)
         } else {
@@ -32,20 +30,20 @@ impl<C: Collector, F: FnMut(&C::Item) -> bool> Collector for Filter<C, F> {
         self.collector.finish()
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().filter(&mut self.pred))
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().filter(self.pred))
     }
 }
 
-impl<C: RefCollector, F: FnMut(&C::Item) -> bool> RefCollector for Filter<C, F> {
+impl<T, C: RefCollector<T>, F: FnMut(&T) -> bool> RefCollector<T> for Filter<C, F> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         if (self.pred)(item) {
             self.collector.collect_ref(item)
         } else {

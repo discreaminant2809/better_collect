@@ -180,12 +180,12 @@ pub use imp::*;
 pub use traits::*;
 
 #[inline(always)]
-fn assert_collector<C: Collector>(collector: C) -> C {
+fn assert_collector<C: Collector<E>, E>(collector: C) -> C {
     collector
 }
 
 #[inline(always)]
-fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
+fn assert_ref_collector<C: RefCollector<E>, E>(collector: C) -> C {
     collector
 }
 

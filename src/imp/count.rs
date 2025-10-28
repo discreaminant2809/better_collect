@@ -1,24 +1,20 @@
-use std::{marker::PhantomData, ops::ControlFlow};
+use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
-pub struct Count<T> {
+#[derive(Debug, Default)]
+pub struct Count {
     count: usize,
-    // We need a generic because we can't leave `Collector::Item` unconstrained.
-    _marker: PhantomData<T>,
 }
 
-impl<T> Count<T> {
+impl Count {
     #[inline]
     pub const fn new() -> Self {
-        Count {
-            count: 0,
-            _marker: PhantomData,
-        }
+        Count { count: 0 }
     }
 
     #[inline]
-    pub fn get(&self) -> usize {
+    pub const fn get(&self) -> usize {
         self.count
     }
 
@@ -30,13 +26,11 @@ impl<T> Count<T> {
     }
 }
 
-impl<T> Collector for Count<T> {
-    type Item = T;
-
+impl<T> Collector<T> for Count {
     type Output = usize;
 
     #[inline]
-    fn collect(&mut self, _: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, _: T) -> ControlFlow<()> {
         self.increment();
         ControlFlow::Continue(())
     }
@@ -47,34 +41,21 @@ impl<T> Collector for Count<T> {
     }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.count += items.into_iter().count();
         ControlFlow::Continue(())
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.count + items.into_iter().count()
     }
 }
 
-impl<T> RefCollector for Count<T> {
+impl<T> RefCollector<T> for Count {
     #[inline]
-    fn collect_ref(&mut self, _: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, _: &mut T) -> ControlFlow<()> {
         self.increment();
         ControlFlow::Continue(())
-    }
-}
-
-impl<T> Default for Count<T> {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T> std::fmt::Debug for Count<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Count").field("count", &self.count).finish()
     }
 }

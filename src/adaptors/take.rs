@@ -32,13 +32,11 @@ impl<C> Take<C> {
     }
 }
 
-impl<C: Collector> Collector for Take<C> {
-    type Item = C::Item;
-
+impl<T, C: Collector<T>> Collector<T> for Take<C> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect(item))
     }
 
@@ -64,7 +62,7 @@ impl<C: Collector> Collector for Take<C> {
     //     self.collector.reserve(additional_min, additional_max);
     // }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector.collect_many(
             items
                 .into_iter()
@@ -74,15 +72,15 @@ impl<C: Collector> Collector for Take<C> {
         )
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().take(self.remaining))
     }
 }
 
-impl<C: RefCollector> RefCollector for Take<C> {
+impl<T, C: RefCollector<T>> RefCollector<T> for Take<C> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_ref(item))
     }
 }

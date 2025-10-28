@@ -17,13 +17,11 @@ impl<C1, C2> Then<C1, C2> {
     }
 }
 
-impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2> {
-    type Item = C1::Item;
-
+impl<T, C1: RefCollector<T>, C2: Collector<T>> Collector<T> for Then<C1, C2> {
     type Output = (C1::Output, C2::Output);
 
     #[inline]
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
         match (
             self.collector1.collect_ref(&mut item),
             self.collector2.collect(item),
@@ -104,7 +102,7 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
     //     }
     // }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         let mut items = items.into_iter();
 
         // DO NOT do this. `Iterator::next` is inefficient for repeated calls if the iterator
@@ -198,7 +196,7 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
         // }
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
         let mut items = items.into_iter();
 
         match items.try_for_each(|mut item| {
@@ -227,9 +225,9 @@ impl<C1: RefCollector, C2: Collector<Item = C1::Item>> Collector for Then<C1, C2
     }
 }
 
-impl<C1: RefCollector, C2: RefCollector<Item = C1::Item>> RefCollector for Then<C1, C2> {
+impl<T, C1: RefCollector<T>, C2: RefCollector<T>> RefCollector<T> for Then<C1, C2> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         match (
             self.collector1.collect_ref(item),
             self.collector2.collect_ref(item),

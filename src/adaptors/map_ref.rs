@@ -2,13 +2,13 @@ use std::{marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
-pub struct MapRef<C, E, F> {
+pub struct MapRef<C, T, F> {
     collector: C,
     f: F,
-    _marker: PhantomData<fn(&mut E)>,
+    _marker: PhantomData<fn(&mut T)>,
 }
 
-impl<C, E, F> MapRef<C, E, F> {
+impl<C, T, F> MapRef<C, T, F> {
     pub(crate) fn new(collector: C, f: F) -> Self {
         Self {
             collector,
@@ -18,13 +18,11 @@ impl<C, E, F> MapRef<C, E, F> {
     }
 }
 
-impl<E, C: Collector, F: FnMut(&mut E) -> C::Item> Collector for MapRef<C, E, F> {
-    type Item = E;
-
+impl<T, U, C: Collector<U>, F: FnMut(&mut T) -> U> Collector<T> for MapRef<C, T, F> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
         self.collect_ref(&mut item)
     }
 
@@ -33,20 +31,20 @@ impl<E, C: Collector, F: FnMut(&mut E) -> C::Item> Collector for MapRef<C, E, F>
         self.collector.finish()
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().map(|mut item| (self.f)(&mut item)))
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().map(move |mut item| (self.f)(&mut item)))
     }
 }
 
-impl<E, C: Collector, F: FnMut(&mut E) -> C::Item> RefCollector for MapRef<C, E, F> {
+impl<T, U, C: Collector<U>, F: FnMut(&mut T) -> U> RefCollector<T> for MapRef<C, T, F> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.collector.collect((self.f)(item))
     }
 }

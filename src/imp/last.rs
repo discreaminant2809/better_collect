@@ -14,8 +14,7 @@ impl<T> Last<T> {
     }
 }
 
-impl<T> Collector for Last<T> {
-    type Item = T;
+impl<T> Collector<T> for Last<T> {
     type Output = Option<T>;
 
     #[inline]
@@ -29,7 +28,7 @@ impl<T> Collector for Last<T> {
         self.value
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // We need a bit complication here since we may risk assigning `None` to `self.value` being `Some`.
         match (&mut self.value, items.into_iter().last()) {
             (Some(value), Some(last)) => *value = last,
@@ -42,7 +41,7 @@ impl<T> Collector for Last<T> {
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         items.into_iter().last().or(self.value)
     }
 }

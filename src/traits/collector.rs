@@ -5,10 +5,7 @@ use crate::{
     assert_ref_collector,
 };
 
-pub trait Collector: Sized {
-    /// Type of items it can collect.
-    type Item;
-
+pub trait Collector<T>: Sized {
     /// Output [`finish`](Collector::finish) yields.
     type Output;
 
@@ -17,7 +14,7 @@ pub trait Collector: Sized {
     ///
     /// Returns `Some(item)` if the item couldn't be collected due to not satisfying some condition,
     /// or the collector is closed.
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()>;
+    fn collect(&mut self, item: T) -> ControlFlow<()>;
 
     /// Finish the collection.
     // Can we separate it to another trait, like `FromCollector`, so that this trait is dyn compatible?
@@ -68,7 +65,7 @@ pub trait Collector: Sized {
     // }
 
     /// Also returns how many items were collected.
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // let (additional_min, additional_max) = items.size_hint();
         // self.reserve(additional_min, additional_max);
 
@@ -83,7 +80,7 @@ pub trait Collector: Sized {
     }
 
     /// Can be overriden to optimize, such as [`take`](Collector::take).
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         // Do this instead of putting `mut` in `self` since some IDEs are stupid
         // and just put `mut self` in every generated code.
         let mut this = self;
@@ -102,7 +99,7 @@ pub trait Collector: Sized {
     #[inline]
     fn cloned(self) -> Cloned<Self>
     where
-        Self::Item: Clone,
+        T: Clone,
     {
         assert_ref_collector(Cloned::new(self))
     }
@@ -110,17 +107,26 @@ pub trait Collector: Sized {
     // fn copied()
 
     #[inline]
-    fn map<E, F: FnMut(E) -> Self::Item>(self, f: F) -> Map<Self, E, F> {
+    fn map<F, U>(self, f: F) -> Map<Self, U, F>
+    where
+        F: FnMut(U) -> T,
+    {
         assert_collector(Map::new(self, f))
     }
 
     #[inline]
-    fn map_ref<E, F: FnMut(&mut E) -> Self::Item>(self, f: F) -> MapRef<Self, E, F> {
+    fn map_ref<F, U>(self, f: F) -> MapRef<Self, U, F>
+    where
+        F: FnMut(&mut U) -> T,
+    {
         assert_ref_collector(MapRef::new(self, f))
     }
 
     #[inline]
-    fn filter<F: FnMut(&Self::Item) -> bool>(self, pred: F) -> Filter<Self, F> {
+    fn filter<F>(self, pred: F) -> Filter<Self, F>
+    where
+        F: FnMut(&T) -> bool,
+    {
         assert_collector(Filter::new(self, pred))
     }
 
@@ -142,16 +148,19 @@ pub trait Collector: Sized {
     // fn step_by()
 
     #[inline]
-    fn partition<F, C>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>
+    fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>
     where
-        C: Collector<Item = Self::Item>,
-        F: FnMut(&mut Self::Item) -> bool,
+        C: Collector<T>,
+        F: FnMut(&mut T) -> bool,
     {
         assert_collector(Partition::new(self, other_if_false, pred))
     }
 
     #[inline]
-    fn unzip<C: Collector>(self, other: C) -> Unzip<Self, C> {
+    fn unzip<C>(self, other: C) -> Unzip<Self, C>
+    where
+        C: Collector<T>,
+    {
         assert_collector(Unzip::new(self, other))
     }
 }

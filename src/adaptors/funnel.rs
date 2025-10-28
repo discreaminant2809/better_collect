@@ -2,13 +2,13 @@ use std::{marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
-pub struct Funnel<C, E, F> {
+pub struct Funnel<C, T, F> {
     collector: C,
     f: F,
-    _marker: PhantomData<fn(&mut E)>,
+    _marker: PhantomData<fn(&mut T)>,
 }
 
-impl<C, E, F> Funnel<C, E, F> {
+impl<C, T, F> Funnel<C, T, F> {
     pub(crate) fn new(collector: C, f: F) -> Self {
         Self {
             collector,
@@ -18,13 +18,11 @@ impl<C, E, F> Funnel<C, E, F> {
     }
 }
 
-impl<E, C: RefCollector, F: FnMut(&mut E) -> &mut C::Item> Collector for Funnel<C, E, F> {
-    type Item = E;
-
+impl<T, U, C: RefCollector<U>, F: FnMut(&mut T) -> &mut U> Collector<T> for Funnel<C, T, F> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
         self.collect_ref(&mut item)
     }
 
@@ -40,9 +38,9 @@ impl<E, C: RefCollector, F: FnMut(&mut E) -> &mut C::Item> Collector for Funnel<
     // }
 }
 
-impl<E, C: RefCollector, F: FnMut(&mut E) -> &mut C::Item> RefCollector for Funnel<C, E, F> {
+impl<T, U, C: RefCollector<U>, F: FnMut(&mut T) -> &mut U> RefCollector<T> for Funnel<C, T, F> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.collector.collect_ref((self.f)(item))
     }
 }

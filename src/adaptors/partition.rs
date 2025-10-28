@@ -32,17 +32,15 @@ macro_rules! cf_and {
     };
 }
 
-impl<CT, CF, F> Collector for Partition<CT, CF, F>
+impl<T, CT, CF, F> Collector<T> for Partition<CT, CF, F>
 where
-    CT: Collector,
-    CF: Collector<Item = CT::Item>,
-    F: FnMut(&mut CT::Item) -> bool,
+    CT: Collector<T>,
+    CF: Collector<T>,
+    F: FnMut(&mut T) -> bool,
 {
-    type Item = CT::Item;
-
     type Output = (CT::Output, CF::Output);
 
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
         if (self.pred)(&mut item) {
             cf_and!(
                 self.collector_if_true.collect(item).is_break(),
@@ -63,7 +61,7 @@ where
         )
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         let mut items = items.into_iter();
 
         match items.try_for_each(|mut item| {
@@ -108,7 +106,7 @@ where
         }
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
         let mut items = items.into_iter();
 
         match items.try_for_each(|mut item| {
@@ -144,13 +142,13 @@ where
     }
 }
 
-impl<CT, CF, F> RefCollector for Partition<CT, CF, F>
+impl<T, CT, CF, F> RefCollector<T> for Partition<CT, CF, F>
 where
-    CT: RefCollector,
-    CF: RefCollector<Item = CT::Item>,
-    F: FnMut(&mut CT::Item) -> bool,
+    CT: RefCollector<T>,
+    CF: RefCollector<T>,
+    F: FnMut(&mut T) -> bool,
 {
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         if (self.pred)(item) {
             cf_and!(
                 self.collector_if_true.collect_ref(item).is_break(),

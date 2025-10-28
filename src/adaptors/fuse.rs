@@ -35,13 +35,11 @@ impl<C> Fuse<C> {
     }
 }
 
-impl<C: Collector> Collector for Fuse<C> {
-    type Item = C::Item;
-
+impl<E, C: Collector<E>> Collector<E> for Fuse<C> {
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: E) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect(item))
     }
 
@@ -51,12 +49,12 @@ impl<C: Collector> Collector for Fuse<C> {
     }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = E>) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_many(items))
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = E>) -> Self::Output {
         if self.finished {
             self.finish()
         } else {
@@ -65,9 +63,9 @@ impl<C: Collector> Collector for Fuse<C> {
     }
 }
 
-impl<C: RefCollector> RefCollector for Fuse<C> {
+impl<E, C: RefCollector<E>> RefCollector<E> for Fuse<C> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut E) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_ref(item))
     }
 }

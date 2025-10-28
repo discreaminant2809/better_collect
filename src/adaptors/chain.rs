@@ -16,16 +16,14 @@ impl<C1, C2> Chain<C1, C2> {
     }
 }
 
-impl<C1, C2> Collector for Chain<C1, C2>
+impl<T, C1, C2> Collector<T> for Chain<C1, C2>
 where
-    C1: Collector,
-    C2: Collector<Item = C1::Item>,
+    C1: Collector<T>,
+    C2: Collector<T>,
 {
-    type Item = C1::Item;
-
     type Output = (C1::Output, C2::Output);
 
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         if !self.collector1.finished() {
             self.collector1.collect(item)
         } else {
@@ -37,7 +35,7 @@ where
         (self.collector1.finish(), self.collector2.finish())
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         let mut items = items.into_iter();
 
         // No need to consult the `fisnished` flag
@@ -48,7 +46,7 @@ where
         }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         let mut items = items.into_iter();
 
         (
@@ -58,12 +56,12 @@ where
     }
 }
 
-impl<C1, C2> RefCollector for Chain<C1, C2>
+impl<E, C1, C2> RefCollector<E> for Chain<C1, C2>
 where
-    C1: RefCollector,
-    C2: RefCollector<Item = C1::Item>,
+    C1: RefCollector<E>,
+    C2: RefCollector<E>,
 {
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut E) -> ControlFlow<()> {
         if !self.collector1.finished() {
             self.collector1.collect_ref(item)
         } else {

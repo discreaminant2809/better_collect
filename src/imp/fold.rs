@@ -2,13 +2,13 @@ use std::{marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, assert_collector};
 
-pub struct Fold<A, E, F> {
+pub struct Fold<A, T, F> {
     accum: A,
     f: F,
-    _marker: PhantomData<fn(E)>,
+    _marker: PhantomData<fn(T)>,
 }
 
-impl<A, E, F: FnMut(&mut A, E) -> ControlFlow<()>> Fold<A, E, F> {
+impl<A, T, F: FnMut(&mut A, T) -> ControlFlow<()>> Fold<A, T, F> {
     #[inline]
     pub fn new(accum: A, f: F) -> Self {
         assert_collector(Fold {
@@ -19,13 +19,11 @@ impl<A, E, F: FnMut(&mut A, E) -> ControlFlow<()>> Fold<A, E, F> {
     }
 }
 
-impl<A, E, F: FnMut(&mut A, E) -> ControlFlow<()>> Collector for Fold<A, E, F> {
-    type Item = E;
-
+impl<A, T, F: FnMut(&mut A, T) -> ControlFlow<()>> Collector<T> for Fold<A, T, F> {
     type Output = A;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         (self.f)(&mut self.accum, item)
     }
 

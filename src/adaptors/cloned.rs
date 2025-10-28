@@ -10,13 +10,14 @@ impl<C> Cloned<C> {
     }
 }
 
-impl<C: Collector> Collector for Cloned<C> {
-    type Item = C::Item;
-
+impl<T, C> Collector<T> for Cloned<C>
+where
+    C: Collector<T>,
+{
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.0.collect(item)
     }
 
@@ -26,18 +27,22 @@ impl<C: Collector> Collector for Cloned<C> {
     }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.0.collect_many(items)
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.0.collect_then_finish(items)
     }
 }
 
-impl<C: Collector<Item: Clone>> RefCollector for Cloned<C> {
+impl<T, C> RefCollector<T> for Cloned<C>
+where
+    T: Clone,
+    C: Collector<T>,
+{
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.0.collect(item.clone())
     }
 }

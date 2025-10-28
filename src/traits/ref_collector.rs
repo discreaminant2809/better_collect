@@ -2,24 +2,30 @@ use std::ops::ControlFlow;
 
 use crate::{Chain, Collector, Funnel, Then, assert_collector, assert_ref_collector};
 
-pub trait RefCollector: Collector {
+pub trait RefCollector<T>: Collector<T> {
     /// Returns a [`ControlFlow`] to command whether to stop the collection.
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
+    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()>;
 
     #[inline]
-    fn then<C: Collector<Item = Self::Item>>(self, other: C) -> Then<Self, C> {
+    fn then<C>(self, other: C) -> Then<Self, C>
+    where
+        C: Collector<T>,
+    {
         assert_collector(Then::new(self, other))
     }
 
     #[inline]
-    fn chain<C: Collector<Item = Self::Item>>(self, other: C) -> Chain<Self, C> {
+    fn chain<C>(self, other: C) -> Chain<Self, C>
+    where
+        C: Collector<T>,
+    {
         assert_collector(Chain::new(self, other))
     }
 
     #[inline]
-    fn funnel<E, F>(self, func: F) -> Funnel<Self, E, F>
+    fn funnel<F, U>(self, func: F) -> Funnel<Self, U, F>
     where
-        F: FnMut(&mut E) -> &mut Self::Item,
+        F: FnMut(&mut U) -> &mut T,
     {
         assert_ref_collector(Funnel::new(self, func))
     }
