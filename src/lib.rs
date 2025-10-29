@@ -146,6 +146,7 @@
 //!
 //! // `Collector`
 //! let collector_way = socket_stream()
+//!     // No clone - the data flows smoothly.
 //!     .better_collect(String::new().then(HashSet::new()));
 //!
 //! assert_eq!(unzip_way, collector_way);
@@ -153,14 +154,42 @@
 //!
 //! # Collector
 //!
-//! Unlike [`std::iter`](core::iter), this crate has two traits instead. Roughtly:
+//! Unlike [`std::iter`](core::iter), this crate has two main traits instead. Roughtly:
 //!
 //! ```
-//! // TODO: trait definition.
+//! pub trait Collector<T>: Sized {
+//!     type Output;
+//!     fn collect(&mut self, item: T) -> ControlFlow<()>;
+//!     fn finish(self) -> Self::Output;
+//! }
+//!
+//! pub trait RefCollector<T>: Collector<T> {
+//!     fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()>;
+//! }
 //! ```
+//!
+//! [`Collector`] is akin to [`Extend`], except it also returns [`ControlFlow`] to signal
+//! (with [`Break`](core::ops::ControlFlow::Break) meaning to "stop")
+//! whether it permanently stops receiving items after calling [`collect`](Collector::collect).
+//! It is a helpful hint for some adaptors (e.g. [`Then`], [`Chain`]) to "vectorize" the rest of
+//! the items to another collector. After returning ``
+//!
+//! [`RefCollector`] is a collector that does not need the ownership of an item to collect it.
+//! The reason this trait exists is to allow an item to pass down through every collector without
+//! any of them consumes it. This allows multiple consumptions from just one item instead of cloning it
+//! to each collector, which is one of the main ideas of this crate. [`RefCollector`] powers [`then`](RefCollector::then),
+//! which establishes a pipeline of collectors and lets an item from the iterator pass down safely without being
+//! collected by ownership midway, to the last one when it is allowed to take the ownership of the item.
+//!
+//! # Todos:
+//!
+//! - More detailed documentation.
+//! - More adaptors (this crate currently only has essential ones).
+//! - Possibly foreign implementations for types in other crates.
 //!
 //! [`HashSet`]: std::collections::HashSet
 //! [`LinkedList`]: std::collections::LinkedList
+//! [`ControlFlow`]: core::ops::ControlFlow
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]

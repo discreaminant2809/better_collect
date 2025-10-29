@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Cloned, Filter, Fuse, Map, MapRef, Partition, Take, Unzip, assert_collector,
+    Chain, Cloned, Filter, Fuse, Map, MapRef, Partition, Take, Unzip, assert_collector,
     assert_ref_collector,
 };
 
@@ -146,6 +146,14 @@ pub trait Collector<T>: Sized {
     // fn skip()
 
     // fn step_by()
+
+    #[inline]
+    fn chain<C>(self, other: C) -> Chain<Self, C>
+    where
+        C: Collector<T>,
+    {
+        assert_collector(Chain::new(self, other))
+    }
 
     #[inline]
     fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>

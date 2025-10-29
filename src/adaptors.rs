@@ -9,6 +9,7 @@ mod partition;
 mod take;
 mod then;
 mod unzip;
+// mod filter_map;
 
 pub use chain::*;
 pub use cloned::*;
@@ -21,3 +22,4 @@ pub use partition::*;
 pub use take::*;
 pub use then::*;
 pub use unzip::*;
+// pub use filter_map::*;
