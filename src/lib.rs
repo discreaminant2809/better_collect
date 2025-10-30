@@ -7,7 +7,7 @@
 //! # Motivation
 //!
 //! Suppose we are given an array of `i32` and we are asked to find its sum and maximum value.
-//! What would be wer approach?
+//! What would be our approach?
 //!
 //! - Approach 1: Two-pass
 //!
@@ -148,7 +148,7 @@
 //! assert_eq!(unzip_way, collector_way);
 //! ```
 //!
-//! # Collector
+//! # Traits
 //!
 //! Unlike [`std::iter`](core::iter), this crate has two main traits instead. Roughtly:
 //!
@@ -166,8 +166,7 @@
 //! }
 //! ```
 //!
-//! [`Collector`] is akin to [`Extend`], except it also returns [`ControlFlow`] to signal
-//! (with [`Break`](core::ops::ControlFlow::Break) meaning to "stop")
+//! [`Collector`] is akin to [`Extend`], except it also returns [`ControlFlow`] to hint
 //! whether it permanently stops receiving items after calling [`collect`](Collector::collect).
 //! It is a helpful hint for some adaptors (e.g. [`Then`], [`Chain`]) to "vectorize" the rest of
 //! the items to another collector. After returning ``
@@ -179,15 +178,29 @@
 //! which establishes a pipeline of collectors and lets an item from the iterator pass down safely without being
 //! collected by ownership midway, to the last one when it is allowed to take the ownership of the item.
 //!
+//! Finally, [`BetterCollect`] adds a method [`better_collect`](BetterCollect::better_collect) to [`Iterator`]
+//! to "use" [`Collector`]. It extracts items from the iterator to the collector, then makes the collector
+//! produces the result. The trait has to be imported to be able to use the method.
+//!
+//! More detail can be found in their respected docs.
+//!
+//! # Features
+//!
+//! - `alloc`: Enables implementations for types in the [`alloc`] crate (e.g. [`Vec`], [`VecDeque`], [`BTreeSet`]).
+//! - `std`: Enables the `alloc` feature, and implementations for [`std`]-only types (e.g. [`HashSet`]).
+//!
 //! # Todos:
 //!
 //! - More detailed documentation.
-//! - More adaptors (this crate currently only has essential ones).
+//! - More adaptors (this crate currently only has common ones).
 //! - Possibly foreign implementations for types in other crates.
 //!
 //! [`HashSet`]: std::collections::HashSet
 //! [`LinkedList`]: std::collections::LinkedList
 //! [`ControlFlow`]: core::ops::ControlFlow
+//! [`alloc`]: https://doc.rust-lang.org/latest/alloc/index.html
+//! [`VecDeque`]: std::collections::VecDeque
+//! [`BTreeSet`]: std::collections::BTreeSet
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]

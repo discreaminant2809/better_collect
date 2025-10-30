@@ -5,20 +5,147 @@ use crate::{
     assert_ref_collector,
 };
 
+/// Collects items and produces a final output.
+///
+/// This trait requires two core methods:
+///
+/// - [`collect`](Collector::collect): consumes an item and returns whether the collector continues
+///   accumulating further items *after* this operation.
+/// - [`finish`](Collector::finish): consumes the collector and returns the accumulated result.
+///
+/// # Implementing
+///
+/// For a simple collector, define the output type you want to produce, wrap it in a struct,
+/// and implement this trait for that struct.
+/// You may also override methods like [`collect_many`](Collector::collect_many) for optimizations.
+///
+/// # Example
+///
+/// Suppose we’re building a tokenizer to process text for an NLP model.
+/// We’ll skip all complicated details for now and simply collect every word we see.
+///
+/// ```
+/// use std::{ops::ControlFlow, collections::HashMap};
+/// use better_collect::{Collector, BetterCollect};
+///
+/// #[derive(Default)]
+/// struct Tokenizer {
+///     indices: HashMap<String, usize>,
+///     words: Vec<String>,
+/// }
+///
+/// impl Tokenizer {
+///     fn tokenize(&self, sentence: &str) -> Vec<usize> {
+///         sentence
+///             .split_whitespace()
+///             .map(|word| self.indices.get(word).copied().unwrap_or(0))
+///             .collect()
+///     }
+/// }
+///
+/// impl Collector<String> for Tokenizer {
+///     // Usually, the collector itself is also the final result.
+///     type Output = Self;
+///
+///     fn collect(&mut self, word: String) -> ControlFlow<()> {
+///         self.indices
+///             .entry(word)
+///             .or_insert_with_key(|word| {
+///                 self.words.push(word.clone());
+///                 // Reserve index 0 for out-of-vocabulary words.
+///                 self.words.len()
+///             });
+///
+///         // Tokenizer never stops accumulating.
+///         ControlFlow::Continue(())
+///     }
+///
+///     fn finish(self) -> Self::Output {
+///         // Just return itself.
+///         self
+///     }
+/// }
+///
+/// let sentence = "the nobel and the singer";
+/// let tokenizer = sentence
+///     .split_whitespace()
+///     .map(String::from)
+///     .better_collect(Tokenizer::default());
+///
+/// // "the" should only appear once.
+/// assert_eq!(tokenizer.words, ["the", "nobel", "and", "singer"]);
+/// assert_eq!(tokenizer.tokenize("the singer and the swordswoman"), [1, 4, 3, 1, 0]);
+/// ```
 pub trait Collector<T>: Sized {
-    /// Output [`finish`](Collector::finish) yields.
+    /// The result this collector yields, via the [`finish`](Collector::finish) method.
     type Output;
 
-    /// Returns a [`ControlFlow`] to command whether the collector is "closed"
-    /// (won't accept more items after the operation).
+    /// Collects an item and returns a [`ControlFlow`] indicating whether the collector is now “closed”
+    /// — meaning it will no longer accumulate items **right after** this operation.
     ///
-    /// Returns `Some(item)` if the item couldn't be collected due to not satisfying some condition,
-    /// or the collector is closed.
+    /// Return [`Continue(())`] to indicate the collector can still accumulate more items,
+    /// or [`Break(())`] if it will no longer accumulate from now on and further feeding is meaningless.
+    ///
+    /// This is analogous to [`Iterator::next`], which returns an item (instead of collecting one)
+    /// and signals with [`None`] whenever it finishes.
+    ///
+    /// Implementors should return this hint carefully and inform the caller the closure
+    /// as early as possible. This can usually be upheld, but not always.
+    /// Some collectors-like [`take(0)`](Collector::take) and `take_while()`-only
+    /// know when they are done after collecting an item, which might be too late
+    /// if the item cannot be “afforded” and is lost forever.
+    /// For "infinite" collectors (like most collections), this is not an issue
+    /// since they can simply return  [`Continue(())`] every time.
+    ///
+    /// It is also allowed for a collector to be "reopened" later and resume accumulating
+    /// items normally. (Just like [`Iterator::next`] might start yielding again).
+    /// That is why the returned [`ControlFlow`] is only a hint -
+    /// this allows optimization (e.g. no need for an internal flag).
+    /// To prevent a collector from resuming, wrap it with [`fuse()`](Collector::fuse).
+    ///
+    /// If the collector is uncertain - like "maybe I won’t accumulate… uh, fine, I will" -
+    /// it is recommended to return [`Continue(())`].
+    /// For example, [`filter()`](Collector::filter) might skip some items it collects,
+    /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate;
+    /// The filter just denies "undesirable" items, not signal termination
+    /// (this is the job of `take_while()` instead).
+    ///
+    /// Collectors with limited capacity (e.g., a `Vec` stored on the stack) will eventually
+    /// return [`Break(())`] once full, right after the last item is accumulated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{Collector, Last};
+    ///
+    /// let mut collector = vec![].take(3); // only takes 3 items
+    ///
+    /// // It has not reached its 3-item quota yet.
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    ///
+    /// // After collecting `3`, it meets the quota, so it signals `Break` immediately.
+    /// assert!(collector.collect(3).is_break());
+    ///
+    /// // Further feeding does nothing.
+    /// assert!(collector.collect(4).is_break());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2, 3]);
+    ///
+    /// // Most collectors can accumulate indefinitely.
+    /// let mut last = Last::new();
+    /// for num in 0..100 {
+    ///     assert!(last.collect(num).is_continue(), "cannot collect {num}");
+    /// }
+    ///
+    /// assert_eq!(last.finish(), Some(99));
+    /// ```
+    ///
+    /// [`Continue(())`]: ControlFlow::Continue
+    /// [`Break(())`]: ControlFlow::Break
     fn collect(&mut self, item: T) -> ControlFlow<()>;
 
-    /// Finish the collection.
-    // Can we separate it to another trait, like `FromCollector`, so that this trait is dyn compatible?
-    // NO, because the compiler will hit an evaluation recursion limit. This approach fails.
+    /// Unwraps the collector and returns its accumulated result.
     fn finish(self) -> Self::Output;
 
     // #[inline]
