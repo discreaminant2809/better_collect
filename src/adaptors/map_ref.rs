@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::ControlFlow};
+use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
@@ -46,5 +46,28 @@ impl<T, U, C: Collector<U>, F: FnMut(&mut T) -> U> RefCollector<T> for MapRef<C,
     #[inline]
     fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.collector.collect((self.f)(item))
+    }
+}
+
+impl<C: Clone, T, F: Clone> Clone for MapRef<C, T, F> {
+    fn clone(&self) -> Self {
+        Self {
+            collector: self.collector.clone(),
+            f: self.f.clone(),
+            _marker: PhantomData,
+        }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.collector.clone_from(&source.collector);
+        self.f.clone_from(&source.f);
+    }
+}
+
+impl<C: Debug, T, F> Debug for MapRef<C, T, F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MapRef")
+            .field("collector", &self.collector)
+            .finish()
     }
 }

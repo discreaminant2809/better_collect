@@ -1,7 +1,8 @@
-use std::ops::ControlFlow;
+use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::{Collector, Fuse, RefCollector};
 
+#[derive(Clone)]
 pub struct Partition<CT, CF, F> {
     // `Fuse` is neccessary since we need to assess one's finishing state while assessing another,
     // like in `collect`.
@@ -160,5 +161,14 @@ where
                 self.collector_if_true.finished()
             )
         }
+    }
+}
+
+impl<CT: Debug, CF: Debug, F> Debug for Partition<CT, CF, F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Partition")
+            .field("collector_if_true", &self.collector_if_true)
+            .field("collector_if_false", &self.collector_if_false)
+            .finish()
     }
 }

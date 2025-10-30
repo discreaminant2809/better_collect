@@ -2,6 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
+#[derive(Debug, Clone)]
 pub struct Unzip<C1, C2> {
     collector1: C1,
     collector2: C2,

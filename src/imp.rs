@@ -1,9 +1,14 @@
 pub mod cmp;
+#[cfg(feature = "alloc")]
+mod collections;
 mod count;
 mod fold;
 mod fold_ref;
 mod last;
 pub mod num;
+#[cfg(feature = "alloc")]
+mod string;
+mod unit;
 #[cfg(feature = "alloc")]
 mod vec;
 // mod sink;

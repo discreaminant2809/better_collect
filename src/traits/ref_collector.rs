@@ -19,7 +19,7 @@ pub trait RefCollector<T>: Collector<T> {
     /// # Examples
     ///
     /// ```
-    /// use better_collector::{
+    /// use better_collect::{
     ///     Collector, RefCollector, cmp::Max, num::Sum,
     /// };
     ///
@@ -30,14 +30,14 @@ pub trait RefCollector<T>: Collector<T> {
     /// assert!(collector.collect(6).is_continue());
     /// assert!(collector.collect(3).is_continue());
     ///
-    /// assert_eq!(collector.finish(), ([4, 2, 6, 3], 6));
+    /// assert_eq!(collector.finish(), (vec![4, 2, 6, 3], Some(6)));
     /// ```
     ///
     /// Even if one collector stops, `Then` still continues as the other continues.
     /// It only stops when both collectors stop.
     ///
     /// ```
-    /// use better_collector::{
+    /// use better_collect::{
     ///     Collector, RefCollector, cmp::Max, num::Sum,
     /// };
     ///
@@ -45,12 +45,56 @@ pub trait RefCollector<T>: Collector<T> {
     ///
     /// assert!(collector.collect(4).is_continue());
     /// assert!(collector.collect(2).is_continue());
-    /// assert!(collector.collect(6).is_continue());
+    /// // Since `vec![].take(3)` only takes 3 items,
+    /// // it signals a stop right after the 3rd item is collected.
+    /// assert!(collector.collect(6).is_break());
     ///
-    /// assert_eq!(collector.clone().finish(), ([4, 2, 6], ()));
-    ///
-    /// assert!(collector.collect(1).is_break());
+    /// assert_eq!(collector.finish(), (vec![4, 2, 6], ()));
     /// ```
+    ///
+    /// Collectors can be `then`ed as many as they can, as long as every of them except the last
+    /// implements [`RefCollector`].
+    ///
+    /// Here is the solution of [LeetCode #1491] to demonstrate it:
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     BetterCollect, Collector, RefCollector,
+    ///     cmp::{Min, Max}, num::Sum, Count,
+    /// };
+    ///
+    /// # struct Solution;
+    /// impl Solution {
+    ///     pub fn average(salary: Vec<i32>) -> f64 {
+    ///         let (((min, max), count), sum) = salary
+    ///             .into_iter()
+    ///             .better_collect(
+    ///                 Min::new()
+    ///                     .copied()
+    ///                     .then(Max::new().copied())
+    ///                     .then(Count::new())
+    ///                     .then(Sum::<i32>::new())
+    ///             );
+    ///                 
+    ///         let (min, max) = (min.unwrap(), max.unwrap());
+    ///         (sum - max - min) as f64 / (count - 2) as f64
+    ///     }
+    /// }
+    ///
+    /// fn correct(actual: f64, expected: f64) -> bool {
+    ///     const DELTA: f64 = 1E-5;
+    ///     (actual - expected).abs() <= DELTA
+    /// }
+    ///
+    /// assert!(correct(
+    ///     Solution::average(vec![5, 3, 1, 2]), 2.5
+    /// ));
+    /// assert!(correct(
+    ///     Solution::average(vec![1, 2, 4]), 2.0
+    /// ));
+    /// ```
+    ///
+    /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
     #[inline]
     fn then<C>(self, other: C) -> Then<Self, C>
     where

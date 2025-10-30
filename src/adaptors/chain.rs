@@ -2,6 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, Fuse, RefCollector};
 
+#[derive(Debug, Clone)]
 pub struct Chain<C1, C2> {
     collector1: Fuse<C1>,
     collector2: C2,

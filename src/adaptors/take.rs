@@ -2,6 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
+#[derive(Debug, Clone)]
 pub struct Take<C> {
     collector: C,
     remaining: usize,

@@ -3,6 +3,7 @@ use std::ops::ControlFlow;
 use super::Fuse;
 use crate::{Collector, RefCollector};
 
+#[derive(Debug, Clone)]
 pub struct Then<C1, C2> {
     collector1: Fuse<C1>,
     collector2: C2,

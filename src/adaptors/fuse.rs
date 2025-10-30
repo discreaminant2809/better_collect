@@ -2,6 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
+#[derive(Debug, Clone)]
 pub struct Fuse<C> {
     collector: C,
     finished: bool,

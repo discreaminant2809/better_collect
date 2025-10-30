@@ -1,7 +1,8 @@
 use crate::{Collector, RefCollector};
 
-use std::ops::ControlFlow;
+use std::{fmt::Debug, ops::ControlFlow};
 
+#[derive(Clone)]
 pub struct Filter<C, F> {
     collector: C,
     pred: F,
@@ -49,5 +50,13 @@ impl<T, C: RefCollector<T>, F: FnMut(&T) -> bool> RefCollector<T> for Filter<C, 
         } else {
             ControlFlow::Continue(())
         }
+    }
+}
+
+impl<C: Debug, F> Debug for Filter<C, F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Filter")
+            .field("collector", &self.collector)
+            .finish()
     }
 }

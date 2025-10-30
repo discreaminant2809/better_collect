@@ -3,15 +3,15 @@ use crate::{Collector, RefCollector};
 use std::ops::ControlFlow;
 
 #[derive(Debug, Clone)]
-pub struct Cloned<C>(C);
+pub struct Copied<C>(C);
 
-impl<C> Cloned<C> {
+impl<C> Copied<C> {
     pub(crate) fn new(collector: C) -> Self {
         Self(collector)
     }
 }
 
-impl<T, C> Collector<T> for Cloned<C>
+impl<T, C> Collector<T> for Copied<C>
 where
     C: Collector<T>,
 {
@@ -37,13 +37,13 @@ where
     }
 }
 
-impl<T, C> RefCollector<T> for Cloned<C>
+impl<T, C> RefCollector<T> for Copied<C>
 where
-    T: Clone,
+    T: Copy,
     C: Collector<T>,
 {
     #[inline]
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
-        self.0.collect(item.clone())
+    fn collect_ref(&mut self, &mut item: &mut T) -> ControlFlow<()> {
+        self.0.collect(item)
     }
 }

@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Filter, Fuse, Map, MapRef, Partition, Take, Unzip, assert_collector,
+    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, Unzip, assert_collector,
     assert_ref_collector,
 };
 
@@ -104,7 +104,13 @@ pub trait Collector<T>: Sized {
         assert_ref_collector(Cloned::new(self))
     }
 
-    // fn copied()
+    #[inline]
+    fn copied(self) -> Copied<Self>
+    where
+        T: Copy,
+    {
+        assert_ref_collector(Copied::new(self))
+    }
 
     #[inline]
     fn map<F, U>(self, f: F) -> Map<Self, U, F>

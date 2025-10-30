@@ -81,10 +81,7 @@
 //! let mut last_seen = None;
 //!
 //! for data in socket_stream() {
-//!     if let Ok(num) = data.parse::<i32>() {
-//!         received.push(num);
-//!     }
-//!
+//!     received.push(data.clone());
 //!     byte_read += data.len();
 //!     last_seen = Some(data);
 //! }
@@ -100,11 +97,10 @@
 //! let ((received, byte_read), last_seen) = socket_stream()
 //!     .better_collect(
 //!         vec![]
-//!             // Use `xxx_map_ref` so that our collector is a `RefCollector`
+//!             .cloned()
+//!             // Use `map_ref` so that our collector is a `RefCollector`
 //!             // (only a `RefCollector` is then-able)
-//!             .filter_map_ref(|data| data.parse::<i32>().ok())
-//!             // Same here
-//!             .then(Sum::<usize>::new().map_ref(|data| data.len()))
+//!             .then(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))
 //!             .then(Last::new())
 //!     );
 //!
@@ -156,7 +152,9 @@
 //!
 //! Unlike [`std::iter`](core::iter), this crate has two main traits instead. Roughtly:
 //!
-//! ```
+//! ```no_run
+//! use std::ops::ControlFlow;
+//!
 //! pub trait Collector<T>: Sized {
 //!     type Output;
 //!     fn collect(&mut self, item: T) -> ControlFlow<()>;
