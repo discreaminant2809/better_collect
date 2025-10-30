@@ -150,7 +150,7 @@
 //!
 //! # Traits
 //!
-//! Unlike [`std::iter`](core::iter), this crate has two main traits instead. Roughtly:
+//! Unlike [`std::iter`], this crate has two main traits instead. Roughtly:
 //!
 //! ```no_run
 //! use std::ops::ControlFlow;
@@ -189,16 +189,21 @@
 //! - `alloc`: Enables implementations for types in the [`alloc`] crate (e.g. [`Vec`], [`VecDeque`], [`BTreeSet`]).
 //! - `std`: Enables the `alloc` feature, and implementations for [`std`]-only types (e.g. [`HashSet`]).
 //!
-//! # Todos:
+//! # Todos
 //!
 //! - More detailed documentation.
 //! - More adaptors (this crate currently only has common ones).
 //! - Possibly foreign implementations for types in other crates.
 //!
+//! [`Iterator`]: std::iter::Iterator
+//! [`Iterator::fold`]: std::iter::Iterator::fold
+//! [`Iterator::unzip`]: std::iter::Iterator::unzip
+//! [`std::iter`]: std::iter
 //! [`HashSet`]: std::collections::HashSet
 //! [`LinkedList`]: std::collections::LinkedList
 //! [`ControlFlow`]: core::ops::ControlFlow
-//! [`alloc`]: https://doc.rust-lang.org/latest/alloc/index.html
+//! [`alloc`]: https://doc.rust-lang.org/1.90.0/alloc/index.html
+//! [`std`]: std
 //! [`VecDeque`]: std::collections::VecDeque
 //! [`BTreeSet`]: std::collections::BTreeSet
 
