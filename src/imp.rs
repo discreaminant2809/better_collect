@@ -7,7 +7,7 @@ mod fold_ref;
 mod last;
 pub mod num;
 #[cfg(feature = "alloc")]
-mod string;
+pub mod string;
 mod unit;
 #[cfg(feature = "alloc")]
 mod vec;

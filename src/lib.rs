@@ -116,7 +116,10 @@
 //!
 //! ```
 //! use std::collections::HashSet;
-//! use better_collect::{Collector, RefCollector, BetterCollect};
+//! use better_collect::{
+//!     Collector, RefCollector, BetterCollect,
+//!     string::ConcatString,
+//! };
 //!
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
@@ -143,7 +146,7 @@
 //! // `Collector`
 //! let collector_way = socket_stream()
 //!     // No clone - the data flows smoothly.
-//!     .better_collect(String::new().then(HashSet::new()));
+//!     .better_collect(ConcatString::new().then(HashSet::new()));
 //!
 //! assert_eq!(unzip_way, collector_way);
 //! ```

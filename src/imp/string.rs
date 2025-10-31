@@ -1,9 +1,14 @@
+mod concat_str;
+mod concat_string;
+
+pub use concat_str::*;
+pub use concat_string::*;
+
 use std::ops::ControlFlow;
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::string::String;
 
-#[cfg(feature = "alloc")]
 use crate::{Collector, RefCollector};
 
 #[cfg(feature = "alloc")]
