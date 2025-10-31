@@ -80,7 +80,7 @@ pub trait Collector<T>: Sized {
     /// The result this collector yields, via the [`finish`](Collector::finish) method.
     type Output;
 
-    /// Collects an item and returns a [`ControlFlow`] indicating whether the collector is now “closed”
+    /// Collects an item and returns a [`ControlFlow`] indicating whether the collector is “closed”
     /// — meaning it will no longer accumulate items **right after** this operation.
     ///
     /// Return [`Continue(())`] to indicate the collector can still accumulate more items,
@@ -145,68 +145,64 @@ pub trait Collector<T>: Sized {
     /// [`Break(())`]: ControlFlow::Break
     fn collect(&mut self, item: T) -> ControlFlow<()>;
 
-    /// Unwraps the collector and returns its accumulated result.
+    /// Consumes the collector and returns the accumulated result.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    ///
+    /// let v = vec![1, 2, 3]
+    ///     .take(999)
+    ///     .fuse()
+    ///     .filter(|&x| x > 0);
+    ///
+    /// assert_eq!(v.finish(), [1, 2, 3]);
+    /// ```
     fn finish(self) -> Self::Output;
 
-    // #[inline]
-    // fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
-    //     let _ = (additional_min, additional_max);
-    //     // Default implementation does nothing.
-    // }
-
-    // /// Hint of how many items can still be collected
-    // /// before [`collect`](Collector::collect) returns [`ControlFlow::Break`]?
-    // #[inline]
-    // fn size_hint(&self) -> (usize, Option<usize>) {
-    //     (0, None)
-    // }
-
-    // /// Returns minimum amount of items to be collected before it's active again.
-    // /// `None` means it's GUARANTEED to be permanently inactive.
-    // ///
-    // /// It only requires the best effort. The collector is allowed to be permanently inactive
-    // /// even tho this method returns `Some(0)`. However, if the method returns `None`, the collector
-    // /// is guaranteed to be permanently inactive.
-    // ///
-    // /// It's a hint for some adaptors (e.g. [`then`](crate::RefCollector::then)) for optimization.
-    // /// However, it's up to the user to return correctly.
-    // ///
-    // /// The default implementation always returns `Some(0)`, meaning that the collector is
-    // /// conservatively always active.
-    // ///
-    // /// [`Filter`] always returns `Some(0)` even though it may have inactivity periods.
-    // /// It can't be confident about whether its predicate returns `true` or not for subsequent items.
-    // #[inline]
-    // fn inactivity_hint(&self) -> Option<usize> {
-    //     Some(0)
-    // }
-
-    // /// Skips the item collection until it's active again. Skips at most `max` items.
-    // ///
-    // /// It should be used with [`inactive_for`](Collector::inactive_for),
-    // /// and should be consistent with it.
-    // #[inline]
-    // fn skip_till_active(&mut self, max: Option<usize>) {
-    //     let _ = max;
-    //     // Default implementation does nothing.
-    // }
-
-    /// Also returns how many items were collected.
+    /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether the collector is “closed”
+    /// — meaning it will no longer accumulate items **right after** the last possible item is collected,
+    /// possibly none are collected.
+    ///
+    /// This method can be overridden for optimization.
+    /// Implementors may choose a more efficient way to consume an iterator than a simple `for` loop
+    /// ([`Iterator`] offers many alternative consumption methods), depending on the collector’s needs.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use better_collect::Collector;
+    ///
+    /// let mut v = vec![1, 2];
+    /// v.collect_many([3, 4, 5]);
+    ///
+    /// assert_eq!(v, [1, 2, 3, 4, 5]);
+    /// ```
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
-        // let (additional_min, additional_max) = items.size_hint();
-        // self.reserve(additional_min, additional_max);
-
-        // // Block the collection beforehand. We can't affort wasting items on an inactive collector.
-        // if self.inactivity_hint().is_none() {
-        //     return ControlFlow::Break(());
-        // }
-
         // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
         // (e.g. `skip`, `chain`, etc.)
         items.into_iter().try_for_each(|item| self.collect(item))
     }
 
-    /// Can be overriden to optimize, such as [`take`](Collector::take).
+    /// Collects items from an iterator, consumes the collector, and produces the accumulated result.
+    ///
+    /// This is equivalent to calling [`collect_many`](Collector::collect_many)  
+    /// followed by [`finish`](Collector::finish) (which is the default implementation),
+    /// but it can be overridden for optimization (e.g., to skip tracking internal state)
+    /// because the collector will be dropped anyway.
+    /// For instance, [`take()`](Collector::take) overrides this method to avoid tracking
+    /// how many items have been collected.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use better_collect::Collector;
+    ///
+    /// let mut v = vec![1, 2];
+    ///
+    /// assert_eq!(v.collect_then_finish([3, 4, 5]), [1, 2, 3, 4, 5]);
+    /// ```
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         // Do this instead of putting `mut` in `self` since some IDEs are stupid
         // and just put `mut self` in every generated code.
@@ -218,6 +214,61 @@ pub trait Collector<T>: Sized {
         this.finish()
     }
 
+    /// Creates a collector that stops accumulating after the first [`Break(())`].
+    ///
+    /// After a collector returns [`Break(())`], future calls may or may not return [`Continue(())`] again.
+    /// `fuse()` ensures that after [`Break(())`] is returned, it will always return [`Break(())`] forever.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{BetterCollect, Collector, Count};
+    /// use std::ops::ControlFlow;
+    ///
+    /// // A collector that alternates between `Continue` and `Break`.
+    /// #[derive(Default)]
+    /// struct NastyCollector {
+    ///     is_continue: bool,
+    /// }
+    ///
+    /// impl Collector<()> for NastyCollector {
+    ///     type Output = ();
+    ///
+    ///     fn collect(&mut self, _: ()) -> ControlFlow<()> {
+    ///         self.is_continue = !self.is_continue;
+    ///         
+    ///         if self.is_continue {
+    ///             ControlFlow::Continue(())
+    ///         } else {
+    ///             ControlFlow::Break(())
+    ///         }
+    ///     }
+    ///
+    ///     fn finish(self) -> Self::Output {}
+    /// }
+    ///
+    /// let mut collector = NastyCollector::default();
+    ///
+    /// // It signals "nastily"
+    /// assert!(collector.collect(()).is_continue());
+    /// assert!(collector.collect(()).is_break());
+    /// assert!(collector.collect(()).is_continue());
+    /// assert!(collector.collect(()).is_break());
+    ///
+    /// // We try the fused version
+    /// let mut collector = NastyCollector::default().fuse();
+    ///
+    /// assert!(collector.collect(()).is_continue());
+    /// assert!(collector.collect(()).is_break());
+    ///
+    /// // Now the hint is stably `Break`
+    /// assert!(collector.collect(()).is_break());
+    /// assert!(collector.collect(()).is_break());
+    /// assert!(collector.collect(()).is_break());
+    /// ```
+    ///
+    /// [`Continue(())`]: ControlFlow::Continue
+    /// [`Break(())`]: ControlFlow::Break
     #[inline]
     fn fuse(self) -> Fuse<Self> {
         assert_collector(Fuse::new(self))
