@@ -3,12 +3,13 @@ use std::ops::ControlFlow;
 use crate::{Collector, RefCollector};
 
 /// Unit type will always stop collecting, no matter the type it collects.
-impl<T> Collector<T> for () {
+impl Collector for () {
+    type Item = ();
     type Output = ();
 
     /// Unit type will always stop collecting, no matter the type it collects.
     #[inline]
-    fn collect(&mut self, _item: T) -> ControlFlow<()> {
+    fn collect(&mut self, _item: Self::Item) -> ControlFlow<()> {
         ControlFlow::Break(())
     }
 
@@ -17,18 +18,20 @@ impl<T> Collector<T> for () {
 
     /// It won't consume any items in an iterator, either.
     #[inline]
-    fn collect_many(&mut self, _items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, _items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         ControlFlow::Break(())
     }
 
     /// It won't consume any items in an iterator, either.
     #[inline]
-    fn collect_then_finish(self, _items: impl IntoIterator<Item = T>) -> Self::Output {}
+    fn collect_then_finish(self, _items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        // Nothing worth doing here
+    }
 }
 
-impl<T> RefCollector<T> for () {
+impl RefCollector for () {
     #[inline]
-    fn collect_ref(&mut self, _item: &mut T) -> ControlFlow<()> {
+    fn collect_ref(&mut self, _item: &mut Self::Item) -> ControlFlow<()> {
         ControlFlow::Break(())
     }
 }

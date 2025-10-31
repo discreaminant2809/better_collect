@@ -18,11 +18,16 @@ impl<C, T, F> Funnel<C, T, F> {
     }
 }
 
-impl<T, U, C: RefCollector<U>, F: FnMut(&mut T) -> &mut U> Collector<T> for Funnel<C, T, F> {
+impl<T, C, F> Collector for Funnel<C, T, F>
+where
+    C: RefCollector,
+    F: FnMut(&mut T) -> &mut C::Item,
+{
+    type Item = T;
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
+    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
         self.collect_ref(&mut item)
     }
 
@@ -36,9 +41,14 @@ impl<T, U, C: RefCollector<U>, F: FnMut(&mut T) -> &mut U> Collector<T> for Funn
     //     self.collector
     //         .collect_many(items.into_iter().map(|mut item| (self.f)(&mut item))) // ...due to this.
     // }
+    // Anyway this is fine. This collector is not supposed to be used at the last of the `then` chain.
 }
 
-impl<T, U, C: RefCollector<U>, F: FnMut(&mut T) -> &mut U> RefCollector<T> for Funnel<C, T, F> {
+impl<T, C, F> RefCollector for Funnel<C, T, F>
+where
+    C: RefCollector,
+    F: FnMut(&mut T) -> &mut C::Item,
+{
     #[inline]
     fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.collector.collect_ref((self.f)(item))

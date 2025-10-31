@@ -15,11 +15,12 @@ macro_rules! num_impl {
             }
         }
 
-        impl Collector<$num_ty> for Sum<$num_ty> {
+        impl Collector for Sum<$num_ty> {
+            type Item = $num_ty;
             type Output = $num_ty;
 
             #[inline]
-            fn collect(&mut self, item: $num_ty) -> ControlFlow<()> {
+            fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
                 self.accum += item;
                 ControlFlow::Continue(())
             }
@@ -33,7 +34,7 @@ macro_rules! num_impl {
             #[inline]
             fn collect_many(
                 &mut self,
-                items: impl IntoIterator<Item = $num_ty>,
+                items: impl IntoIterator<Item = Self::Item>,
             ) -> ControlFlow<()> {
                 self.accum += items.into_iter().sum::<$num_ty>();
                 ControlFlow::Continue(())
@@ -41,14 +42,17 @@ macro_rules! num_impl {
 
             /// Forwards to [`Iterator::sum`].
             #[inline]
-            fn collect_then_finish(self, items: impl IntoIterator<Item = $num_ty>) -> Self::Output {
+            fn collect_then_finish(
+                self,
+                items: impl IntoIterator<Item = Self::Item>,
+            ) -> Self::Output {
                 self.accum + items.into_iter().sum::<$num_ty>()
             }
         }
 
-        impl RefCollector<$num_ty> for Sum<$num_ty> {
+        impl RefCollector for Sum<$num_ty> {
             #[inline]
-            fn collect_ref(&mut self, &mut item: &mut $num_ty) -> ControlFlow<()> {
+            fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
                 self.accum += item;
                 ControlFlow::Continue(())
             }

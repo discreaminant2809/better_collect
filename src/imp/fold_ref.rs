@@ -5,7 +5,8 @@ use crate::{Collector, RefCollector, assert_ref_collector};
 pub struct FoldRef<A, T, F> {
     accum: A,
     f: F,
-    // Since `E` appears in one of the parameters of `F`.
+    // Needed, or else the compiler will complain about "unconstraint generics."
+    // Since we use `&mut T` in the function params, it's logical to use `PhantomData` like this.
     _marker: PhantomData<fn(&mut T)>,
 }
 
@@ -20,11 +21,12 @@ impl<A, T, F: FnMut(&mut A, &mut T) -> ControlFlow<()>> FoldRef<A, T, F> {
     }
 }
 
-impl<A, T, F: FnMut(&mut A, &mut T) -> ControlFlow<()>> Collector<T> for FoldRef<A, T, F> {
+impl<A, T, F: FnMut(&mut A, &mut T) -> ControlFlow<()>> Collector for FoldRef<A, T, F> {
+    type Item = T;
     type Output = A;
 
     #[inline]
-    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
+    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
         self.collect_ref(&mut item)
     }
 
@@ -34,9 +36,9 @@ impl<A, T, F: FnMut(&mut A, &mut T) -> ControlFlow<()>> Collector<T> for FoldRef
     }
 }
 
-impl<A, T, F: FnMut(&mut A, &mut T) -> ControlFlow<()>> RefCollector<T> for FoldRef<A, T, F> {
+impl<A, T, F: FnMut(&mut A, &mut T) -> ControlFlow<()>> RefCollector for FoldRef<A, T, F> {
     #[inline]
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         (self.f)(&mut self.accum, item)
     }
 }

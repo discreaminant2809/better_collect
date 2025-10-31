@@ -17,14 +17,15 @@ impl<C1, C2> Unzip<C1, C2> {
     }
 }
 
-impl<T1, T2, C1, C2> Collector<(T1, T2)> for Unzip<C1, C2>
+impl<C1, C2> Collector for Unzip<C1, C2>
 where
-    C1: Collector<T1>,
-    C2: Collector<T2>,
+    C1: Collector,
+    C2: Collector,
 {
+    type Item = (C1::Item, C2::Item);
     type Output = (C1::Output, C2::Output);
 
-    fn collect(&mut self, (item1, item2): (T1, T2)) -> ControlFlow<()> {
+    fn collect(&mut self, (item1, item2): Self::Item) -> ControlFlow<()> {
         let res1 = self.collector1.collect(item1);
         let res2 = self.collector2.collect(item2);
 
@@ -36,7 +37,7 @@ where
         (self.collector1.finish(), self.collector2.finish())
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = (T1, T2)>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         let mut items = items.into_iter();
 
         match items.try_for_each(|(item1, item2)| {
@@ -56,7 +57,7 @@ where
         }
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = (T1, T2)>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         let mut items = items.into_iter();
 
         match items.try_for_each(|(item1, item2)| {
@@ -82,12 +83,12 @@ where
     }
 }
 
-impl<T1, T2, C1, C2> RefCollector<(T1, T2)> for Unzip<C1, C2>
+impl<C1, C2> RefCollector for Unzip<C1, C2>
 where
-    C1: RefCollector<T1>,
-    C2: RefCollector<T2>,
+    C1: RefCollector,
+    C2: RefCollector,
 {
-    fn collect_ref(&mut self, (item1, item2): &mut (T1, T2)) -> ControlFlow<()> {
+    fn collect_ref(&mut self, (item1, item2): &mut Self::Item) -> ControlFlow<()> {
         let res1 = self.collector1.collect_ref(item1);
         let res2 = self.collector2.collect_ref(item2);
 

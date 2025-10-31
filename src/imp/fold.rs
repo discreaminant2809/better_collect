@@ -5,6 +5,8 @@ use crate::{Collector, assert_collector};
 pub struct Fold<A, T, F> {
     accum: A,
     f: F,
+    // Needed, or else the compiler will complain about "unconstraint generics."
+    // Since we use `T` in the function params, it's logical to use `PhantomData` like this.
     _marker: PhantomData<fn(T)>,
 }
 
@@ -19,11 +21,12 @@ impl<A, T, F: FnMut(&mut A, T) -> ControlFlow<()>> Fold<A, T, F> {
     }
 }
 
-impl<A, T, F: FnMut(&mut A, T) -> ControlFlow<()>> Collector<T> for Fold<A, T, F> {
+impl<A, T, F: FnMut(&mut A, T) -> ControlFlow<()>> Collector for Fold<A, T, F> {
+    type Item = T;
     type Output = A;
 
     #[inline]
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         (self.f)(&mut self.accum, item)
     }
 

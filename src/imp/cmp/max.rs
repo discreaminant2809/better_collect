@@ -21,11 +21,12 @@ impl<T> Default for Max<T> {
     }
 }
 
-impl<T: Ord> Collector<T> for Max<T> {
+impl<T: Ord> Collector for Max<T> {
+    type Item = T;
     type Output = Option<T>;
 
     #[inline]
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         // Because it's `Max`, if `max` is a `None` then it's always smaller than a `Some`.
         // Doesn't work on `Min`, however.
         self.max = self.max.take().max(Some(item));
@@ -37,7 +38,7 @@ impl<T: Ord> Collector<T> for Max<T> {
         self.max
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         if let Some(max) = items.into_iter().max() {
             self.collect(max)
         } else {
@@ -45,7 +46,7 @@ impl<T: Ord> Collector<T> for Max<T> {
         }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         items.into_iter().max().max(self.max)
     }
 }

@@ -2,9 +2,9 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, Funnel, Then, assert_collector, assert_ref_collector};
 
-pub trait RefCollector<T>: Collector<T> {
+pub trait RefCollector: Collector {
     /// Returns a [`ControlFlow`] to command whether to stop the collection.
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()>;
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
 
     /// The most important adaptor, and the reason why this crate exists.
     ///
@@ -43,13 +43,13 @@ pub trait RefCollector<T>: Collector<T> {
     ///
     /// let mut collector = vec![].take(3).then(()); // `()` always stops collecting.
     ///
-    /// assert!(collector.collect(4).is_continue());
-    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(()).is_continue());
+    /// assert!(collector.collect(()).is_continue());
     /// // Since `vec![].take(3)` only takes 3 items,
     /// // it signals a stop right after the 3rd item is collected.
-    /// assert!(collector.collect(6).is_break());
+    /// assert!(collector.collect(()).is_break());
     ///
-    /// assert_eq!(collector.finish(), (vec![4, 2, 6], ()));
+    /// assert_eq!(collector.finish(), (vec![(); 3], ()));
     /// ```
     ///
     /// Collectors can be `then`ed as many as they can, as long as every of them except the last
@@ -98,15 +98,15 @@ pub trait RefCollector<T>: Collector<T> {
     #[inline]
     fn then<C>(self, other: C) -> Then<Self, C>
     where
-        C: Collector<T>,
+        C: Collector<Item = Self::Item>,
     {
         assert_collector(Then::new(self, other))
     }
 
     #[inline]
-    fn funnel<F, U>(self, func: F) -> Funnel<Self, U, F>
+    fn funnel<F, T>(self, func: F) -> Funnel<Self, T, F>
     where
-        F: FnMut(&mut U) -> &mut T,
+        F: FnMut(&mut T) -> &mut Self::Item,
     {
         assert_ref_collector(Funnel::new(self, func))
     }

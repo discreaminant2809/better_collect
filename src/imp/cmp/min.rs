@@ -21,11 +21,12 @@ impl<T> Default for Min<T> {
     }
 }
 
-impl<T: Ord> Collector<T> for Min<T> {
+impl<T: Ord> Collector for Min<T> {
+    type Item = T;
     type Output = Option<T>;
 
     #[inline]
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         self.min = Some(match self.min.take() {
             Some(min) => min.min(item),
             None => item,
@@ -39,7 +40,7 @@ impl<T: Ord> Collector<T> for Min<T> {
         self.min
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         if let Some(min) = items.into_iter().min() {
             self.collect(min)
         } else {
@@ -47,7 +48,7 @@ impl<T: Ord> Collector<T> for Min<T> {
         }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         items.into_iter().min().min(self.min)
     }
 }

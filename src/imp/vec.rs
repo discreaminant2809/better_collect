@@ -8,7 +8,8 @@ use alloc::vec::Vec;
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-impl<T> Collector<T> for Vec<T> {
+impl<T> Collector for Vec<T> {
+    type Item = T;
     type Output = Self;
 
     #[inline]
@@ -35,38 +36,9 @@ impl<T> Collector<T> for Vec<T> {
     }
 }
 
-// #[cfg(feature = "alloc")]
-// #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-// impl<'a, T: Copy> Collector<&'a T> for Vec<T> {
-//     type Output = Self;
-
-//     #[inline]
-//     fn collect(&mut self, item: &'a T) -> ControlFlow<()> {
-//         self.push(*item);
-//         ControlFlow::Continue(())
-//     }
-
-//     #[inline]
-//     fn finish(self) -> Self::Output {
-//         self
-//     }
-
-//     #[inline]
-//     fn collect_many(&mut self, items: impl IntoIterator<Item = &'a T>) -> ControlFlow<()> {
-//         self.extend(items);
-//         ControlFlow::Continue(())
-//     }
-
-//     #[inline]
-//     fn collect_then_finish(mut self, items: impl IntoIterator<Item = &'a T>) -> Self::Output {
-//         self.extend(items);
-//         self
-//     }
-// }
-
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-impl<T: Copy> RefCollector<T> for Vec<T> {
+impl<T: Copy> RefCollector for Vec<T> {
     #[inline]
     fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.push(*item);

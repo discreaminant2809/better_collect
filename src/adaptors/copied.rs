@@ -11,14 +11,15 @@ impl<C> Copied<C> {
     }
 }
 
-impl<T, C> Collector<T> for Copied<C>
+impl<C> Collector for Copied<C>
 where
-    C: Collector<T>,
+    C: Collector,
 {
+    type Item = C::Item;
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         self.0.collect(item)
     }
 
@@ -28,22 +29,22 @@ where
     }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.0.collect_many(items)
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         self.0.collect_then_finish(items)
     }
 }
 
-impl<T, C> RefCollector<T> for Copied<C>
+impl<C> RefCollector for Copied<C>
 where
-    T: Copy,
-    C: Collector<T>,
+    Self::Item: Copy,
+    C: Collector,
 {
     #[inline]
-    fn collect_ref(&mut self, &mut item: &mut T) -> ControlFlow<()> {
+    fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
         self.0.collect(item)
     }
 }

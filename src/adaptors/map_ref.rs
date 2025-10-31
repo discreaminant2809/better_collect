@@ -18,7 +18,12 @@ impl<C, T, F> MapRef<C, T, F> {
     }
 }
 
-impl<T, U, C: Collector<U>, F: FnMut(&mut T) -> U> Collector<T> for MapRef<C, T, F> {
+impl<T, C, F> Collector for MapRef<C, T, F>
+where
+    C: Collector,
+    F: FnMut(&mut T) -> C::Item,
+{
+    type Item = T;
     type Output = C::Output;
 
     #[inline]
@@ -31,20 +36,24 @@ impl<T, U, C: Collector<U>, F: FnMut(&mut T) -> U> Collector<T> for MapRef<C, T,
         self.collector.finish()
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().map(|mut item| (self.f)(&mut item)))
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().map(move |mut item| (self.f)(&mut item)))
     }
 }
 
-impl<T, U, C: Collector<U>, F: FnMut(&mut T) -> U> RefCollector<T> for MapRef<C, T, F> {
+impl<T, C, F> RefCollector for MapRef<C, T, F>
+where
+    C: Collector,
+    F: FnMut(&mut T) -> C::Item,
+{
     #[inline]
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.collector.collect((self.f)(item))
     }
 }

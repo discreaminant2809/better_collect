@@ -18,7 +18,12 @@ impl<C, T, F> Map<C, T, F> {
     }
 }
 
-impl<T, U, C: Collector<U>, F: FnMut(T) -> U> Collector<T> for Map<C, T, F> {
+impl<T, C, F> Collector for Map<C, T, F>
+where
+    C: Collector,
+    F: FnMut(T) -> C::Item,
+{
+    type Item = T;
     type Output = C::Output;
 
     #[inline]
@@ -31,12 +36,12 @@ impl<T, U, C: Collector<U>, F: FnMut(T) -> U> Collector<T> for Map<C, T, F> {
         self.collector.finish()
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().map(&mut self.f))
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().map(self.f))
     }

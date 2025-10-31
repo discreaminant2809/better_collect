@@ -1,16 +1,19 @@
-use std::ops::ControlFlow;
+use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
-#[derive(Debug, Default)]
-pub struct Count {
+pub struct Count<T> {
     count: usize,
+    _marker: PhantomData<fn(T)>,
 }
 
-impl Count {
+impl<T> Count<T> {
     #[inline]
     pub const fn new() -> Self {
-        Count { count: 0 }
+        Count {
+            count: 0,
+            _marker: PhantomData,
+        }
     }
 
     #[inline]
@@ -26,11 +29,12 @@ impl Count {
     }
 }
 
-impl<T> Collector<T> for Count {
+impl<T> Collector for Count<T> {
+    type Item = T;
     type Output = usize;
 
     #[inline]
-    fn collect(&mut self, _: T) -> ControlFlow<()> {
+    fn collect(&mut self, _: Self::Item) -> ControlFlow<()> {
         self.increment();
         ControlFlow::Continue(())
     }
@@ -41,21 +45,44 @@ impl<T> Collector<T> for Count {
     }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.count += items.into_iter().count();
         ControlFlow::Continue(())
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         self.count + items.into_iter().count()
     }
 }
 
-impl<T> RefCollector<T> for Count {
+impl<T> RefCollector for Count<T> {
     #[inline]
-    fn collect_ref(&mut self, _: &mut T) -> ControlFlow<()> {
+    fn collect_ref(&mut self, _: &mut Self::Item) -> ControlFlow<()> {
         self.increment();
         ControlFlow::Continue(())
+    }
+}
+
+impl<T> Debug for Count<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Count").field("count", &self.count).finish()
+    }
+}
+
+impl<T> Clone for Count<T> {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self {
+            count: self.count,
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Default for Count<T> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
 }

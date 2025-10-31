@@ -155,14 +155,16 @@
 //! ```no_run
 //! use std::ops::ControlFlow;
 //!
-//! pub trait Collector<T>: Sized {
+//! pub trait Collector: Sized {
+//!     type Item;
 //!     type Output;
-//!     fn collect(&mut self, item: T) -> ControlFlow<()>;
+//!
+//!     fn collect(&mut self, item: Self::Item) -> ControlFlow<()>;
 //!     fn finish(self) -> Self::Output;
 //! }
 //!
-//! pub trait RefCollector<T>: Collector<T> {
-//!     fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()>;
+//! pub trait RefCollector: Collector {
+//!     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
 //! }
 //! ```
 //!
@@ -225,12 +227,12 @@ pub use imp::*;
 pub use traits::*;
 
 #[inline(always)]
-fn assert_collector<C: Collector<E>, E>(collector: C) -> C {
+fn assert_collector<C: Collector>(collector: C) -> C {
     collector
 }
 
 #[inline(always)]
-fn assert_ref_collector<C: RefCollector<E>, E>(collector: C) -> C {
+fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
     collector
 }
 
