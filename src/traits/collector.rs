@@ -78,9 +78,11 @@ use crate::{
 /// assert_eq!(tokenizer.tokenize("the singer and the swordswoman"), [1, 4, 3, 1, 0]);
 /// ```
 pub trait Collector: Sized {
-    /// Although it is tempting to put it in generic instead (since [`String`] can collect
-    /// `char` and `&str`, and [`Count`](crate::Count) can collect basically everything),
-    /// it will break type coherence because the compiler cannot decide which generic to use.
+    /// Type of items this collector collects and accumulates.
+    // Although it is tempting to put it in generic instead (since `String` can collect
+    // `char` and `&str`, and `Count` can collect basically everything),
+    // it will break type coherence because the compiler cannot decide which generic to use.
+    // It turns out the "adaptor pattern" doesn't work well with generic traits.
     type Item;
 
     /// The result this collector yields, via the [`finish`](Collector::finish) method.
@@ -220,7 +222,7 @@ pub trait Collector: Sized {
         this.finish()
     }
 
-    /// Creates a collector that stops accumulating after the first [`Break(())`].
+    /// Creates a [`Collector`] that stops accumulating after the first [`Break(())`].
     ///
     /// After a collector returns [`Break(())`], future calls may or may not return [`Continue(())`] again.
     /// `fuse()` ensures that after [`Break(())`] is returned, it will always return [`Break(())`] forever.
@@ -281,6 +283,66 @@ pub trait Collector: Sized {
         assert_collector(Fuse::new(self))
     }
 
+    /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s all of collected items.
+    ///
+    /// This is useful when you want ownerships of items, but you still want to [`then`] it
+    /// with another collector. (Reminder: only [`RefCollector`]s are [`then`]-able)
+    ///
+    /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
+    /// since collectors usually implement [`RefCollector`] to collect them seemlessly.
+    /// However, for non-[`Copy`] types like [`String`], you will need this.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{BetterCollect, Collector, RefCollector};
+    ///
+    /// let collector_res = ["a", "b", "c"]
+    ///     .into_iter()
+    ///     .map(String::from)
+    ///     // `Vec` does not implement `RefCollector` for `String` as an item
+    ///     // So we have to `cloned` to be able to `then` further.
+    ///     // The logic is if we don't, the first `Vec` will consume the item,
+    ///     // leaving nothing left to the second one.
+    ///     .better_collect(vec![].cloned().then(vec![]));
+    ///
+    /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
+    /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
+    ///
+    /// // The code above is the same as this
+    /// let unzip_res: (Vec<_>, Vec<_>) = ["a", "b", "c"]
+    ///     .into_iter()
+    ///     .map(String::from)
+    ///     .map(|s| (s.clone(), s))
+    ///     .unzip();
+    ///
+    /// assert_eq!(collector_res, unzip_res);
+    /// ```
+    ///
+    /// For [`Copy`] types, this adaptor is usually not needed.
+    ///
+    /// ```
+    /// use better_collect::{BetterCollect, Collector, RefCollector};
+    ///
+    /// let collector_res = [1, 2, 3]
+    ///     .into_iter()
+    ///     // Just `then` normally.
+    ///     // `Vec` implements `RefCollector` if its item type is `Copy`.
+    ///     .better_collect(vec![].then(vec![]));
+    ///
+    /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
+    ///
+    /// // The code above is the same as this
+    /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
+    ///     .into_iter()
+    ///     .map(|num| (num, num))
+    ///     .unzip();
+    ///
+    /// assert_eq!(collector_res, unzip_res);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    /// [`then`]: crate::RefCollector::then
     #[inline]
     fn cloned(self) -> Cloned<Self>
     where
@@ -289,6 +351,46 @@ pub trait Collector: Sized {
         assert_ref_collector(Cloned::new(self))
     }
 
+    /// Creates a [`RefCollector`] that copies all of collected items.
+    ///
+    /// This is useful when you want ownerships of items, but you still want to [`then`] it
+    /// with another collector. (Reminder: only [`RefCollector`]s are [`then`]-able)
+    ///
+    /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
+    /// since collectors usually implement [`RefCollector`] to collect them seemlessly.
+    /// However, if your collector does not support it, you will need this.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{BetterCollect, Collector, RefCollector};
+    ///
+    /// let collector_copied_res = [1, 2, 3]
+    ///     .into_iter()
+    ///     .better_collect(vec![].copied().then(vec![]));
+    ///
+    /// assert_eq!(collector_copied_res, (vec![1, 2, 3], vec![1, 2, 3]));
+    ///
+    /// // The code above is the same as this...
+    /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
+    ///     .into_iter()
+    ///     .map(|s| (s, s))
+    ///     .unzip();
+    ///
+    /// assert_eq!(collector_copied_res, unzip_res);
+    ///
+    /// // And this
+    /// let collector_normal_res = [1, 2, 3]
+    ///     .into_iter()
+    ///     // Just `then` normally.
+    ///     // `Vec` implements `RefCollector` if its item type is `Copy`.
+    ///     .better_collect(vec![].then(vec![]));
+    ///
+    /// assert_eq!(collector_copied_res, collector_normal_res);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    /// [`then`]: crate::RefCollector::then
     #[inline]
     fn copied(self) -> Copied<Self>
     where
@@ -297,6 +399,52 @@ pub trait Collector: Sized {
         assert_ref_collector(Copied::new(self))
     }
 
+    /// Creates a [`Collector`] that calls a closure on each item before collecting.
+    ///
+    /// This is used when the [`then`](crate::RefCollector::then) chain expects to collect `T`,
+    /// but you have a collector that collects `U`. In this case, you map transform `T` to `U`.
+    ///
+    /// # Limitations
+    ///
+    /// Currently, in some occasions, you need to annotate type for the parameters of the closure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{BetterCollect, Collector};
+    ///
+    /// // Collect first 5 squared numbers
+    /// let collector_evens = (1..=5)
+    ///     .better_collect(vec![].map(|num| num * num));
+    ///
+    /// assert_eq!(collector_evens, [1, 4, 9, 16, 25]);
+    ///
+    /// // The above is the same as the below, which is prefered
+    /// let iter_evens: Vec<_> = (1..=5)
+    ///     .map(|num| num * num)
+    ///     .collect();
+    ///
+    /// assert_eq!(collector_evens, iter_evens);
+    /// ```
+    ///
+    /// If you have two collectors collecting different item types, this adaptor helps.
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     BetterCollect, Collector, RefCollector,
+    ///     string::ConcatStr,
+    /// };
+    ///
+    /// let (_strings, lens) = ["a", "bcd", "ef"]
+    ///     .into_iter()
+    ///     .better_collect(
+    ///         ConcatStr::new()
+    ///             // This is the limitation: we need a type annotation
+    ///             .then(vec![].map(|s: &str| s.len()))
+    ///     );
+    ///
+    /// assert_eq!(lens, [1, 3, 2]);
+    /// ```
     #[inline]
     fn map<F, T>(self, f: F) -> Map<Self, T, F>
     where
