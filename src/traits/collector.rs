@@ -238,11 +238,11 @@ pub trait Collector: Sized {
     ///
     /// // A collector that alternates between `Continue` and `Break`.
     /// #[derive(Default)]
-    /// struct NastyCollector {
+    /// struct NaughtyCollector {
     ///     is_continue: bool,
     /// }
     ///
-    /// impl Collector for NastyCollector {
+    /// impl Collector for NaughtyCollector {
     ///     type Item = ();
     ///     type Output = ();
     ///
@@ -259,16 +259,16 @@ pub trait Collector: Sized {
     ///     fn finish(self) -> Self::Output {}
     /// }
     ///
-    /// let mut collector = NastyCollector::default();
+    /// let mut collector = NaughtyCollector::default();
     ///
-    /// // It signals "nastily."
+    /// // It hints "naughtily."
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_break());
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_break());
     ///
     /// // Try the fused version.
-    /// let mut collector = NastyCollector::default().fuse();
+    /// let mut collector = NaughtyCollector::default().fuse();
     ///
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_break());
@@ -296,6 +296,10 @@ pub trait Collector: Sized {
     /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
     /// since collectors usually implement [`RefCollector`] to collect them seamlessly.
     /// However, for non-[`Copy`] types like [`String`], this adaptor becomes necessary.
+    ///
+    /// As a [`Collector`], `cloned()` does nothing (effectively a no-op) and is usually useless
+    /// at the end of a [`then`] chain.
+    /// It only performs its intended behavior when used as a [`RefCollector`].
     ///
     /// # Examples
     ///
