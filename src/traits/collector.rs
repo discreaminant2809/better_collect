@@ -207,7 +207,7 @@ pub trait Collector: Sized {
     /// ```rust
     /// use better_collect::Collector;
     ///
-    /// let mut v = vec![1, 2];
+    /// let v = vec![1, 2];
     ///
     /// assert_eq!(v.collect_then_finish([3, 4, 5]), [1, 2, 3, 4, 5]);
     /// ```
