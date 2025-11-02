@@ -2,25 +2,29 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, Funnel, Then, assert_collector, assert_ref_collector};
 
+/// # Difference with [`Collector<Item = &mut T>`]
 pub trait RefCollector: Collector {
     /// Returns a [`ControlFlow`] to command whether to stop the collection.
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
 
-    /// The most important adaptor, and the reason why this crate exists.
+    /// The most important adaptor — the reason why this crate exists.
     ///
-    /// `then()` returns a new collector that let both collectors receive the same item. The first collector
-    /// receives a mutable reference to the item, **then** the second collector may receive it by
-    /// mutable reference or ownership. Together, they form a "pipeline" that the item passes through collectors,
-    /// and the end is the final consumer by ownership.
+    /// Creates a [`Collector`] that lets **both** collectors collect the same item.
+    /// The first collector collects the item by mutable reference, **then** the second one
+    /// collects it by either mutable reference or ownership.
+    /// Together, they form a *pipeline* where each collector processes the item in turn,
+    /// and the final one consumes by ownership.
     ///
-    /// If the second collector implements [`RefCollector`], this collector can be `then`ed further to extend the pipeline,
-    /// else it cannot be `then`ed and becomes the endpoint of the pipeline.
+    /// If the second collector implements [`RefCollector`], this adaptor implements [`RefCollector`],
+    /// allowing the chain to be extended further with additional `then()` calls.
+    /// Otherwise, it becomes the endpoint of the pipeline.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::{
-    ///     Collector, RefCollector, cmp::Max, num::Sum,
+    ///     Collector, RefCollector,
+    ///     cmp::Max,
     /// };
     ///
     /// let mut collector = vec![].then(Max::new());
@@ -33,29 +37,28 @@ pub trait RefCollector: Collector {
     /// assert_eq!(collector.finish(), (vec![4, 2, 6, 3], Some(6)));
     /// ```
     ///
-    /// Even if one collector stops, `Then` still continues as the other continues.
-    /// It only stops when both collectors stop.
+    /// Even if one collector stops, `then()` continues as the other does.
+    /// It only stops when **both** collectors stop.
     ///
     /// ```
-    /// use better_collect::{
-    ///     Collector, RefCollector, cmp::Max, num::Sum,
-    /// };
+    /// use better_collect::{Collector, RefCollector};
     ///
     /// let mut collector = vec![].take(3).then(()); // `()` always stops collecting.
     ///
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_continue());
     /// // Since `vec![].take(3)` only takes 3 items,
-    /// // it signals a stop right after the 3rd item is collected.
+    /// // it hints a stop right after the 3rd item is collected.
+    /// assert!(collector.collect(()).is_break());
     /// assert!(collector.collect(()).is_break());
     ///
     /// assert_eq!(collector.finish(), (vec![(); 3], ()));
     /// ```
     ///
-    /// Collectors can be `then`ed as many as they can, as long as every of them except the last
-    /// implements [`RefCollector`].
+    /// Collectors can be chained with `then()` as many as you want,
+    /// as long as every of them except the last implements [`RefCollector`].
     ///
-    /// Here is the solution of [LeetCode #1491] to demonstrate it:
+    /// Here’s the solution to [LeetCode #1491] — a perfect demo of its power:
     ///
     /// ```
     /// use better_collect::{

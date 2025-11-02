@@ -222,10 +222,13 @@ pub trait Collector: Sized {
         this.finish()
     }
 
-    /// Creates a [`Collector`] that stops accumulating after the first [`Break(())`].
+    /// Creates a [`Collector`] that stops accumulating permanently after the first [`Break(())`].
     ///
-    /// After a collector returns [`Break(())`], future calls may or may not return [`Continue(())`] again.
-    /// `fuse()` ensures that after [`Break(())`] is returned, it will always return [`Break(())`] forever.
+    /// Normally, a collector that returns [`Break(())`] may later return [`Continue(())`] again.
+    /// `fuse()` ensures that once [`Break(())`] has been returned, it will **always**
+    /// return [`Break(())`] forever.
+    ///
+    /// This adaptor implements [`RefCollector`] if the underlying collector does.
     ///
     /// # Examples
     ///
@@ -258,24 +261,25 @@ pub trait Collector: Sized {
     ///
     /// let mut collector = NastyCollector::default();
     ///
-    /// // It signals "nastily"
+    /// // It signals "nastily."
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_break());
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_break());
     ///
-    /// // We try the fused version
+    /// // Try the fused version.
     /// let mut collector = NastyCollector::default().fuse();
     ///
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_break());
     ///
-    /// // Now the hint is stably `Break`
+    /// // Now the hint remains `Break`.
     /// assert!(collector.collect(()).is_break());
     /// assert!(collector.collect(()).is_break());
     /// assert!(collector.collect(()).is_break());
     /// ```
     ///
+    /// [`RefCollector`]: crate::RefCollector
     /// [`Continue(())`]: ControlFlow::Continue
     /// [`Break(())`]: ControlFlow::Break
     #[inline]
@@ -283,14 +287,15 @@ pub trait Collector: Sized {
         assert_collector(Fuse::new(self))
     }
 
-    /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s all of collected items.
+    /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
     ///
-    /// This is useful when you want ownerships of items, but you still want to [`then`] it
-    /// with another collector. (Reminder: only [`RefCollector`]s are [`then`]-able)
+    /// This is useful when you need ownership of items, but you still want to [`then`]
+    /// the underlying collector into another collector.
+    /// (Reminder: only [`RefCollector`]s are [`then`]-able.)
     ///
     /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
-    /// since collectors usually implement [`RefCollector`] to collect them seemlessly.
-    /// However, for non-[`Copy`] types like [`String`], you will need this.
+    /// since collectors usually implement [`RefCollector`] to collect them seamlessly.
+    /// However, for non-[`Copy`] types like [`String`], this adaptor becomes necessary.
     ///
     /// # Examples
     ///
@@ -300,16 +305,16 @@ pub trait Collector: Sized {
     /// let collector_res = ["a", "b", "c"]
     ///     .into_iter()
     ///     .map(String::from)
-    ///     // `Vec` does not implement `RefCollector` for `String` as an item
-    ///     // So we have to `cloned` to be able to `then` further.
-    ///     // The logic is if we don't, the first `Vec` will consume the item,
-    ///     // leaving nothing left to the second one.
+    ///     // `Vec<String>` does not implement `RefCollector`,
+    ///     // so we must call `cloned()` to make it `then`-able.
+    ///     // Otherwise, the first `Vec` would consume each item,
+    ///     // leaving nothing for the second.
     ///     .better_collect(vec![].cloned().then(vec![]));
     ///
     /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
     /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
     ///
-    /// // The code above is the same as this
+    /// // Equivalent to:
     /// let unzip_res: (Vec<_>, Vec<_>) = ["a", "b", "c"]
     ///     .into_iter()
     ///     .map(String::from)
@@ -319,7 +324,7 @@ pub trait Collector: Sized {
     /// assert_eq!(collector_res, unzip_res);
     /// ```
     ///
-    /// For [`Copy`] types, this adaptor is usually not needed.
+    /// For [`Copy`] types, this adaptor is usually unnecessary:
     ///
     /// ```
     /// use better_collect::{BetterCollect, Collector, RefCollector};
@@ -327,12 +332,12 @@ pub trait Collector: Sized {
     /// let collector_res = [1, 2, 3]
     ///     .into_iter()
     ///     // Just `then` normally.
-    ///     // `Vec` implements `RefCollector` if its item type is `Copy`.
+    ///     // `Vec<i32>` implements `RefCollector` since `i32` is `Copy`.
     ///     .better_collect(vec![].then(vec![]));
     ///
     /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
-    /// // The code above is the same as this
+    /// // Equivalent to:
     /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
     ///     .into_iter()
     ///     .map(|num| (num, num))
@@ -351,14 +356,15 @@ pub trait Collector: Sized {
         assert_ref_collector(Cloned::new(self))
     }
 
-    /// Creates a [`RefCollector`] that copies all of collected items.
+    /// Creates a [`RefCollector`] that copies every collected item.
     ///
-    /// This is useful when you want ownerships of items, but you still want to [`then`] it
-    /// with another collector. (Reminder: only [`RefCollector`]s are [`then`]-able)
+    /// This is useful when you need ownership of items, but you still want to [`then`]
+    /// the underlying collector into another collector.
+    /// (Reminder: only [`RefCollector`]s are [`then`]-able.)
     ///
-    /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
-    /// since collectors usually implement [`RefCollector`] to collect them seemlessly.
-    /// However, if your collector does not support it, you will need this.
+    /// You usually don’t need this adaptor when working with [`Copy`] types (e.g., primitives),
+    /// since collectors often implement [`RefCollector`] to collect them seamlessly.
+    /// However, if your collector does not support it, this adaptor provides a fallback.
     ///
     /// # Examples
     ///
@@ -371,7 +377,7 @@ pub trait Collector: Sized {
     ///
     /// assert_eq!(collector_copied_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
-    /// // The code above is the same as this...
+    /// // Equivalent to:
     /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
     ///     .into_iter()
     ///     .map(|s| (s, s))
@@ -379,11 +385,9 @@ pub trait Collector: Sized {
     ///
     /// assert_eq!(collector_copied_res, unzip_res);
     ///
-    /// // And this
+    /// // Also equivalent to using `then` directly, since `Vec<i32>` implements `RefCollector`.
     /// let collector_normal_res = [1, 2, 3]
     ///     .into_iter()
-    ///     // Just `then` normally.
-    ///     // `Vec` implements `RefCollector` if its item type is `Copy`.
     ///     .better_collect(vec![].then(vec![]));
     ///
     /// assert_eq!(collector_copied_res, collector_normal_res);
@@ -401,33 +405,39 @@ pub trait Collector: Sized {
 
     /// Creates a [`Collector`] that calls a closure on each item before collecting.
     ///
-    /// This is used when the [`then`](crate::RefCollector::then) chain expects to collect `T`,
-    /// but you have a collector that collects `U`. In this case, you map transform `T` to `U`.
+    /// This is used when a [`then`] chain expects to collect `T`,
+    /// but you have a collector that collects `U`. In that case,
+    /// you can use `map()` to transform `U` into `T` before passing it along.
+    ///
+    /// Since it does **not** implement [`RefCollector`], this adaptor should be used
+    /// on the **final collector** in a [`then`] chain.
+    /// If you find yourself writing `map().cloned()` or `map().copied()`,
+    /// consider using [`map_ref()`](Collector::map_ref) instead, which avoids unnecessary cloning.
     ///
     /// # Limitations
     ///
-    /// Currently, in some occasions, you need to annotate type for the parameters of the closure.
+    /// In certain cases, you may need to annotate the parameter types in the mapping closure.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::{BetterCollect, Collector};
     ///
-    /// // Collect first 5 squared numbers
-    /// let collector_evens = (1..=5)
+    /// // Collect the first 5 squared numbers.
+    /// let collector_squares = (1..=5)
     ///     .better_collect(vec![].map(|num| num * num));
     ///
-    /// assert_eq!(collector_evens, [1, 4, 9, 16, 25]);
+    /// assert_eq!(collector_squares, [1, 4, 9, 16, 25]);
     ///
-    /// // The above is the same as the below, which is prefered
-    /// let iter_evens: Vec<_> = (1..=5)
+    /// // Equivalent to:
+    /// let iter_squares: Vec<_> = (1..=5)
     ///     .map(|num| num * num)
     ///     .collect();
     ///
-    /// assert_eq!(collector_evens, iter_evens);
+    /// assert_eq!(collector_squares, iter_squares);
     /// ```
     ///
-    /// If you have two collectors collecting different item types, this adaptor helps.
+    /// If you have multiple collectors with different item types, this adaptor bridges them.
     ///
     /// ```
     /// use better_collect::{
@@ -439,12 +449,15 @@ pub trait Collector: Sized {
     ///     .into_iter()
     ///     .better_collect(
     ///         ConcatStr::new()
-    ///             // This is the limitation: we need a type annotation
+    ///             // Limitation: type annotation may be needed.
     ///             .then(vec![].map(|s: &str| s.len()))
     ///     );
     ///
     /// assert_eq!(lens, [1, 3, 2]);
     /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    /// [`then`]: crate::RefCollector::then
     #[inline]
     fn map<F, T>(self, f: F) -> Map<Self, T, F>
     where
@@ -453,6 +466,46 @@ pub trait Collector: Sized {
         assert_collector(Map::new(self, f))
     }
 
+    /// Creates a [`RefCollector`] that calls a closure on each item by mutable reference before collecting.
+    ///
+    /// This is used when the [`then`](crate::RefCollector::then) chain expects to collect `T`,
+    /// but you have a collector that collects `U`.
+    /// In that case, you can use `map_ref()` to transform `T` into `U`.
+    ///
+    /// Unlike [`map()`](Collector::map), this adaptor only receives a mutable reference to each item.
+    /// Because of that, it can be used **in the middle** of a [`then`] chain,
+    /// since it is a [`RefCollector`].
+    /// While it can also appear at the end of the chain, consider using [`map()`](Collector::map) there
+    /// instead for better clarity.
+    ///
+    /// # Limitations
+    ///
+    /// In certain cases, you may need to annotate the parameter types in the closure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     BetterCollect, Collector, RefCollector,
+    ///     string::ConcatString,
+    /// };
+    ///
+    /// let (lens, _strings) = ["a".to_owned(), "bcd".to_owned(), "ef".to_owned()]
+    ///     .into_iter()
+    ///     .better_collect(
+    ///         vec![]
+    ///             // Since we can only "view" the string via &mut,
+    ///             // we use this adaptor to avoid cloning.
+    ///             // (Limitation: type annotation may be required.)
+    ///             .map_ref(|s: &mut String| s.len())
+    ///             .then(ConcatString::new())
+    ///     );
+    ///
+    /// assert_eq!(lens, [1, 3, 2]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    /// [`then`]: crate::RefCollector::then
     #[inline]
     fn map_ref<F, T>(self, f: F) -> MapRef<Self, T, F>
     where
@@ -461,6 +514,57 @@ pub trait Collector: Sized {
         assert_ref_collector(MapRef::new(self, f))
     }
 
+    /// Creates a [`Collector`] that uses a closure to determine whether an item should be collected.
+    ///
+    /// The underlying collector only collects items for which the given predicate returns `true`.
+    ///
+    /// This also implements [`RefCollector`] if the underlying collector does.
+    ///
+    /// Note that even if an item is not collected, this adaptor will still return
+    /// [`Continue`] as long as the underlying collector does. If you want the collector to stop
+    /// after the first `false`, consider using [`take_while`] instead.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    ///
+    /// let mut collector = vec![].filter(|&x| x % 2 == 0);
+    ///
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(4).is_continue());
+    /// assert!(collector.collect(0).is_continue());
+    ///
+    /// // Still `Continue` even if an item doesn’t satisfy the predicate.
+    /// assert!(collector.collect(1).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [2, 4, 0]);
+    /// ```
+    ///
+    /// The adaptor also implements [`RefCollector`] if the underlying collector does.
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     BetterCollect, Collector, RefCollector,
+    ///     string::ConcatString,
+    /// };
+    ///
+    /// let (evens, negs) = (-5..=5)
+    ///     .better_collect(
+    ///         vec![]
+    ///             .filter(|&x| x % 2 == 0)
+    ///             // Since `Vec<i32>` implements `RefCollector`,
+    ///             // this adaptor does too!
+    ///             .then(vec![].filter(|&x| x < 0))
+    ///     );
+    ///
+    /// assert_eq!(evens, [-4, -2, 0, 2, 4]);
+    /// assert_eq!(negs, [-5, -4, -3, -2, -1]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    /// [`Continue`]: std::ops::ControlFlow::Continue
+    /// [`Break`]: std::ops::ControlFlow::Break
     #[inline]
     fn filter<F>(self, pred: F) -> Filter<Self, F>
     where
