@@ -1,20 +1,52 @@
 use std::ops::ControlFlow;
 
-use crate::Collector;
+use crate::{Collector, assert_collector};
 
-#[derive(Debug)]
+/// A [`Collector`] that computes the minimum value among the items it collects.
+///
+/// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
+/// or `Some` containing the minimum item otherwise.
+///
+/// This collector corresponds to [`Iterator::min()`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::{Collector, cmp::Min};
+///
+/// let mut collector = Min::new();
+///
+/// assert!(collector.collect(5).is_continue());
+/// assert!(collector.collect(2).is_continue());
+/// assert!(collector.collect(3).is_continue());
+/// assert!(collector.collect(1).is_continue());
+/// assert!(collector.collect(3).is_continue());
+///
+/// assert_eq!(collector.finish(), Some(1));
+/// ```
+///
+/// Its output is `None` if it has not encountered any items.
+///
+/// ```
+/// use better_collect::{Collector, cmp::Min};
+///
+/// assert_eq!(Min::<i32>::new().finish(), None);
+/// ```
+#[derive(Debug, Clone)]
 pub struct Min<T> {
-    min: Option<T>,
+    // For `Debug` impl for `MinByKey`.
+    pub(super) min: Option<T>,
 }
 
-impl<T> Min<T> {
+impl<T: Ord> Min<T> {
+    /// Creates a new instance of this collector.
     #[inline]
     pub const fn new() -> Self {
-        Min { min: None }
+        assert_collector(Self { min: None })
     }
 }
 
-impl<T> Default for Min<T> {
+impl<T: Ord> Default for Min<T> {
     #[inline]
     fn default() -> Self {
         Self::new()
@@ -49,6 +81,6 @@ impl<T: Ord> Collector for Min<T> {
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        items.into_iter().min().min(self.min)
+        self.min.into_iter().chain(items).min()
     }
 }

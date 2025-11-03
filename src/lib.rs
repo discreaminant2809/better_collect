@@ -231,12 +231,12 @@ pub use imp::*;
 pub use traits::*;
 
 #[inline(always)]
-fn assert_collector<C: Collector>(collector: C) -> C {
+const fn assert_collector<C: Collector>(collector: C) -> C {
     collector
 }
 
 #[inline(always)]
-fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
+const fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
     collector
 }
 
