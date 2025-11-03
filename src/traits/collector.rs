@@ -526,7 +526,7 @@ pub trait Collector: Sized {
     ///
     /// Note that even if an item is not collected, this adaptor will still return
     /// [`Continue`] as long as the underlying collector does. If you want the collector to stop
-    /// after the first `false`, consider using [`take_while`] instead.
+    /// after the first `false`, consider using [`take_while()`](Collector::take_while) instead.
     ///
     /// # Examples
     ///
@@ -584,6 +584,36 @@ pub trait Collector: Sized {
 
     // fn flat_map()
 
+    /// Creates a [`Collector`] that stops accumulating after collecting the first `n` items,
+    /// or fewer if the underlying collector ends sooner.
+    ///
+    /// `take(n)` collects items until either `n` items have been collected or the underlying collector
+    /// stops - whichever happens first.
+    /// For collections, the [`Output`](Collector::Output) will contain at most `n` more items than
+    /// it had before construction.
+    ///
+    /// This also implements [`RefCollector`] if the underlying collector does.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    ///
+    /// let mut collector = vec![].take(3);
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    ///
+    /// // Immediately stops after the third item.
+    /// assert!(collector.collect(3).is_break());
+    ///
+    /// // No more items will be accumulated.
+    /// assert!(collector.collect(4).is_break());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2, 3]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
     #[inline]
     fn take(self, n: usize) -> Take<Self> {
         Take::new(self, n)
@@ -594,6 +624,39 @@ pub trait Collector: Sized {
 
     // fn step_by()
 
+    /// Creates a [`Collector`] that feeds every item in the first collector until it stops accumulating,
+    /// then continues feeding items into the second one.
+    ///
+    /// The first collector should be finite (typically achieved with [`take`](Collector::take)
+    /// or [`take_while`](Collector::take_while)),
+    /// otherwise it will hoard all incoming items and never pass any to the second.
+    ///
+    /// The [`Output`](Collector::Output) is a tuple containing the outputs of both underlying collectors,
+    /// in order.
+    ///
+    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    ///
+    /// let mut collector = vec![].take(2).chain(vec![]);
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    ///
+    /// // Now the first collector stops accumulating, but the second one is still active.
+    /// assert!(collector.collect(2).is_continue());
+    ///
+    /// // Now the second one takes the spotlight.
+    /// assert!(collector.collect(3).is_continue());
+    /// assert!(collector.collect(4).is_continue());
+    /// assert!(collector.collect(5).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), (vec![1, 2], vec![3, 4, 5]));
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
     #[inline]
     fn chain<C>(self, other: C) -> Chain<Self, C>
     where

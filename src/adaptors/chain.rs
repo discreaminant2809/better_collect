@@ -27,12 +27,16 @@ where
 
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         if !self.collector1.finished() {
-            self.collector1.collect(item)
+            let _ = self.collector1.collect(item);
+            // DO NOT just return whatever the first collector returns.
+            // We still have the second collector, so we can't hint `Break`!
+            ControlFlow::Continue(())
         } else {
             self.collector2.collect(item)
         }
     }
 
+    #[inline]
     fn finish(self) -> Self::Output {
         (self.collector1.finish(), self.collector2.finish())
     }
@@ -40,7 +44,7 @@ where
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         let mut items = items.into_iter();
 
-        // No need to consult the `fisnished` flag
+        // No need to consult the `finished` flag
         if self.collector1.collect_many(items.by_ref()).is_break() {
             self.collector2.collect_many(items)
         } else {
@@ -51,6 +55,7 @@ where
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         let mut items = items.into_iter();
 
+        // No need to consult the `finished` flag
         (
             self.collector1.collect_then_finish(items.by_ref()),
             self.collector2.collect_then_finish(items),
