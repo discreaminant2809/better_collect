@@ -105,16 +105,16 @@ pub trait Collector: Sized {
     /// For "infinite" collectors (like most collections), this is not an issue
     /// since they can simply return  [`Continue(())`] every time.
     ///
-    /// It is also allowed for a collector to be "reopened" later and resume accumulating
+    /// It is also allowed for a collector to "resume" later and resume accumulating
     /// items normally. (Just like [`Iterator::next`] might start yielding again).
     /// That is why the returned [`ControlFlow`] is only a hint -
     /// this allows optimization (e.g. no need for an internal flag).
-    /// To prevent a collector from resuming, wrap it with [`fuse()`](Collector::fuse).
+    /// To prevent a collector from resuming, [`fuse()`](Collector::fuse) it.
     ///
     /// If the collector is uncertain - like "maybe I won’t accumulate… uh, fine, I will" -
     /// it is recommended to return [`Continue(())`].
     /// For example, [`filter()`](Collector::filter) might skip some items it collects,
-    /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate;
+    /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate.
     /// The filter just denies "undesirable" items, not signal termination
     /// (this is the job of `take_while()` instead).
     ///
@@ -124,7 +124,7 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{Collector, Last};
+    /// use better_collect::Collector;
     ///
     /// let mut collector = vec![].take(3); // only takes 3 items
     ///
@@ -139,8 +139,13 @@ pub trait Collector: Sized {
     /// assert!(collector.collect(4).is_break());
     ///
     /// assert_eq!(collector.finish(), [1, 2, 3]);
+    /// ```
     ///
-    /// // Most collectors can accumulate indefinitely.
+    /// Most collectors can accumulate indefinitely.
+    ///
+    /// ```
+    /// use better_collect::{Collector, Last};
+    ///
     /// let mut last = Last::new();
     /// for num in 0..100 {
     ///     assert!(last.collect(num).is_continue(), "cannot collect {num}");
@@ -665,6 +670,26 @@ pub trait Collector: Sized {
         assert_collector(Chain::new(self, other))
     }
 
+    /// Creates a [`Collector`] that distributes items between two collectors based on a predicate.
+    ///
+    /// Items for which the predicate returns `true` are sent to the first collector,
+    /// and those for which it returns `false` go to the second collector.
+    ///
+    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    ///
+    /// let collector = vec![].partition(|&mut x| x % 2 == 0, vec![]);
+    /// let (evens, odds) = collector.collect_then_finish(-5..5);
+    ///
+    /// assert_eq!(evens, [-4, -2, 0, 2, 4]);
+    /// assert_eq!(odds, [-5, -3, -1, 1, 3]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
     #[inline]
     fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>
     where
@@ -674,6 +699,53 @@ pub trait Collector: Sized {
         assert_collector(Partition::new(self, other_if_false, pred))
     }
 
+    /// Creates a [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
+    /// `A` goes to the first collector, and `B` goes to the second collector.
+    ///
+    /// `unzip()` is useful when you want to split an [`Iterator`]
+    /// producing tuples or structs into multiple collections.
+    ///
+    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{BetterCollect, Collector};
+    ///
+    /// struct User {
+    ///     id: u32,
+    ///     name: String,
+    ///     email: String,
+    /// }
+    ///
+    /// let users = [
+    ///     User {
+    ///         id: 1,
+    ///         name: "Alice".to_owned(),
+    ///         email: "alice@mail.com".to_owned(),
+    ///     },
+    ///     User {
+    ///         id: 2,
+    ///         name: "Bob".to_owned(),
+    ///         email: "bob@mail.com".to_owned(),
+    ///     },
+    /// ];
+    ///
+    /// let ((ids, names), emails) = users
+    ///     .into_iter()
+    ///     .better_collect(
+    ///         vec![]
+    ///             .unzip(vec![])
+    ///             .unzip(vec![])
+    ///             .map(|user: User| ((user.id, user.name), user.email)),
+    ///     );
+    ///
+    /// assert_eq!(ids, [1, 2]);
+    /// assert_eq!(names, vec!["Alice", "Bob"]);
+    /// assert_eq!(emails, vec!["alice@mail.com", "bob@mail.com"]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
     #[inline]
     fn unzip<C>(self, other: C) -> Unzip<Self, C>
     where

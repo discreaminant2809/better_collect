@@ -2,9 +2,59 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, Funnel, Then, assert_collector, assert_ref_collector};
 
-/// # Difference with [`Collector<Item = &mut T>`]
+/// A [`Collector`] that can also collect items by mutable reference.
+///
+/// This trait introduces one additional method, [`collect_ref`](RefCollector::collect_ref),
+/// which takes a mutable reference to an item.
+///
+/// It exists primarily to support [`then()`].
+/// Since [`Collector`] consumes items by ownership, each item cannot normally be passed further.
+/// A type implementing this trait essentially declares: “A view of an item is enough for me
+/// to collect it — feel free to keep using it elsewhere.”
+/// This enables items to flow through multiple collectors while maintaining composability.
+/// See [`then()`] for a deeper explanation.
+///
+/// # Difference from [`Collector<Item = &mut T>`]
+///
+/// Although both can collect mutable references, [`Collector<Item = &mut T>`]
+/// implies *ownership* of those references and their lifetimes.
+/// As such, it cannot be safely fed with references to items that will later be consumed.
+///
+/// For example, imagine a `Vec<&mut T>` collector:
+/// it would hold the references beyond a single iteration,
+/// preventing the item from being passed to another collector.
+/// [`RefCollector`], in contrast, borrows mutably *just long enough* to collect,
+/// then immediately releases the borrow — enabling true chaining.
+///
+/// [`then()`]: RefCollector::then
 pub trait RefCollector: Collector {
-    /// Returns a [`ControlFlow`] to command whether to stop the collection.
+    /// Collects an item by mutable reference and returns a [`ControlFlow`] indicating whether
+    /// the collector is “closed” — meaning it will no longer accumulate items **right after**
+    /// this operation.
+    ///
+    /// See [`Collector::collect()`] for requirements regarding the returned [`ControlFlow`].
+    ///
+    /// After implementing this method, [`Collector::collect()`] can generally be forwarded
+    /// like this:
+    ///
+    /// ```no_run
+    /// # use better_collect::{Collector, RefCollector};
+    /// # use std::ops::ControlFlow;
+    /// # struct Foo;
+    /// # impl Collector for Foo {
+    /// # type Item = ();
+    /// # type Output = ();
+    /// fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
+    ///     self.collect_ref(&mut item)
+    /// }
+    /// #     fn finish(self) -> Self::Output {}
+    /// # }
+    /// # impl RefCollector for Foo {
+    /// #     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+    /// #         ControlFlow::Continue(())
+    /// #     }
+    /// # }
+    /// ```
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
 
     /// The most important adaptor — the reason why this crate exists.
@@ -106,6 +156,7 @@ pub trait RefCollector: Collector {
         assert_collector(Then::new(self, other))
     }
 
+    /// Doc coming soon!
     #[inline]
     fn funnel<F, T>(self, func: F) -> Funnel<Self, T, F>
     where
