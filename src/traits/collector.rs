@@ -419,7 +419,8 @@ pub trait Collector: Sized {
     /// you can use `map()` to transform `U` into `T` before passing it along.
     ///
     /// Since it does **not** implement [`RefCollector`], this adaptor should be used
-    /// on the **final collector** in a [`then`] chain.
+    /// on the **final collector** in a [`then`] chain, or adapted into a [`RefCollector`]
+    /// using the appropriate adaptor.
     /// If you find yourself writing `map().cloned()` or `map().copied()`,
     /// consider using [`map_ref()`](Collector::map_ref) instead, which avoids unnecessary cloning.
     ///
