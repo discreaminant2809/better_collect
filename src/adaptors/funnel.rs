@@ -2,6 +2,7 @@ use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
+/// This `struct` is created by [`RefCollector::funnel()`]. See its documentation for more.
 pub struct Funnel<C, T, F> {
     collector: C,
     f: F,

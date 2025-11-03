@@ -2,6 +2,9 @@ use crate::{Collector, RefCollector};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
+/// A [`Collector`] that uses a closure to determine whether an item should be collected.
+///
+/// This `struct` is created by [`Collector::filter()`]. See its documentation for more.
 #[derive(Clone)]
 pub struct Filter<C, F> {
     collector: C,

@@ -2,6 +2,9 @@ use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::Collector;
 
+/// A [`Collector`] that calls a closure on each item before collecting.
+///
+/// This `struct` is created by [`Collector::map()`]. See its documentation for more.
 pub struct Map<C, T, F> {
     collector: C,
     f: F,

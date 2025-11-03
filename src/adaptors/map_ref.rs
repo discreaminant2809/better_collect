@@ -2,6 +2,9 @@ use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
+/// A [`RefCollector`] that calls a closure on each item by mutable reference before collecting.
+///
+/// This `struct` is created by [`Collector::map_ref()`]. See its documentation for more.
 pub struct MapRef<C, T, F> {
     collector: C,
     f: F,

@@ -3,6 +3,9 @@ use std::ops::ControlFlow;
 use super::Fuse;
 use crate::{Collector, RefCollector};
 
+/// Creates a [`Collector`] that lets **both** collectors collect the same item.
+///
+/// This `struct` is created by [`RefCollector::then()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Then<C1, C2> {
     collector1: Fuse<C1>,

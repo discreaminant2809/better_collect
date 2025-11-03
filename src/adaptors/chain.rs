@@ -2,6 +2,10 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, Fuse, RefCollector};
 
+/// A [`Collector`] that feeds the first collector until it stop accumulating,
+/// then feeds the second collector.
+///
+/// This `struct` is created by [`Collector::chain()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Chain<C1, C2> {
     collector1: Fuse<C1>,

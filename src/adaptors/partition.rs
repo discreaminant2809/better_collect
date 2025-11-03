@@ -2,6 +2,9 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::{Collector, Fuse, RefCollector};
 
+/// A [`Collector`] that distributes items between two collectors based on a predicate.
+///
+/// This `struct` is created by [`Collector::partition()`]. See its documentation for more.
 #[derive(Clone)]
 pub struct Partition<CT, CF, F> {
     // `Fuse` is neccessary since we need to assess one's finishing state while assessing another,

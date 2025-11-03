@@ -2,6 +2,9 @@ use crate::{Collector, RefCollector};
 
 use std::ops::ControlFlow;
 
+/// A [`RefCollector`] that copies every collected item.
+///
+/// This `struct` is created by [`Collector::copied()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Copied<C>(C);
 

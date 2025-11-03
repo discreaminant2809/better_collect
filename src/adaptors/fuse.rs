@@ -2,6 +2,11 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
+/// A [`Collector`] that stops accumulating permanently after the first [`Break(())`].
+///
+/// This `struct` is created by [`Collector::fuse()`]. See its documentation for more.
+///
+/// [`Break(())`]: ControlFlow::Break
 #[derive(Debug, Clone)]
 pub struct Fuse<C> {
     collector: C,
