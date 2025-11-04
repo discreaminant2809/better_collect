@@ -4,7 +4,8 @@ use std::ops::ControlFlow;
 /// A [`Collector`] that calculates sum of collected primitive numeric types.
 ///
 ///  This is a more specific version of [`crate::Sum`] which needs less generics.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone)]
+#[repr(transparent)]
 pub struct Sum<Num> {
     accum: Num,
 }
@@ -17,6 +18,16 @@ macro_rules! num_impl {
             #[inline]
             pub const fn new() -> Self {
                 Self { accum: $default }
+            }
+        }
+
+        // Roll out our own implementation since we can't use
+        // 0.0 as the default value for f32 and f64
+        // (their additive identity is -0.0, but the default value is 0.0)
+        impl Default for Sum<$num_ty> {
+            #[inline]
+            fn default() -> Self {
+                Self::new()
             }
         }
 
