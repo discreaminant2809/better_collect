@@ -73,11 +73,8 @@ impl<T: Ord> Collector for Min<T> {
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        if let Some(min) = items.into_iter().min() {
-            self.collect(min)
-        } else {
-            ControlFlow::Continue(())
-        }
+        self.min = self.min.take().into_iter().chain(items).min();
+        ControlFlow::Continue(())
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {

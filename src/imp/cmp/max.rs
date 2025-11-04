@@ -73,11 +73,8 @@ impl<T: Ord> Collector for Max<T> {
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        if let Some(max) = items.into_iter().max() {
-            self.collect(max)
-        } else {
-            ControlFlow::Continue(())
-        }
+        self.max = self.max.take().into_iter().chain(items).max();
+        ControlFlow::Continue(())
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
