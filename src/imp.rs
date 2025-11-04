@@ -6,6 +6,7 @@ mod last;
 pub mod num;
 #[cfg(feature = "alloc")]
 pub mod string;
+mod sum;
 mod try_fold;
 mod try_fold_ref;
 mod unit;
@@ -15,6 +16,7 @@ mod vec;
 
 pub use count::*;
 pub use last::*;
+pub use sum::*;
 pub use try_fold::*;
 pub use try_fold_ref::*;
 // pub use sink::*;

@@ -1,17 +1,22 @@
 use crate::{Collector, RefCollector};
 use std::ops::ControlFlow;
 
+/// A [`Collector`] that calculates sum of collected primitive numeric types.
+///
+///  This is a more specific version of [`crate::Sum`] which needs less generics.
 #[derive(Debug, Default)]
 pub struct Sum<Num> {
     accum: Num,
 }
 
 macro_rules! num_impl {
-    ($num_ty:ty) => {
+    ($num_ty:ty, $default:expr) => {
         impl Sum<$num_ty> {
+            /// Create a new instance of this collector with the initial value being
+            /// the *additive identity* (“zero”) of the type.
             #[inline]
             pub const fn new() -> Self {
-                Self { accum: 0 as _ }
+                Self { accum: $default }
             }
         }
 
@@ -60,14 +65,24 @@ macro_rules! num_impl {
     };
 }
 
-macro_rules! num_impls {
-    ($($num_ty:ty)*) => {
-        $(num_impl!($num_ty);)*
+macro_rules! int_impls {
+    ($($int_ty:ty)*) => {
+        $(num_impl!($int_ty, 0);)*
     };
 }
 
-num_impls!(
+macro_rules! float_impls {
+    ($($float_ty:ty)*) => {
+        // `Sum` implementations of floats have the starting value
+        // of -0.0, not 0.0.
+        // See: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.sum
+        $(num_impl!($float_ty, -0.0);)*
+    };
+}
+
+int_impls!(
     i8 i16 i32 i64 i128 isize
     u8 u16 u32 u64 u128 usize
-    f32 f64
 );
+
+float_impls!(f32 f64);
