@@ -178,7 +178,7 @@ pub trait Collector: Sized {
     /// — meaning it will no longer accumulate items **right after** the last possible item is collected,
     /// possibly none are collected.
     ///
-    /// This method can be overridden for optimization.
+    /// This method can be overridden for optimization and/or to avoid consuming one item prematurely.
     /// Implementors may choose a more efficient way to consume an iterator than a simple `for` loop
     /// ([`Iterator`] offers many alternative consumption methods), depending on the collector’s needs.
     ///

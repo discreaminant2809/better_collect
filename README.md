@@ -118,7 +118,10 @@ To demonstrate the difference, take this example:
 
 ```rust
 use std::collections::HashSet;
-use better_collect::{Collector, RefCollector, BetterCollect};
+use better_collect::{
+    Collector, RefCollector, BetterCollect,
+    string::ConcatString,
+};
 
 // Suppose we open a connection...
 fn socket_stream() -> impl Iterator<Item = String> {
@@ -145,7 +148,7 @@ let unzip_way = (concatenated_data, chunks);
 // `Collector`
 let collector_way = socket_stream()
     // No clone - the data flows smoothly.
-    .better_collect(String::new().then(HashSet::new()));
+    .better_collect(ConcatString::new().then(HashSet::new()));
 
 assert_eq!(unzip_way, collector_way);
 ```
@@ -157,21 +160,23 @@ Unlike [`std::iter`], this crate has two main traits instead. Roughtly:
 ```rust
 use std::ops::ControlFlow;
 
-pub trait Collector<T>: Sized {
+pub trait Collector: Sized {
+    type Item;
     type Output;
-    fn collect(&mut self, item: T) -> ControlFlow<()>;
+
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()>;
     fn finish(self) -> Self::Output;
 }
 
-pub trait RefCollector<T>: Collector<T> {
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()>;
+pub trait RefCollector: Collector {
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
 }
 ```
 
 [`Collector`] is akin to [`Extend`], except it also returns [`ControlFlow`] to hint
 whether it permanently stops receiving items after calling [`collect`](Collector::collect).
 It is a helpful hint for some adaptors (e.g. [`Then`], [`Chain`]) to "vectorize" the rest of
-the items to another collector. After returning ``
+the items to another collector. This is like the [`Extend`] trait, but composable.
 
 [`RefCollector`] is a collector that does not need the ownership of an item to collect it.
 The reason this trait exists is to allow an item to pass down through every collector without

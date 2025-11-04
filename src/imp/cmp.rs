@@ -3,7 +3,7 @@
 //! This module provides collectors that determine the maximum or minimum
 //! values among the items they collect, using different comparison strategies.
 //! They correspond to [`Iterator`]’s comparison-related methods, such as
-//! [`Iterator::max`], [`Iterator::min_by`], and [`Iterator::max_by_key`].
+//! [`Iterator::max()`], [`Iterator::min_by()`], and [`Iterator::max_by_key()`].
 
 mod max;
 mod max_by;

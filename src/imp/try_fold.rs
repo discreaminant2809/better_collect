@@ -5,7 +5,7 @@ use crate::{Collector, assert_collector};
 /// A [`Collector`] that accumulates items using a function
 /// as long as the function returns successfully.
 ///
-/// This collector corresponds to [`Iterator::try_fold`], except that
+/// This collector corresponds to [`Iterator::try_fold()`], except that
 /// the accumulator is mutated in place, and its result type
 /// is **not** wrapped in a control-flow container.
 ///

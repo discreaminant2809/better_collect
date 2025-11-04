@@ -10,7 +10,7 @@ use crate::Collector;
 ///   Must implement both [`Sum<T>`] and [`AddAssign<Self>`].
 /// - `T`: the item type that this collector consumes.
 ///
-/// This collector corresponds to [`Iterator::sum`], except that its return type
+/// This collector corresponds to [`Iterator::sum()`], except that its return type
 /// is slightly more restrictive (additionally requiring [`AddAssign<Self>`]).
 ///
 /// Because this is an “umbrella” implementation which has more generics than needed

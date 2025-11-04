@@ -174,7 +174,7 @@
 //! [`Collector`] is akin to [`Extend`], except it also returns [`ControlFlow`] to hint
 //! whether it permanently stops receiving items after calling [`collect`](Collector::collect).
 //! It is a helpful hint for some adaptors (e.g. [`Then`], [`Chain`]) to "vectorize" the rest of
-//! the items to another collector. After returning ``
+//! the items to another collector. This is like the [`Extend`] trait, but composable.
 //!
 //! [`RefCollector`] is a collector that does not need the ownership of an item to collect it.
 //! The reason this trait exists is to allow an item to pass down through every collector without

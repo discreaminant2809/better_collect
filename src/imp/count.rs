@@ -2,12 +2,38 @@ use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
+/// A [`RefCollector`] that counts the number of items it collects.
+///
+/// This collector corresponds to [`Iterator::count()`].
+///
+/// # Overflow Behavior
+///
+/// This collector does no guarding against overflows, so feeding it
+/// more than [`usize::MAX`] items either produces the wrong result or panics.
+/// If overflow checks are enabled, a panic is guaranteed.
+/// This is similar to [`Iterator::count()`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::{Collector, Count};
+///
+/// let mut collector = Count::new();
+///
+/// assert!(collector.collect(3).is_continue());
+/// assert!(collector.collect(7).is_continue());
+/// assert!(collector.collect(0).is_continue());
+/// assert!(collector.collect(-1).is_continue());
+///
+/// assert_eq!(collector.finish(), 4);
+/// ```
 pub struct Count<T> {
     count: usize,
     _marker: PhantomData<fn(T)>,
 }
 
 impl<T> Count<T> {
+    /// Creates a new instance of this collector with an initial count of 0.
     #[inline]
     pub const fn new() -> Self {
         Count {
@@ -16,13 +42,14 @@ impl<T> Count<T> {
         }
     }
 
+    /// Returns the current count.
     #[inline]
     pub const fn get(&self) -> usize {
         self.count
     }
 
     #[inline]
-    pub fn increment(&mut self) {
+    fn increment(&mut self) {
         // We don't care about overflow.
         // See: https://doc.rust-lang.org/1.90.0/src/core/iter/traits/iterator.rs.html#219-230
         self.count += 1;
