@@ -3,6 +3,7 @@ pub mod cmp;
 #[cfg(feature = "alloc")]
 mod collections;
 mod count;
+mod find;
 mod last;
 pub mod num;
 mod reduce;
@@ -18,6 +19,7 @@ mod vec;
 
 pub use all_any::*;
 pub use count::*;
+pub use find::*;
 pub use last::*;
 pub use reduce::*;
 pub use sum::*;
