@@ -7,7 +7,7 @@ use crate::{Collector, RefCollector};
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ConcatStr<'a> {
     buf: String,
     _marker: PhantomData<fn(&'a str)>,
@@ -62,15 +62,6 @@ impl RefCollector for ConcatStr<'_> {
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.buf.push_str(item);
         ControlFlow::Continue(())
-    }
-}
-
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-impl Default for ConcatStr<'_> {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }
 

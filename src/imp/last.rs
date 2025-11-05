@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
-use crate::Collector;
+use crate::{Collector, assert_collector};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Last<T> {
     value: Option<T>,
 }
@@ -10,7 +10,7 @@ pub struct Last<T> {
 impl<T> Last<T> {
     #[inline]
     pub const fn new() -> Self {
-        Last { value: None }
+        assert_collector(Last { value: None })
     }
 }
 

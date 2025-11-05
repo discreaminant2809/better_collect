@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
-use crate::{Collector, RefCollector};
+use crate::{Collector, RefCollector, assert_ref_collector};
 
 /// A [`RefCollector`] that counts the number of items it collects.
 ///
@@ -36,10 +36,10 @@ impl<T> Count<T> {
     /// Creates a new instance of this collector with an initial count of 0.
     #[inline]
     pub const fn new() -> Self {
-        Count {
+        assert_ref_collector(Count {
             count: 0,
             _marker: PhantomData,
-        }
+        })
     }
 
     /// Returns the current count.

@@ -1,3 +1,4 @@
+mod all_any;
 pub mod cmp;
 #[cfg(feature = "alloc")]
 mod collections;
@@ -15,6 +16,7 @@ mod unit;
 mod vec;
 // mod sink;
 
+pub use all_any::*;
 pub use count::*;
 pub use last::*;
 pub use reduce::*;

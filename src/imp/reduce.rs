@@ -1,4 +1,4 @@
-use crate::Collector;
+use crate::{Collector, assert_collector};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
@@ -44,7 +44,7 @@ where
     /// Crates a new instance of this collector with a given accumulator.
     #[inline]
     pub const fn new(f: F) -> Self {
-        Self { accum: None, f }
+        assert_collector(Self { accum: None, f })
     }
 }
 
