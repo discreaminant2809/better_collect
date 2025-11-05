@@ -1,3 +1,25 @@
 # {{crate}}
 
 {{readme}}
+
+[`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
+[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
+[`BetterCollect`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html
+[`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
+[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
+[`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
+[`then()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.then
+[`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
+[`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
+[`Iterator::fold`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
+[`Iterator::unzip`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
+[`std::iter`]: https://doc.rust-lang.org/std/iter/index.html
+[`Vec`]: https://doc.rust-lang.org/1.90.0/std/vec/struct.Vec.html
+[`HashSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashSet.html
+[`HashMap`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashMap.html
+[`LinkedList`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.LinkedList.html
+[`ControlFlow`]: https://doc.rust-lang.org/1.90.0/std/ops/enum.ControlFlow.html
+[`alloc`]: https://doc.rust-lang.org/1.90.0/alloc/index.html
+[`std`]: https://doc.rust-lang.org/1.90.0/std/index.html
+[`VecDeque`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.VecDeque.html
+[`BTreeSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.BTreeSet.html

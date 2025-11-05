@@ -175,7 +175,7 @@ pub trait RefCollector: Collector {
 
 [`Collector`] is similar to [`Extend`], but it also returns a [`ControlFlow`]
 value to indicate whether it should stop accumulating items after a call to
-[`collect`].
+[`collect()`].
 This serves as a hint for adaptors like [`then()`] or [`chain()`]
 to "vectorize" the remaining items to another collector.
 In short, it is like a **composable** [`Extend`].
@@ -210,19 +210,24 @@ If the `std` feature is **not** enabled, the crate builds in `no_std` mode.
 - More adaptors (this crate currently only has common ones).
 - Possibly foreign implementations for types in other crates.
 
-[`Iterator`]: std::iter::Iterator
-[`Iterator::fold`]: std::iter::Iterator::fold
-[`Iterator::unzip`]: std::iter::Iterator::unzip
-[`collect`]: Collector::collect
-[`then()`]: RefCollector::then
-[`chain()`]: Collector::chain
-[`better_collect()`]: BetterCollect::better_collect
-[`std::iter`]: std::iter
-[`HashSet`]: std::collections::HashSet
-[`HashMap`]: std::collections::HashMap
-[`LinkedList`]: std::collections::LinkedList
-[`ControlFlow`]: core::ops::ControlFlow
+[`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
+[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
+[`BetterCollect`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html
+[`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
+[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
+[`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
+[`then()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.then
+[`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
+[`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
+[`Iterator::fold`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
+[`Iterator::unzip`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
+[`std::iter`]: https://doc.rust-lang.org/std/iter/index.html
+[`Vec`]: https://doc.rust-lang.org/1.90.0/std/vec/struct.Vec.html
+[`HashSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashSet.html
+[`HashMap`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashMap.html
+[`LinkedList`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.LinkedList.html
+[`ControlFlow`]: https://doc.rust-lang.org/1.90.0/std/ops/enum.ControlFlow.html
 [`alloc`]: https://doc.rust-lang.org/1.90.0/alloc/index.html
-[`std`]: std
-[`VecDeque`]: std::collections::VecDeque
-[`BTreeSet`]: std::collections::BTreeSet
+[`std`]: https://doc.rust-lang.org/1.90.0/std/index.html
+[`VecDeque`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.VecDeque.html
+[`BTreeSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.BTreeSet.html

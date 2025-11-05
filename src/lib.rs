@@ -173,7 +173,7 @@
 //!
 //! [`Collector`] is similar to [`Extend`], but it also returns a [`ControlFlow`]
 //! value to indicate whether it should stop accumulating items after a call to
-//! [`collect`].
+//! [`collect()`].
 //! This serves as a hint for adaptors like [`then()`] or [`chain()`]
 //! to "vectorize" the remaining items to another collector.
 //! In short, it is like a **composable** [`Extend`].
@@ -208,10 +208,7 @@
 //! - More adaptors (this crate currently only has common ones).
 //! - Possibly foreign implementations for types in other crates.
 //!
-//! [`Iterator`]: std::iter::Iterator
-//! [`Iterator::fold`]: std::iter::Iterator::fold
-//! [`Iterator::unzip`]: std::iter::Iterator::unzip
-//! [`collect`]: Collector::collect
+//! [`collect()`]: Collector::collect
 //! [`then()`]: RefCollector::then
 //! [`chain()`]: Collector::chain
 //! [`better_collect()`]: BetterCollect::better_collect
@@ -220,8 +217,6 @@
 //! [`HashMap`]: std::collections::HashMap
 //! [`LinkedList`]: std::collections::LinkedList
 //! [`ControlFlow`]: core::ops::ControlFlow
-//! [`alloc`]: https://doc.rust-lang.org/1.90.0/alloc/index.html
-//! [`std`]: std
 //! [`VecDeque`]: std::collections::VecDeque
 //! [`BTreeSet`]: std::collections::BTreeSet
 
@@ -229,7 +224,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(all(feature = "alloc", not(feature = "std")))]
+#[cfg(any(doc, all(feature = "alloc", not(feature = "std"))))]
 extern crate alloc;
 
 #[cfg(not(feature = "std"))]
