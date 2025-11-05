@@ -31,6 +31,7 @@ pub struct ConcatString {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatString {
+    /// Creates a new instance of this collector with an empty string.
     pub const fn new() -> Self {
         Self { buf: String::new() }
     }

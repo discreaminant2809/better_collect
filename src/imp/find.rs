@@ -55,6 +55,7 @@ impl<T, F> Find<T, F>
 where
     F: FnMut(&T) -> bool,
 {
+    /// Creates an intance of this collector with a given predicate.
     #[inline]
     pub const fn new(pred: F) -> Self {
         assert_collector(Self {

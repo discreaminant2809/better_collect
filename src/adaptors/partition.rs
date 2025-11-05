@@ -15,7 +15,7 @@ pub struct Partition<CT, CF, F> {
 }
 
 impl<CT, CF, F> Partition<CT, CF, F> {
-    pub fn new(collector_if_true: CT, collector_if_false: CF, pred: F) -> Self {
+    pub(crate) fn new(collector_if_true: CT, collector_if_false: CF, pred: F) -> Self {
         Self {
             collector_if_true: Fuse::new(collector_if_true),
             collector_if_false: Fuse::new(collector_if_false),

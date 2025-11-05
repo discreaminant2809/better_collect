@@ -220,7 +220,7 @@
 //! [`VecDeque`]: std::collections::VecDeque
 //! [`BTreeSet`]: std::collections::BTreeSet
 
-// #![forbid(missing_docs)]
+#![forbid(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
 

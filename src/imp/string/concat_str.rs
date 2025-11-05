@@ -33,7 +33,7 @@ pub struct ConcatStr<'a> {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatStr<'_> {
-    // Creates a new instance of this collector with an empty string.
+    /// Creates a new instance of this collector with an empty string.
     pub const fn new() -> Self {
         Self {
             buf: String::new(),

@@ -2,12 +2,41 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, assert_collector};
 
+/// A [`Collector`] that stores the last item it collects.
+///
+/// If no items have been collected, its [`Output`] is `None`;
+/// otherwise, it is `Some` containing the most recently collected item.
+///
+/// This collector corresponds to [`Iterator::last()`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::{Collector, Last};
+///
+/// let mut collector = Last::new();
+///
+/// assert!(collector.collect(1).is_continue());
+/// assert!(collector.collect(2).is_continue());
+/// assert!(collector.collect(3).is_continue());
+///
+/// assert_eq!(collector.finish(), Some(3));
+/// ```
+///
+/// ```
+/// use better_collect::{Collector, Last};
+///
+/// assert_eq!(Last::<i32>::new().finish(), None);
+/// ```
+///
+/// [`Output`]: Collector::Output
 #[derive(Debug, Clone)]
 pub struct Last<T> {
     value: Option<T>,
 }
 
 impl<T> Last<T> {
+    /// Creates an intance of this collector.
     #[inline]
     pub const fn new() -> Self {
         assert_collector(Last { value: None })
