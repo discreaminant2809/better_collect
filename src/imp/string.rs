@@ -1,3 +1,8 @@
+//! String-related collectors.
+//!
+//! This module provides [`Collector`] implementations for [`String`] as well as
+//! collectors for string concatenation.
+
 mod concat_str;
 mod concat_string;
 

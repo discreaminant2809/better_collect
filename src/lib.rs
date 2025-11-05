@@ -64,13 +64,13 @@
 //! ```
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
-//!     ["12", "34", "not an integer", "56"]
+//!     ["the", "nobel", "and", "the", "singer"]
 //!         .into_iter()
 //!         .map(String::from)
 //! }
 //!
 //! // Task: Returns:
-//! // - An array of `i32` successfully parsed from the stream (skip all unparsable data).
+//! // - An array of data from the stream.
 //! // - How many bytes were read.
 //! // - The last-seen data.
 //!
@@ -123,7 +123,7 @@
 //!
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
-//!     ["a", "b", "c", "b"]
+//!     ["the", "nobel", "and", "the", "singer"]
 //!         .into_iter()
 //!         .map(String::from)
 //! }
@@ -153,7 +153,7 @@
 //!
 //! # Traits
 //!
-//! Unlike [`std::iter`], this crate has two main traits instead. Roughtly:
+//! Unlike [`std::iter`], this crate defines two main traits instead. Roughly:
 //!
 //! ```no_run
 //! use std::ops::ControlFlow;
@@ -171,28 +171,36 @@
 //! }
 //! ```
 //!
-//! [`Collector`] is akin to [`Extend`], except it also returns [`ControlFlow`] to hint
-//! whether it permanently stops receiving items after calling [`collect`](Collector::collect).
-//! It is a helpful hint for some adaptors (e.g. [`Then`], [`Chain`]) to "vectorize" the rest of
-//! the items to another collector. This is like the [`Extend`] trait, but composable.
+//! [`Collector`] is similar to [`Extend`], but it also returns a [`ControlFlow`]
+//! value to indicate whether it should stop accumulating items after a call to
+//! [`collect`].
+//! This serves as a hint for adaptors like [`then()`] or [`chain()`]
+//! to "vectorize" the remaining items to another collector.
+//! In short, it is like a **composable** [`Extend`].
 //!
-//! [`RefCollector`] is a collector that does not need the ownership of an item to collect it.
-//! The reason this trait exists is to allow an item to pass down through every collector without
-//! any of them consumes it. This allows multiple consumptions from just one item instead of cloning it
-//! to each collector, which is one of the main ideas of this crate. [`RefCollector`] powers [`then`](RefCollector::then),
-//! which establishes a pipeline of collectors and lets an item from the iterator pass down safely without being
-//! collected by ownership midway, to the last one when it is allowed to take the ownership of the item.
+//! [`RefCollector`] is a collector that does not require ownership of an item
+//! to process it.
+//! This allows items to flow through multiple collectors without being consumed,
+//! avoiding unnecessary cloning.
+//! It powers [`then()`], which creates a pipeline of collectors,
+//! letting each item pass through safely by reference until the final collector
+//! takes ownership.
 //!
-//! Finally, [`BetterCollect`] adds a method [`better_collect`](BetterCollect::better_collect) to [`Iterator`]
-//! to "use" [`Collector`]. It extracts items from the iterator to the collector, then makes the collector
-//! produces the result. The trait has to be imported to be able to use the method.
+//! Finally, [`BetterCollect`] extends [`Iterator`] with the
+//! [`better_collect()`] method, which feeds all items from an iterator
+//! into a [`Collector`] and returns the collector’s result.
+//! To use this method, the [`BetterCollect`] trait must be imported.
 //!
-//! More detail can be found in their respected docs.
+//! More details can be found in their respective documentation.
 //!
 //! # Features
 //!
-//! - `alloc`: Enables implementations for types in the [`alloc`] crate (e.g. [`Vec`], [`VecDeque`], [`BTreeSet`]).
-//! - `std`: Enables the `alloc` feature, and implementations for [`std`]-only types (e.g. [`HashSet`]).
+//! If the `std` feature is **not** enabled, the crate builds in `no_std` mode.
+//!
+//! - **`alloc`** — Enables implementations for types in the [`alloc`] crate
+//!   (e.g., [`Vec`], [`VecDeque`], [`BTreeSet`]).
+//! - **`std`** *(default)* — Enables the `alloc` feature and implementations
+//!   for [`std`]-only types (e.g., [`HashMap`]).
 //!
 //! # Todos
 //!
@@ -203,8 +211,13 @@
 //! [`Iterator`]: std::iter::Iterator
 //! [`Iterator::fold`]: std::iter::Iterator::fold
 //! [`Iterator::unzip`]: std::iter::Iterator::unzip
+//! [`collect`]: Collector::collect
+//! [`then()`]: RefCollector::then
+//! [`chain()`]: Collector::chain
+//! [`better_collect()`]: BetterCollect::better_collect
 //! [`std::iter`]: std::iter
 //! [`HashSet`]: std::collections::HashSet
+//! [`HashMap`]: std::collections::HashMap
 //! [`LinkedList`]: std::collections::LinkedList
 //! [`ControlFlow`]: core::ops::ControlFlow
 //! [`alloc`]: https://doc.rust-lang.org/1.90.0/alloc/index.html

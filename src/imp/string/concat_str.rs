@@ -5,6 +5,23 @@ use alloc::string::String;
 
 use crate::{Collector, RefCollector};
 
+/// A [`RefCollector`] that concatenates [`str`] slices into a single [`String`].
+///
+/// Its [`Output`](Collector::Output) type is [`String`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::{BetterCollect, string::ConcatStr};
+///
+/// let s = "abc de fghi j";
+///
+/// let s_no_whitespace = s
+///     .split_whitespace()
+///     .better_collect(ConcatStr::new());
+///
+/// assert_eq!(s_no_whitespace, "abcdefghij");
+/// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[derive(Clone, Default)]
@@ -16,6 +33,7 @@ pub struct ConcatStr<'a> {
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatStr<'_> {
+    // Creates a new instance of this collector with an empty string.
     pub const fn new() -> Self {
         Self {
             buf: String::new(),

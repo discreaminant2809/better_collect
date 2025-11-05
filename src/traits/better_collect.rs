@@ -5,7 +5,7 @@ use crate::Collector;
 ///
 /// This trait is automatically implemented for all [`Iterator`] types.
 pub trait BetterCollect: Iterator {
-    /// Extracts items from this iterator into the provided collector
+    /// Extracts all items from this iterator into the provided collector
     /// and returns the collector’s output.
     ///
     /// To use this method, import the [`BetterCollect`] trait.

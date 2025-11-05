@@ -5,6 +5,22 @@ use alloc::string::String;
 
 use crate::{Collector, RefCollector};
 
+/// A [`RefCollector`] that concatenates [`String`] into a single [`String`].
+///
+/// Its [`Output`](Collector::Output) type is [`String`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::{BetterCollect, string::ConcatString};
+///
+/// let url = ["https://", "website.com", "/login"]
+///     .into_iter()
+///     .map(String::from)
+///     .better_collect(ConcatString::new());
+///
+/// assert_eq!(url, "https://website.com/login");
+/// ```
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[derive(Debug, Default, Clone)]
