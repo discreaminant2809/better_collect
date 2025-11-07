@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, Unzip, assert_collector,
-    assert_ref_collector,
+    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, TakeWhile, Unzip,
+    assert_collector, assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -624,7 +624,42 @@ pub trait Collector: Sized {
     fn take(self, n: usize) -> Take<Self> {
         Take::new(self, n)
     }
-    // fn take_while()
+
+    /// Creates a [`Collector`] that accumulates items as long as a predicate returns `true`.
+    ///
+    /// `take_while()` collects items until it encounters one for which the predicate returns `false`.
+    /// That item—and all subsequent ones—will **not** be accumulated.
+    ///
+    /// This also implements [`RefCollector`] if the underlying collector does.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{Collector, string::ConcatStr};
+    ///
+    /// let mut collector = ConcatStr::new().take_while(|s| !s.is_empty());
+    ///
+    /// assert!(collector.collect("abc").is_continue());
+    /// assert!(collector.collect("def").is_continue());
+    ///
+    /// // Immediately stops after an empty string.
+    /// assert!(collector.collect("").is_break());
+    ///
+    /// // No more items will be accumulated.
+    /// assert!(collector.collect("pls").is_break());
+    /// assert!(collector.collect("revert").is_break());
+    /// assert!(collector.collect("back").is_break());
+    ///
+    /// assert_eq!(collector.finish(), "abcdef");
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    fn take_while<F>(self, pred: F) -> TakeWhile<Self, F>
+    where
+        F: FnMut(&Self::Item) -> bool,
+    {
+        assert_collector(TakeWhile::new(self, pred))
+    }
 
     // fn skip()
 
