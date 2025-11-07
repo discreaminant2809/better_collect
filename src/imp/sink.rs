@@ -1,4 +1,4 @@
-use core::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
+use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 use crate::{Collector, RefCollector};
 
@@ -26,53 +26,37 @@ impl<T> Sink<T> {
     }
 }
 
-macro_rules! impl_collector {
-    ($ty:ty) => {
-        impl<T> Collector for $ty {
-            type Item = T;
+impl<T> Collector for Sink<T> {
+    type Item = T;
 
-            type Output = ();
+    type Output = ();
 
-            #[inline]
-            fn collect(&mut self, _item: Self::Item) -> ControlFlow<()> {
-                ControlFlow::Continue(())
-            }
+    #[inline]
+    fn collect(&mut self, _item: Self::Item) -> ControlFlow<()> {
+        ControlFlow::Continue(())
+    }
 
-            #[inline]
-            fn finish(self) -> Self::Output {
-                // Nothing worth implementing.
-            }
+    #[inline]
+    fn finish(self) -> Self::Output {}
 
-            #[inline]
-            fn collect_many(
-                &mut self,
-                items: impl IntoIterator<Item = Self::Item>,
-            ) -> ControlFlow<()> {
-                items.into_iter().for_each(drop);
-                ControlFlow::Continue(())
-            }
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        items.into_iter().for_each(drop);
+        ControlFlow::Continue(())
+    }
 
-            #[inline]
-            fn collect_then_finish(
-                self,
-                items: impl IntoIterator<Item = Self::Item>,
-            ) -> Self::Output {
-                items.into_iter().for_each(drop);
-            }
-        }
-
-        impl<T> RefCollector for $ty {
-            #[inline]
-            fn collect_ref(&mut self, _item: &mut Self::Item) -> ControlFlow<()> {
-                ControlFlow::Continue(())
-            }
-        }
-    };
+    #[inline]
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        items.into_iter().for_each(drop);
+    }
 }
 
-impl_collector!(Sink<T>);
-impl_collector!(&Sink<T>);
-impl_collector!(&mut Sink<T>);
+impl<T> RefCollector for Sink<T> {
+    #[inline]
+    fn collect_ref(&mut self, _item: &mut Self::Item) -> ControlFlow<()> {
+        ControlFlow::Continue(())
+    }
+}
 
 impl<T> Clone for Sink<T> {
     #[inline]
@@ -84,7 +68,7 @@ impl<T> Clone for Sink<T> {
 }
 
 impl<T> Debug for Sink<T> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Sink").finish()
     }
 }

@@ -127,40 +127,6 @@ where
     }
 }
 
-impl<T, F> Collector for &mut AnyRef<T, F>
-where
-    F: FnMut(&mut T) -> bool,
-{
-    type Item = T;
-
-    type Output = bool;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        AnyRef::collect(self, item)
-    }
-
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.get()
-    }
-
-    #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        AnyRef::collect_many(self, items)
-    }
-}
-
-impl<T, F> RefCollector for &mut AnyRef<T, F>
-where
-    F: FnMut(&mut T) -> bool,
-{
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        AnyRef::collect_ref(self, item)
-    }
-}
-
 impl<T, F: Clone> Clone for AnyRef<T, F> {
     fn clone(&self) -> Self {
         Self {
