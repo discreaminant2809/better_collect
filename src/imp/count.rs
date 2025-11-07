@@ -91,6 +91,34 @@ impl<T> RefCollector for Count<T> {
     }
 }
 
+impl<T> Collector for &mut Count<T> {
+    type Item = T;
+
+    type Output = usize;
+
+    #[inline]
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+        Count::collect(self, item)
+    }
+
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.get()
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        Count::collect_many(self, items)
+    }
+}
+
+impl<T> RefCollector for &mut Count<T> {
+    #[inline]
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+        Count::collect_ref(self, item)
+    }
+}
+
 impl<T> Debug for Count<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Count").field("count", &self.count).finish()

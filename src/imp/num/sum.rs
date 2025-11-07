@@ -5,7 +5,6 @@ use std::ops::ControlFlow;
 ///
 ///  This is a more specific version of [`crate::Sum`] which needs less generics.
 #[derive(Debug, Clone)]
-#[repr(transparent)]
 pub struct Sum<Num> {
     accum: Num,
 }
@@ -71,6 +70,41 @@ macro_rules! num_impl {
             fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
                 self.accum += item;
                 ControlFlow::Continue(())
+            }
+        }
+
+        impl Collector for &mut Sum<$num_ty> {
+            type Item = $num_ty;
+            type Output = $num_ty;
+
+            #[inline]
+            fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+                self.accum += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn finish(self) -> Self::Output {
+                self.accum
+            }
+
+            /// Forwards to [`Iterator::sum`].
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = Self::Item>,
+            ) -> ControlFlow<()> {
+                self.accum += items.into_iter().sum::<$num_ty>();
+                ControlFlow::Continue(())
+            }
+
+            /// Forwards to [`Iterator::sum`].
+            #[inline]
+            fn collect_then_finish(
+                self,
+                items: impl IntoIterator<Item = Self::Item>,
+            ) -> Self::Output {
+                self.accum + items.into_iter().sum::<$num_ty>()
             }
         }
     };

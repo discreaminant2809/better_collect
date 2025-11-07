@@ -106,6 +106,30 @@ where
     }
 }
 
+impl<T, F> Collector for &mut Any<T, F>
+where
+    F: FnMut(T) -> bool,
+{
+    type Item = T;
+
+    type Output = bool;
+
+    #[inline]
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+        Any::collect(self, item)
+    }
+
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.get()
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        Any::collect_many(self, items)
+    }
+}
+
 impl<T, F: Clone> Clone for Any<T, F> {
     fn clone(&self) -> Self {
         Self {
