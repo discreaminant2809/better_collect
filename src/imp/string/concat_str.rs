@@ -34,9 +34,16 @@ pub struct ConcatStr<'a> {
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatStr<'_> {
     /// Creates a new instance of this collector with an empty string.
+    #[inline]
     pub const fn new() -> Self {
+        Self::with_buf(String::new())
+    }
+
+    /// Creates a new instance of this collector with an initial string.
+    #[inline]
+    pub const fn with_buf(buf: String) -> Self {
         Self {
-            buf: String::new(),
+            buf,
             _marker: PhantomData,
         }
     }
@@ -88,5 +95,14 @@ impl RefCollector for ConcatStr<'_> {
 impl Debug for ConcatStr<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ConcatStr").field("buf", &self.buf).finish()
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl From<String> for ConcatStr<'_> {
+    #[inline]
+    fn from(buf: String) -> Self {
+        Self::with_buf(buf)
     }
 }

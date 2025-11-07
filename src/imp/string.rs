@@ -2,6 +2,9 @@
 //!
 //! This module provides [`Collector`] implementations for [`String`] as well as
 //! collectors for string concatenation.
+//!
+//! [`String`] as a collector can collect `char`s. If you want to concat strings instead,
+//! use [`ConcatStr`] or [`ConcatString`].
 
 mod concat_str;
 mod concat_string;

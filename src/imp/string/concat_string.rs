@@ -5,7 +5,7 @@ use alloc::string::String;
 
 use crate::{Collector, RefCollector};
 
-/// A [`RefCollector`] that concatenates [`String`] into a single [`String`].
+/// A [`RefCollector`] that concatenates [`String`]s into a single [`String`].
 ///
 /// Its [`Output`](Collector::Output) type is [`String`].
 ///
@@ -32,8 +32,15 @@ pub struct ConcatString {
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatString {
     /// Creates a new instance of this collector with an empty string.
+    #[inline]
     pub const fn new() -> Self {
-        Self { buf: String::new() }
+        Self::with_buf(String::new())
+    }
+
+    /// Creates a new instance of this collector with an initial string.
+    #[inline]
+    pub const fn with_buf(buf: String) -> Self {
+        Self { buf }
     }
 }
 
@@ -75,5 +82,14 @@ impl RefCollector for ConcatString {
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.buf.push_str(item);
         ControlFlow::Continue(())
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl From<String> for ConcatString {
+    #[inline]
+    fn from(buf: String) -> Self {
+        Self::with_buf(buf)
     }
 }
