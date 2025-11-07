@@ -4,7 +4,8 @@
 
 ### Added
 
-- Added `ConcatStr(ing)::with_buf()` that initializes `ConcatStr(ing)` with an initial string.
+- `ConcatStr(ing)::with_buf()` that initializes `ConcatStr(ing)` with an initial string.
+- `Sink`.
 
 ## 0.1.0
 
