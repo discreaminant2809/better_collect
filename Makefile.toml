@@ -1,0 +1,17 @@
+[tasks.test_doc]
+command = "cargo"
+args = ["t", "--doc", "--all-features"]
+
+[tasks.watch_doc]
+env = { RUSTDOCFLAGS="--cfg docsrs" }
+command = "cargo"
+args = ["watch", "-w", "src", "-x", "+nightly doc --all-features --no-deps"]
+
+[tasks.readme]
+command = "cargo"
+args = ["readme", "--output", "README.md"]
+
+[tasks.doc]
+env = { RUSTDOCFLAGS = "--cfg docsrs" }
+command = "rustup"
+args = ["run", "nightly", "cargo", "doc", "--all-features", "--no-deps"]
