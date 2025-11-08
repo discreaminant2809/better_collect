@@ -6,6 +6,10 @@
 
 - `Collector::unbatching()`.
 
+### Changed
+
+- Optimized `Take::collect_many()`.
+
 ### Fixed
 
 - Added doc for `Funnel` (struct).

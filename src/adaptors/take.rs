@@ -8,6 +8,7 @@ use crate::{Collector, RefCollector};
 #[derive(Debug, Clone)]
 pub struct Take<C> {
     collector: C,
+    // Unspecified if the underlying collector stops accumulating.
     remaining: usize,
 }
 
@@ -68,10 +69,29 @@ impl<C: Collector> Collector for Take<C> {
     // }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        // FIXME: consider the iterator's size hint to (partly) avoid `inspect`.
+        // FIXED: utilize specialization after it's stabilized.
+
+        let mut items = items.into_iter();
+        let (lower_sh, _) = items.size_hint();
+
+        // Implementation note: we trust the iterator's hint.
+
+        // The collector may end early. We risk tracking the state wrong?
+        // Worry not. By then, the `remaining` becomes useless
+        // and acts as a *soft* fuse.
+        if self.remaining <= lower_sh {
+            let n = self.remaining;
+            self.remaining = 0;
+            return self.collect_many(items.take(n));
+        }
+
+        self.remaining -= lower_sh;
+        self.collector.collect_many(items.by_ref().take(lower_sh))?;
+
+        // We don't know how many left after the lower bound,
+        // so we carefully track the state with `inspect`.
         self.collector.collect_many(
             items
-                .into_iter()
                 .take(self.remaining)
                 // Since the collector may not collect all `remaining` items
                 .inspect(|_| self.remaining -= 1),
