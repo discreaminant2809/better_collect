@@ -66,7 +66,7 @@ This is only with integers. How about with a non-`Copy` type?
 ```rust
 // Suppose we open a connection...
 fn socket_stream() -> impl Iterator<Item = String> {
-    ["the", "nobel", "and", "the", "singer"]
+    ["the", "noble", "and", "the", "singer"]
         .into_iter()
         .map(String::from)
 }
@@ -125,7 +125,7 @@ use better_collect::{
 
 // Suppose we open a connection...
 fn socket_stream() -> impl Iterator<Item = String> {
-    ["the", "nobel", "and", "the", "singer"]
+    ["the", "noble", "and", "the", "singer"]
         .into_iter()
         .map(String::from)
 }
