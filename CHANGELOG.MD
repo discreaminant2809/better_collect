@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+### Fixed
+
+- Added doc for `Funnel` (struct).
+
 ## 0.1.1
 
 ### Added
