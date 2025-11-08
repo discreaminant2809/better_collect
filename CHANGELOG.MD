@@ -5,6 +5,7 @@
 ### Added
 
 - `Collector::unbatching()`.
+- `Product`.
 
 ### Changed
 

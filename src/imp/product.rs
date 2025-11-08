@@ -1,56 +1,57 @@
-use std::{fmt::Debug, iter, marker::PhantomData, ops::AddAssign, ops::ControlFlow};
+use std::{fmt::Debug, iter, marker::PhantomData, ops::ControlFlow, ops::MulAssign};
 
-use crate::Collector;
+use crate::{Collector, assert_collector};
 
-/// A [`Collector`] that computes the sum of all collected items.
+/// A [`Collector`] that computes the product of all collected items.
 ///
 /// It is generic over two types:
 ///
 /// - `A`: the accumulator and final result type.
-///   Must implement both [`Sum<T>`] and [`AddAssign<Self>`].
+///   Must implement both [`Product<T>`] and [`MulAssign<Self>`].
 /// - `T`: the item type that this collector consumes.
 ///
-/// This collector corresponds to [`Iterator::sum()`], except that its return type
-/// is slightly more restrictive (additionally requiring [`AddAssign<Self>`]).
+/// This collector corresponds to [`Iterator::product()`], except that its return type
+/// is slightly more restrictive (additionally requiring [`MulAssign<Self>`]).
 ///
 /// Because this is an “umbrella” implementation which has more generics than needed
 /// (cumbersome to initialize) and does **not** implement [`RefCollector`],
-/// you can define your own `Sum` collector tailored to your type, with fewer generics
+/// you can define your own `Product` collector tailored to your type, with fewer generics
 /// and optional [`RefCollector`] implementation.
 ///
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, Sum};
+/// use better_collect::{Collector, Product};
 ///
-/// let mut collector = Sum::<i32, _>::new();
+/// let mut collector = Product::<i32, _>::new();
 ///
 /// assert!(collector.collect(1).is_continue());
 /// assert!(collector.collect(2).is_continue());
 /// assert!(collector.collect(3).is_continue());
+/// assert!(collector.collect(4).is_continue());
 ///
-/// assert_eq!(collector.finish(), 6);
+/// assert_eq!(collector.finish(), 24);
 /// ```
 ///
 /// [`RefCollector`]: crate::RefCollector
-pub struct Sum<A, T> {
-    sum: A,
+pub struct Product<A, T> {
+    product: A,
     _marker: PhantomData<fn(T)>,
 }
 
-impl<A: iter::Sum<T> + AddAssign, T> Sum<A, T> {
+impl<A: iter::Product<T> + MulAssign, T> Product<A, T> {
     /// Create a new instance of this collector with the initial value being
     /// the *additive identity* (“zero”) of the type.
     #[inline]
     pub fn new() -> Self {
-        Self {
-            sum: None.into_iter().sum(),
+        assert_collector(Self {
+            product: None.into_iter().product(),
             _marker: PhantomData,
-        }
+        })
     }
 }
 
-impl<A: iter::Sum<T> + AddAssign, T> Collector for Sum<A, T> {
+impl<A: iter::Product<T> + MulAssign, T> Collector for Product<A, T> {
     type Item = T;
 
     type Output = A;
@@ -62,44 +63,46 @@ impl<A: iter::Sum<T> + AddAssign, T> Collector for Sum<A, T> {
 
     #[inline]
     fn finish(self) -> Self::Output {
-        self.sum
+        self.product
     }
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        self.sum += items.into_iter().sum::<A>();
+        self.product *= items.into_iter().product::<A>();
         ControlFlow::Continue(())
     }
 
     #[inline]
     fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        self.sum += items.into_iter().sum::<A>();
-        self.sum
+        self.product *= items.into_iter().product::<A>();
+        self.product
     }
 }
 
-impl<A: iter::Sum<T> + AddAssign, T> Default for Sum<A, T> {
+impl<A: iter::Product<T> + MulAssign, T> Default for Product<A, T> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<A: Clone, T> Clone for Sum<A, T> {
+impl<A: Clone, T> Clone for Product<A, T> {
     fn clone(&self) -> Self {
         Self {
-            sum: self.sum.clone(),
+            product: self.product.clone(),
             _marker: PhantomData,
         }
     }
 
     fn clone_from(&mut self, source: &Self) {
-        self.sum.clone_from(&source.sum);
+        self.product.clone_from(&source.product);
     }
 }
 
-impl<A: Debug, T> Debug for Sum<A, T> {
+impl<A: Debug, T> Debug for Product<A, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Sum").field("sum", &self.sum).finish()
+        f.debug_struct("Product")
+            .field("product", &self.product)
+            .finish()
     }
 }

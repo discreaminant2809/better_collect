@@ -6,6 +6,7 @@ mod count;
 mod find;
 mod last;
 pub mod num;
+mod product;
 mod reduce;
 mod sink;
 #[cfg(feature = "alloc")]
@@ -21,6 +22,7 @@ pub use all_any::*;
 pub use count::*;
 pub use find::*;
 pub use last::*;
+pub use product::*;
 pub use reduce::*;
 pub use sink::*;
 pub use sum::*;

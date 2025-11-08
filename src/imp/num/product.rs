@@ -3,46 +3,46 @@ use std::ops::ControlFlow;
 
 /// A [`Collector`] that calculates sum of collected primitive numeric types.
 ///
-/// This is a more specific version of [`Sum`](crate::Sum). This one needs less generics.
+/// This is a more specific version of [`Product`](crate::Product). This one needs less generics.
 #[derive(Debug, Clone)]
-pub struct Sum<Num> {
-    sum: Num,
+pub struct Product<Num> {
+    product: Num,
 }
 
 macro_rules! num_impl {
     ($num_ty:ty, $default:expr) => {
-        impl Sum<$num_ty> {
+        impl Product<$num_ty> {
             /// Create a new instance of this collector with the initial value being
             /// the *additive identity* (“zero”) of the type.
             #[inline]
             pub const fn new() -> Self {
-                Self { sum: $default }
+                Self { product: $default }
             }
         }
 
         // Roll out our own implementation since we can't use
         // 0.0 as the default value for f32 and f64
         // (their additive identity is -0.0, but the default value is 0.0)
-        impl Default for Sum<$num_ty> {
+        impl Default for Product<$num_ty> {
             #[inline]
             fn default() -> Self {
                 Self::new()
             }
         }
 
-        impl Collector for Sum<$num_ty> {
+        impl Collector for Product<$num_ty> {
             type Item = $num_ty;
             type Output = $num_ty;
 
             #[inline]
             fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-                self.sum += item;
+                self.product += item;
                 ControlFlow::Continue(())
             }
 
             #[inline]
             fn finish(self) -> Self::Output {
-                self.sum
+                self.product
             }
 
             /// Forwards to [`Iterator::sum`].
@@ -51,7 +51,7 @@ macro_rules! num_impl {
                 &mut self,
                 items: impl IntoIterator<Item = Self::Item>,
             ) -> ControlFlow<()> {
-                self.sum += items.into_iter().sum::<$num_ty>();
+                self.product += items.into_iter().sum::<$num_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -61,14 +61,14 @@ macro_rules! num_impl {
                 self,
                 items: impl IntoIterator<Item = Self::Item>,
             ) -> Self::Output {
-                self.sum + items.into_iter().sum::<$num_ty>()
+                self.product + items.into_iter().sum::<$num_ty>()
             }
         }
 
-        impl RefCollector for Sum<$num_ty> {
+        impl RefCollector for Product<$num_ty> {
             #[inline]
             fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
-                self.sum += item;
+                self.product += item;
                 ControlFlow::Continue(())
             }
         }
@@ -77,16 +77,13 @@ macro_rules! num_impl {
 
 macro_rules! int_impls {
     ($($int_ty:ty)*) => {
-        $(num_impl!($int_ty, 0);)*
+        $(num_impl!($int_ty, 1);)*
     };
 }
 
 macro_rules! float_impls {
     ($($float_ty:ty)*) => {
-        // `Sum` implementations of floats have the starting value
-        // of -0.0, not 0.0.
-        // See: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.sum
-        $(num_impl!($float_ty, -0.0);)*
+        $(num_impl!($float_ty, 1.0);)*
     };
 }
 
