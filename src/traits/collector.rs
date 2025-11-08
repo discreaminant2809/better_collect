@@ -19,6 +19,12 @@ use crate::{
 /// and implement this trait for that struct.
 /// You may also override methods like [`collect_many`](Collector::collect_many) for optimizations.
 ///
+/// # Limitations
+///
+/// In some cases, you may need to explicitly annotate the parameter types in closures,
+/// especially for adaptors that take generic functions.
+/// This is due to current limitations in Rust’s type inference for closure parameters.
+///
 /// # Example
 ///
 /// Suppose we’re building a tokenizer to process text for an NLP model.
@@ -424,10 +430,6 @@ pub trait Collector: Sized {
     /// If you find yourself writing `map().cloned()` or `map().copied()`,
     /// consider using [`map_ref()`](Collector::map_ref) instead, which avoids unnecessary cloning.
     ///
-    /// # Limitations
-    ///
-    /// In certain cases, you may need to annotate the parameter types in the mapping closure.
-    ///
     /// # Examples
     ///
     /// ```
@@ -487,10 +489,6 @@ pub trait Collector: Sized {
     /// since it is a [`RefCollector`].
     /// While it can also appear at the end of the chain, consider using [`map()`](Collector::map) there
     /// instead for better clarity.
-    ///
-    /// # Limitations
-    ///
-    /// In certain cases, you may need to annotate the parameter types in the closure.
     ///
     /// # Examples
     ///
@@ -792,7 +790,7 @@ pub trait Collector: Sized {
 
     /// Creates a [`Collector`] with a custom collection logic.
     ///
-    /// This adaptor is useful for "impossible" behaviors that cannot be expressed
+    /// This adaptor is useful for behaviors that cannot be expressed
     /// through existing adaptors without cloning or intermediate allocations.
     ///
     /// Since it does **not** implement [`RefCollector`], this adaptor should be used
@@ -801,10 +799,6 @@ pub trait Collector: Sized {
     /// If you find yourself writing `unbatching().cloned()` or `unbatching().copied()`,
     /// consider using [`unbatching_ref()`](Collector::unbatching_ref) instead,
     /// which avoids unnecessary cloning.
-    ///
-    /// # Limitations
-    ///
-    /// In certain cases, you may need to annotate the parameter types in the closure.
     ///
     /// # Examples
     ///
