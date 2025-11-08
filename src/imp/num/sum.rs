@@ -1,5 +1,5 @@
 use crate::{Collector, RefCollector};
-use std::ops::ControlFlow;
+use std::{num::Wrapping, ops::ControlFlow};
 
 /// A [`Collector`] that calculates sum of collected primitive numeric types.
 ///
@@ -45,7 +45,6 @@ macro_rules! num_impl {
                 self.sum
             }
 
-            /// Forwards to [`Iterator::sum`].
             #[inline]
             fn collect_many(
                 &mut self,
@@ -55,7 +54,6 @@ macro_rules! num_impl {
                 ControlFlow::Continue(())
             }
 
-            /// Forwards to [`Iterator::sum`].
             #[inline]
             fn collect_then_finish(
                 self,
@@ -78,6 +76,7 @@ macro_rules! num_impl {
 macro_rules! int_impls {
     ($($int_ty:ty)*) => {
         $(num_impl!($int_ty, 0);)*
+        $(num_impl!(Wrapping<$int_ty>, Wrapping(0));)*
     };
 }
 
