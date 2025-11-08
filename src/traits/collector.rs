@@ -67,14 +67,14 @@ use crate::{
 ///     }
 /// }
 ///
-/// let sentence = "the nobel and the singer";
+/// let sentence = "the noble and the singer";
 /// let tokenizer = sentence
 ///     .split_whitespace()
 ///     .map(String::from)
 ///     .better_collect(Tokenizer::default());
 ///
 /// // "the" should only appear once.
-/// assert_eq!(tokenizer.words, ["the", "nobel", "and", "singer"]);
+/// assert_eq!(tokenizer.words, ["the", "noble", "and", "singer"]);
 /// assert_eq!(tokenizer.tokenize("the singer and the swordswoman"), [1, 4, 3, 1, 0]);
 /// ```
 pub trait Collector: Sized {

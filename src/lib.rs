@@ -64,7 +64,7 @@
 //! ```
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
-//!     ["the", "nobel", "and", "the", "singer"]
+//!     ["the", "noble", "and", "the", "singer"]
 //!         .into_iter()
 //!         .map(String::from)
 //! }
@@ -123,7 +123,7 @@
 //!
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
-//!     ["the", "nobel", "and", "the", "singer"]
+//!     ["the", "noble", "and", "the", "singer"]
 //!         .into_iter()
 //!         .map(String::from)
 //! }

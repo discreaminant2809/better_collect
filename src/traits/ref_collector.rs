@@ -156,7 +156,52 @@ pub trait RefCollector: Collector {
         assert_collector(Then::new(self, other))
     }
 
-    /// Doc coming soon!
+    /// Creates a [`RefCollector`] that maps a mutable reference to an item
+    /// into another mutable reference.
+    ///
+    /// This is used when a [`then`] chain expects to collect `T`,
+    /// but you have a collector that collects `U`. In that case,
+    /// you can use `funnel()` to transform `U` into `T` before passing it along.
+    ///
+    /// Unlike [`Collector::map()`] or [`Collector::map_ref()`], this adaptor works
+    /// seamlessly with [`RefCollector`]s by forwarding items directly through
+    /// the [`collect_ref`] method.
+    /// This avoids cloning because the underlying collector does not need owndership of items.
+    ///
+    /// # Limitations
+    ///
+    /// In certain cases, you may need to annotate the parameter types in the mapping closure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     BetterCollect, Collector, RefCollector,
+    ///     string::ConcatString,
+    /// };
+    ///
+    /// let vecs = [
+    ///     vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],
+    ///     vec!["1".to_owned(), "2".to_owned(), "3".to_owned()],
+    ///     vec!["swordswoman".to_owned(), "singer".to_owned()],
+    /// ];
+    ///
+    /// let (concat_firsts, _lens) = vecs
+    ///     .into_iter()
+    ///     .better_collect(
+    ///         ConcatString::new()
+    ///             // We only need a reference to a string to concatenate.
+    ///             // `funnel` lets us avoid cloning by transforming &mut Vec<_> → &mut String.
+    ///             // Otherwise, we have to clone with `map_ref`.
+    ///             .funnel(|v: &mut Vec<_>| &mut v[0])
+    ///             .then(vec![].map(|v: Vec<_>| v.len()))
+    ///     );
+    ///
+    /// assert_eq!(concat_firsts, "a1swordswoman");
+    /// ```
+    ///
+    /// [`collect_ref`]: RefCollector::collect_ref
+    /// [`then`]: RefCollector::then
     #[inline]
     fn funnel<F, T>(self, func: F) -> Funnel<Self, T, F>
     where

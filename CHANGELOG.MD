@@ -7,6 +7,7 @@
 - `ConcatStr(ing)::with_buf()` that initializes `ConcatStr(ing)` with an initial string.
 - `Sink`.
 - `Collector::take_while()`.
+- Doc for `RefCollector::funnel()`.
 
 ## 0.1.0
 
