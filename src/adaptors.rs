@@ -10,6 +10,7 @@ mod partition;
 mod take;
 mod take_while;
 mod then;
+mod unbatching;
 mod unzip;
 // mod filter_map;
 
@@ -25,5 +26,6 @@ pub use partition::*;
 pub use take::*;
 pub use take_while::*;
 pub use then::*;
+pub use unbatching::*;
 pub use unzip::*;
 // pub use filter_map::*;

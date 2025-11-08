@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, TakeWhile, Unzip,
-    assert_collector, assert_ref_collector,
+    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, TakeWhile, Unbatching,
+    Unzip, assert_collector, assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -788,5 +788,48 @@ pub trait Collector: Sized {
         C: Collector,
     {
         assert_collector(Unzip::new(self, other))
+    }
+
+    /// Creates a [`Collector`] with a custom collection logic.
+    ///
+    /// This adaptor is useful for "impossible" behaviors that cannot be expressed
+    /// through existing adaptors without cloning or intermediate allocations.
+    ///
+    /// Since it does **not** implement [`RefCollector`], this adaptor should be used
+    /// on the **final collector** in a [`then`] chain, or adapted into a [`RefCollector`]
+    /// using the appropriate adaptor.
+    /// If you find yourself writing `unbatching().cloned()` or `unbatching().copied()`,
+    /// consider using [`unbatching_ref()`](Collector::unbatching_ref) instead,
+    /// which avoids unnecessary cloning.
+    ///
+    /// # Limitations
+    ///
+    /// In certain cases, you may need to annotate the parameter types in the closure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    /// use std::ops::ControlFlow;
+    ///
+    /// let mut collector = vec![]
+    ///     .unbatching(|v, arr: &[_]| {
+    ///         v.collect_many(arr.iter().copied());
+    ///         ControlFlow::Continue(())
+    ///     });
+    ///
+    /// assert!(collector.collect(&[1, 2, 3]).is_continue());
+    /// assert!(collector.collect(&[4, 5]).is_continue());
+    /// assert!(collector.collect(&[6, 7, 8, 9]).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    fn unbatching<T, F>(self, f: F) -> Unbatching<Self, T, F>
+    where
+        F: FnMut(&mut Self, T) -> ControlFlow<()>,
+    {
+        assert_collector(Unbatching::new(self, f))
     }
 }

@@ -2,6 +2,10 @@
 
 ## 0.1.2
 
+### Added
+
+- `Collector::unbatching()`.
+
 ### Fixed
 
 - Added doc for `Funnel` (struct).
