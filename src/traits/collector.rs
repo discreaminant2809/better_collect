@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{
     Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, TakeWhile, Unbatching,
-    Unzip, assert_collector, assert_ref_collector,
+    UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -440,13 +440,6 @@ pub trait Collector: Sized {
     ///     .better_collect(vec![].map(|num| num * num));
     ///
     /// assert_eq!(collector_squares, [1, 4, 9, 16, 25]);
-    ///
-    /// // Equivalent to:
-    /// let iter_squares: Vec<_> = (1..=5)
-    ///     .map(|num| num * num)
-    ///     .collect();
-    ///
-    /// assert_eq!(collector_squares, iter_squares);
     /// ```
     ///
     /// If you have multiple collectors with different item types, this adaptor bridges them.
@@ -820,10 +813,61 @@ pub trait Collector: Sized {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
+    /// [`then`]: crate::RefCollector::then
     fn unbatching<T, F>(self, f: F) -> Unbatching<Self, T, F>
     where
         F: FnMut(&mut Self, T) -> ControlFlow<()>,
     {
         assert_collector(Unbatching::new(self, f))
+    }
+
+    /// Creates a [`RefCollector`] with a custom collection logic.
+    ///
+    /// This adaptor is useful for behaviors that cannot be expressed
+    /// through existing adaptors without cloning or intermediate allocations.
+    ///
+    /// Unlike [`unbatching()`](Collector::unbatching), this adaptor only receives
+    /// a mutable reference to each item.
+    /// Because of that, it can be used **in the middle** of a [`then`] chain,
+    /// since it is a [`RefCollector`].
+    /// While it can also appear at the end of the chain, consider using
+    /// [`unbatching()`](Collector::unbatching) there instead for better clarity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     BetterCollect, Collector, RefCollector,
+    ///     Sink,
+    /// };
+    /// use std::ops::ControlFlow;
+    ///
+    /// let matrix = vec![
+    ///     vec![1, 2, 3],
+    ///     vec![4, 5, 6],
+    ///     vec![7, 8, 9],
+    /// ];
+    ///
+    /// let (flattened, _) = matrix
+    ///     .into_iter()
+    ///     .better_collect(
+    ///         vec![]
+    ///             .unbatching_ref(|v, row: &mut Vec<_>| {
+    ///                 v.collect_many(row.iter().copied());
+    ///                 ControlFlow::Continue(())
+    ///             })
+    ///             .then(Sink::new())
+    ///     );
+    ///
+    /// assert_eq!(flattened, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    /// [`then`]: crate::RefCollector::then
+    fn unbatching_ref<T, F>(self, f: F) -> UnbatchingRef<Self, T, F>
+    where
+        F: FnMut(&mut Self, &mut T) -> ControlFlow<()>,
+    {
+        assert_ref_collector(UnbatchingRef::new(self, f))
     }
 }
