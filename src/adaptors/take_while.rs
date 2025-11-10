@@ -8,15 +8,12 @@ use crate::{Collector, RefCollector};
 #[derive(Clone)]
 pub struct TakeWhile<C, F> {
     collector: C,
-    pred: Option<F>,
+    pred: F,
 }
 
 impl<C, F> TakeWhile<C, F> {
     pub(crate) fn new(collector: C, pred: F) -> Self {
-        Self {
-            collector,
-            pred: Some(pred),
-        }
+        Self { collector, pred }
     }
 }
 
@@ -30,14 +27,9 @@ where
     type Output = C::Output;
 
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        let Some(ref mut pred) = self.pred else {
-            return ControlFlow::Break(());
-        };
-
-        if pred(&item) {
+        if (self.pred)(&item) {
             self.collector.collect(item)
         } else {
-            self.pred = None;
             ControlFlow::Break(())
         }
     }
@@ -48,40 +40,23 @@ where
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        let Some(ref mut pred) = self.pred else {
-            return ControlFlow::Break(());
-        };
-
         // Be careful - the underlying collector may stop before the predicate return false.
         let mut all_true = true;
-        let cf = self.collector.collect_many(items.into_iter().take_while({
-            // We wanna move `&mut pred`.
-            // If we don't do this (use non-move closure directly),
-            // `&mut pred` will be captured as `&mut &mut pred`.
-            let all_true = &mut all_true;
-            move |item| {
+        let cf = self
+            .collector
+            .collect_many(items.into_iter().take_while(|item| {
                 // We trust the implementation of the standard library and the collector.
                 // They should short-circuit on the first false.
-                *all_true = pred(item);
-                *all_true
-            }
-        }));
+                all_true = (self.pred)(item);
+                all_true
+            }));
 
-        if all_true {
-            cf
-        } else {
-            self.pred = None;
-            ControlFlow::Break(())
-        }
+        if all_true { cf } else { ControlFlow::Break(()) }
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        if let Some(pred) = self.pred {
-            self.collector
-                .collect_then_finish(items.into_iter().take_while(pred))
-        } else {
-            self.collector.finish()
-        }
+        self.collector
+            .collect_then_finish(items.into_iter().take_while(self.pred))
     }
 }
 
@@ -91,14 +66,9 @@ where
     F: FnMut(&C::Item) -> bool,
 {
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        let Some(ref mut pred) = self.pred else {
-            return ControlFlow::Break(());
-        };
-
-        if pred(item) {
+        if (self.pred)(item) {
             self.collector.collect_ref(item)
         } else {
-            self.pred = None;
             ControlFlow::Break(())
         }
     }

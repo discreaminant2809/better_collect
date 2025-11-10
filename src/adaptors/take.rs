@@ -22,6 +22,8 @@ impl<C> Take<C> {
 
     #[inline]
     fn collect_impl(&mut self, f: impl FnOnce(&mut C) -> ControlFlow<()>) -> ControlFlow<()> {
+        // Must NOT remove it. The user may construct with `take(0)` and
+        // because it hasn't yielded Break, it shouldn't panic!
         if self.remaining == 0 {
             return ControlFlow::Break(());
         }

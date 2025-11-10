@@ -19,6 +19,26 @@ use crate::{
 /// and implement this trait for that struct.
 /// You may also override methods like [`collect_many`](Collector::collect_many) for optimizations.
 ///
+/// # Panics
+///
+/// Unless stated otherwise by the collector’s implementation, the behavior of
+/// [`Collector::collect()`], [`Collector::collect_many()`], and
+/// [`RefCollector::collect_ref()`](crate::RefCollector::collect_ref)
+/// **after** any of them have returned [`Break(())`] is unspecified.
+///
+/// After that point, subsequent calls to **any** method other than [`finish()`](Collector::finish)
+/// may behave arbitrarily. They may panic, overflow, or even resume accumulation
+/// (similar to how [`Iterator::next()`] might yield again after returning [`None`]).
+/// Callers should generally call [`finish()`](Collector::finish) once a collector
+/// returns [`Break(())`].
+/// If this invariant cannot be upheld, wrap it with [`fuse()`](Collector::fuse).
+///
+/// This looseness allows for optimizations (for example, omitting an internal “closed” flag).
+///
+/// Although the behavior is unspecified, this method is **not** `unsafe`.
+/// Implementors **must not** cause memory corruption, undefined behavior,
+/// or any other safety violations — and callers **must not** rely on such outcomes.
+///
 /// # Limitations
 ///
 /// In some cases, you may need to explicitly annotate the parameter types in closures,
@@ -83,6 +103,8 @@ use crate::{
 /// assert_eq!(tokenizer.words, ["the", "noble", "and", "singer"]);
 /// assert_eq!(tokenizer.tokenize("the singer and the swordswoman"), [1, 4, 3, 1, 0]);
 /// ```
+///
+/// [`Break(())`]: std::ops::ControlFlow::Break
 pub trait Collector: Sized {
     /// Type of items this collector collects and accumulates.
     // Although it is tempting to put it in generic instead (since `String` can collect
@@ -100,29 +122,23 @@ pub trait Collector: Sized {
     /// Return [`Continue(())`] to indicate the collector can still accumulate more items,
     /// or [`Break(())`] if it will no longer accumulate from now on and further feeding is meaningless.
     ///
-    /// This is analogous to [`Iterator::next`], which returns an item (instead of collecting one)
+    /// This is analogous to [`Iterator::next()`], which returns an item (instead of collecting one)
     /// and signals with [`None`] whenever it finishes.
     ///
     /// Implementors should return this hint carefully and inform the caller the closure
     /// as early as possible. This can usually be upheld, but not always.
-    /// Some collectors-like [`take(0)`](Collector::take) and `take_while()`-only
+    /// Some collectors-like [`take(0)`](Collector::take) and [`take_while()`]-only
     /// know when they are done after collecting an item, which might be too late
     /// if the item cannot be “afforded” and is lost forever.
     /// For "infinite" collectors (like most collections), this is not an issue
     /// since they can simply return  [`Continue(())`] every time.
-    ///
-    /// It is also allowed for a collector to "resume" later and resume accumulating
-    /// items normally. (Just like [`Iterator::next`] might start yielding again).
-    /// That is why the returned [`ControlFlow`] is only a hint -
-    /// this allows optimization (e.g. no need for an internal flag).
-    /// To prevent a collector from resuming, [`fuse()`](Collector::fuse) it.
     ///
     /// If the collector is uncertain - like "maybe I won’t accumulate… uh, fine, I will" -
     /// it is recommended to return [`Continue(())`].
     /// For example, [`filter()`](Collector::filter) might skip some items it collects,
     /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate.
     /// The filter just denies "undesirable" items, not signal termination
-    /// (this is the job of `take_while()` instead).
+    /// (this is the job of [`take_while()`] instead).
     ///
     /// Collectors with limited capacity (e.g., a `Vec` stored on the stack) will eventually
     /// return [`Break(())`] once full, right after the last item is accumulated.
@@ -162,6 +178,7 @@ pub trait Collector: Sized {
     ///
     /// [`Continue(())`]: ControlFlow::Continue
     /// [`Break(())`]: ControlFlow::Break
+    /// [`take_while()`]: Collector::take_while
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()>;
 
     /// Consumes the collector and returns the accumulated result.
@@ -235,59 +252,47 @@ pub trait Collector: Sized {
 
     /// Creates a [`Collector`] that stops accumulating permanently after the first [`Break(())`].
     ///
-    /// Normally, a collector that returns [`Break(())`] may later return [`Continue(())`] again.
+    /// Normally, a collector that returns [`Break(())`] may behave unpredictably,
+    /// inclluding returning [`Continue(())`] again.
     /// `fuse()` ensures that once [`Break(())`] has been returned, it will **always**
-    /// return [`Break(())`] forever.
+    /// return [`Break(())`] forever, and subsequent items will **not** be accumulated.
     ///
     /// This adaptor implements [`RefCollector`] if the underlying collector does.
     ///
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{BetterCollect, Collector, Count};
-    /// use std::ops::ControlFlow;
+    /// use better_collect::Collector;
     ///
-    /// // A collector that alternates between `Continue` and `Break`.
-    /// #[derive(Default)]
-    /// struct NaughtyCollector {
-    ///     is_continue: bool,
-    /// }
+    /// // `take_while()` is one of a few collectors that do NOT fuse internally.
+    /// let mut collector = vec![].take_while(|&x| x != 3);
     ///
-    /// impl Collector for NaughtyCollector {
-    ///     type Item = ();
-    ///     type Output = ();
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(3).is_break());
     ///
-    ///     fn collect(&mut self, _: ()) -> ControlFlow<()> {
-    ///         self.is_continue = !self.is_continue;
-    ///         
-    ///         if self.is_continue {
-    ///             ControlFlow::Continue(())
-    ///         } else {
-    ///             ControlFlow::Break(())
-    ///         }
-    ///     }
+    /// // Use after `Break` ⚠️
+    /// let _ = collector.collect(4);
     ///
-    ///     fn finish(self) -> Self::Output {}
-    /// }
+    /// // What do you think what `collector.finish()` would yield? You can try it yourself.
+    /// // (Spoiler: by the current implementation, it may NOT be `[1, 2]`!)
+    /// # // Not shown to the doc. We only confirm our claim here.
+    /// # assert_ne!(collector.finish(), [1, 2]);
     ///
-    /// let mut collector = NaughtyCollector::default();
+    /// // Now try `fuse()`.
+    /// let mut collector = vec![].take_while(|&x| x != 3).fuse();
     ///
-    /// // It hints "naughtily."
-    /// assert!(collector.collect(()).is_continue());
-    /// assert!(collector.collect(()).is_break());
-    /// assert!(collector.collect(()).is_continue());
-    /// assert!(collector.collect(()).is_break());
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(3).is_break());
     ///
-    /// // Try the fused version.
-    /// let mut collector = NaughtyCollector::default().fuse();
+    /// // From now on, there's only `Break`. No further items are accumulated.
+    /// assert!(collector.collect(4).is_break());
+    /// assert!(collector.collect(5).is_break());
+    /// assert!(collector.collect_many([6, 7, 8, 9]).is_break());
     ///
-    /// assert!(collector.collect(()).is_continue());
-    /// assert!(collector.collect(()).is_break());
-    ///
-    /// // Now the hint remains `Break`.
-    /// assert!(collector.collect(()).is_break());
-    /// assert!(collector.collect(()).is_break());
-    /// assert!(collector.collect(()).is_break());
+    /// // The output is consistent again.
+    /// assert_eq!(collector.finish(), [1, 2]);
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
@@ -628,18 +633,13 @@ pub trait Collector: Sized {
     /// ```
     /// use better_collect::{Collector, string::ConcatStr};
     ///
-    /// let mut collector = ConcatStr::new().take_while(|s| !s.is_empty());
+    /// let mut collector = ConcatStr::new().take_while(|&s| s != "stop");
     ///
     /// assert!(collector.collect("abc").is_continue());
     /// assert!(collector.collect("def").is_continue());
     ///
-    /// // Immediately stops after an empty string.
-    /// assert!(collector.collect("").is_break());
-    ///
-    /// // No more items will be accumulated.
-    /// assert!(collector.collect("pls").is_break());
-    /// assert!(collector.collect("revert").is_break());
-    /// assert!(collector.collect("back").is_break());
+    /// // Immediately stops after "stop".
+    /// assert!(collector.collect("stop").is_break());
     ///
     /// assert_eq!(collector.finish(), "abcdef");
     /// ```
