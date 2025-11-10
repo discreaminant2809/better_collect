@@ -7,6 +7,7 @@
 - `Collector::unbatching()`.
 - `Product`.
 - Implementations for `Sum<Wrapping<Int>>` and `Product<Wrapping<Int>>`.
+- `Fold(Ref)`.
 
 ### Changed
 

@@ -6,7 +6,7 @@ use crate::{Collector, assert_collector};
 /// as long as the function returns successfully.
 ///
 /// This collector corresponds to [`Iterator::try_fold()`], except that
-/// the accumulator is mutated in place, and its result type
+/// the accumulated value is mutated in place, and its result type
 /// is **not** wrapped in a control-flow container.
 ///
 /// Currently, it only supports [`ControlFlow`] as the function’s return type.
