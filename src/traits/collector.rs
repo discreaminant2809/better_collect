@@ -156,9 +156,8 @@ pub trait Collector: Sized {
     ///
     /// // After collecting `3`, it meets the quota, so it signals `Break` immediately.
     /// assert!(collector.collect(3).is_break());
-    ///
-    /// // Further feeding does nothing.
-    /// assert!(collector.collect(4).is_break());
+    /// # // Internal assertion.
+    /// # assert!(collector.collect(4).is_break());
     ///
     /// assert_eq!(collector.finish(), [1, 2, 3]);
     /// ```
@@ -608,9 +607,8 @@ pub trait Collector: Sized {
     ///
     /// // Immediately stops after the third item.
     /// assert!(collector.collect(3).is_break());
-    ///
-    /// // No more items will be accumulated.
-    /// assert!(collector.collect(4).is_break());
+    /// # // Internal assertion.
+    /// # assert!(collector.collect(4).is_break());
     ///
     /// assert_eq!(collector.finish(), [1, 2, 3]);
     /// ```

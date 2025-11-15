@@ -100,7 +100,8 @@ pub trait RefCollector: Collector {
     /// // Since `vec![].take(3)` only takes 3 items,
     /// // it hints a stop right after the 3rd item is collected.
     /// assert!(collector.collect(()).is_break());
-    /// assert!(collector.collect(()).is_break());
+    /// # // Internal assertion.
+    /// # assert!(collector.collect(()).is_break());
     ///
     /// assert_eq!(collector.finish(), (vec![(); 3], ()));
     /// ```
