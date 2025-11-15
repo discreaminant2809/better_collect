@@ -2,6 +2,10 @@
 
 ## 0.2.0
 
+### Changed
+
+- `[___]Ref` collectors have their constructors moved to their non-`Ref` verions.
+
 ## 0.1.2
 
 ### Added
