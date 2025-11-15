@@ -74,7 +74,10 @@ where
 {
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         if !self.collector1.finished() {
-            self.collector1.collect_ref(item)
+            let _ = self.collector1.collect_ref(item);
+            // DO NOT just return whatever the first collector returns.
+            // We still have the second collector, so we can't hint `Break`!
+            ControlFlow::Continue(())
         } else {
             self.collector2.collect_ref(item)
         }

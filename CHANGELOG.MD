@@ -6,6 +6,10 @@
 
 - `[___]Ref` collectors have their constructors moved to their non-`Ref` verions.
 
+### Fixed
+
+- `Chain::collect_ref()` returning `Break` when the first collector stops.
+
 ## 0.1.2
 
 ### Added
