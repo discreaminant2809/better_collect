@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
-/// Creates a [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
+/// A [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
 /// `A` goes to the first collector, and `B` goes to the second collector.
 ///
 /// This `struct` is created by [`Collector::unzip()`]. See its documentation for more.

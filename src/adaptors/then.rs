@@ -3,7 +3,7 @@ use std::ops::ControlFlow;
 use super::Fuse;
 use crate::{Collector, RefCollector};
 
-/// Creates a [`Collector`] that lets **both** collectors collect the same item.
+/// A [`Collector`] that lets **both** collectors collect the same item.
 ///
 /// This `struct` is created by [`RefCollector::then()`]. See its documentation for more.
 #[derive(Debug, Clone)]

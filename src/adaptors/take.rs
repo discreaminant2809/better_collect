@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
-/// Creates a [`Collector`] that stops accumulating after collecting the first `n` items.
+/// A [`Collector`] that stops accumulating after collecting the first `n` items.
 ///
 /// This `struct` is created by [`Collector::take()`]. See its documentation for more.
 #[derive(Debug, Clone)]
