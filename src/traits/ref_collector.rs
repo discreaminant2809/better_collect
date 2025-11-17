@@ -60,8 +60,8 @@ pub trait RefCollector: Collector {
     /// The most important adaptor — the reason why this crate exists.
     ///
     /// Creates a [`Collector`] that lets **both** collectors collect the same item.
-    /// The first collector collects the item by mutable reference, **then** the second one
-    /// collects it by either mutable reference or ownership.
+    /// For each item collected, the first collector collects the item by mutable reference,
+    /// **then** the second one collects it by either mutable reference or ownership.
     /// Together, they form a *pipeline* where each collector processes the item in turn,
     /// and the final one consumes by ownership.
     ///
