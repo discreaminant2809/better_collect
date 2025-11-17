@@ -2,6 +2,10 @@
 
 ## 0.2.1
 
+### Added
+
+- `Collector::skip()`.
+
 ## 0.2.0
 
 ### Changed

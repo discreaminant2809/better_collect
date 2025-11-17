@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Take, TakeWhile, Unbatching,
+    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Skip, Take, TakeWhile, Unbatching,
     UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
@@ -650,7 +650,36 @@ pub trait Collector: Sized {
         assert_collector(TakeWhile::new(self, pred))
     }
 
-    // fn skip()
+    /// Creates a [`Collector`] that skips the first `n` collected items before it begins
+    /// accumulating them.
+    ///
+    /// `skip(n)` ignores collected items until `n` items have been collected. After that,
+    /// subsequent items are accumulated normally.
+    ///
+    /// This also implements [`RefCollector`] if the underlying collector does.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::Collector;
+    ///
+    /// let mut collector = vec![].skip(3);
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(3).is_continue());
+    ///
+    /// // It has skipped enough items.
+    /// assert!(collector.collect(4).is_continue());
+    /// assert!(collector.collect(5).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [4, 5]);
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    fn skip(self, n: usize) -> Skip<Self> {
+        assert_collector(Skip::new(self, n))
+    }
 
     // fn step_by()
 
