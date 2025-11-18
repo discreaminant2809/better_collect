@@ -898,3 +898,28 @@ pub trait Collector: Sized {
         assert_ref_collector(UnbatchingRef::new(self, f))
     }
 }
+
+/// A mutable reference to a collect produce nothing.
+///
+/// This is useful when you *just* want to feed items to a collector without
+/// finishing it.
+impl<C: Collector> Collector for &mut C {
+    type Item = C::Item;
+
+    type Output = ();
+
+    #[inline]
+    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+        C::collect(self, item)
+    }
+
+    #[inline]
+    fn finish(self) -> Self::Output {}
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        C::collect_many(self, items)
+    }
+
+    // The default implementation for `collect_then_finish()` is sufficient.
+}

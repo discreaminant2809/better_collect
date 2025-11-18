@@ -7,6 +7,8 @@ mod fuse;
 mod map;
 mod map_ref;
 mod partition;
+#[cfg(feature = "unstable")]
+mod puller;
 mod skip;
 mod take;
 mod take_while;
@@ -25,6 +27,8 @@ pub use fuse::*;
 pub use map::*;
 pub use map_ref::*;
 pub use partition::*;
+#[cfg(feature = "unstable")]
+pub use puller::*;
 pub use skip::*;
 pub use take::*;
 pub use take_while::*;

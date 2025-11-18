@@ -195,12 +195,16 @@
 //!
 //! # Features
 //!
-//! If the `std` feature is **not** enabled, the crate builds in `no_std` mode.
+//! - **`alloc`** — Enables collectors and implementations for types in the
+//!   [`alloc`] crate (e.g., [`Vec`], [`VecDeque`], [`BTreeSet`]).
 //!
-//! - **`alloc`** — Enables implementations for types in the [`alloc`] crate
-//!   (e.g., [`Vec`], [`VecDeque`], [`BTreeSet`]).
 //! - **`std`** *(default)* — Enables the `alloc` feature and implementations
 //!   for [`std`]-only types (e.g., [`HashMap`]).
+//!   When this feature is disabled, the crate builds in `no_std` mode.
+//!
+//! - **`unstable`** — Enables experimental and unstable features.
+//!   Items gated behind this feature do **not** follow normal semver guarantees
+//!   and may change or be removed at any time.
 //!
 //! # Todos
 //!
@@ -246,6 +250,12 @@ const fn assert_collector<C: Collector>(collector: C) -> C {
 #[inline(always)]
 const fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
     collector
+}
+
+#[cfg(feature = "unstable")]
+#[inline(always)]
+const fn assert_iterator<I: Iterator>(iterator: I) -> I {
+    iterator
 }
 
 #[cfg(test)]

@@ -211,3 +211,14 @@ pub trait RefCollector: Collector {
         assert_ref_collector(Funnel::new(self, func))
     }
 }
+
+/// A mutable reference to a collect produce nothing.
+///
+/// This is useful when you *just* want to feed items to a collector without
+/// finishing it.
+impl<C: RefCollector> RefCollector for &mut C {
+    #[inline]
+    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+        C::collect_ref(self, item)
+    }
+}

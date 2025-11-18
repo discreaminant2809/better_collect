@@ -5,6 +5,8 @@
 ### Added
 
 - `Collector::skip()`.
+- `(Ref)Collector` implementations for `&mut C`, where `C: (Ref)Collector`.
+- `unstable` feature flag.
 
 ## 0.2.0
 
