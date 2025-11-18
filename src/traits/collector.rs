@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Copied, Filter, Fuse, Map, MapRef, Partition, Skip, Take, TakeWhile, Unbatching,
-    UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
+    Chain, Cloned, Copied, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
+    TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -717,11 +717,11 @@ pub trait Collector: Sized {
     ///
     /// [`RefCollector`]: crate::RefCollector
     #[inline]
-    fn chain<C>(self, other: C) -> Chain<Self, C>
+    fn chain<C>(self, other: C) -> Chain<Self, C::IntoCollector>
     where
-        C: Collector<Item = Self::Item>,
+        C: IntoCollector<Item = Self::Item>,
     {
-        assert_collector(Chain::new(self, other))
+        assert_collector(Chain::new(self, other.into_collector()))
     }
 
     /// Creates a [`Collector`] that distributes items between two collectors based on a predicate.
@@ -745,12 +745,12 @@ pub trait Collector: Sized {
     ///
     /// [`RefCollector`]: crate::RefCollector
     #[inline]
-    fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C, F>
+    fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C::IntoCollector, F>
     where
-        C: Collector<Item = Self::Item>,
+        C: IntoCollector<Item = Self::Item>,
         F: FnMut(&mut Self::Item) -> bool,
     {
-        assert_collector(Partition::new(self, other_if_false, pred))
+        assert_collector(Partition::new(self, other_if_false.into_collector(), pred))
     }
 
     /// Creates a [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
@@ -801,11 +801,11 @@ pub trait Collector: Sized {
     ///
     /// [`RefCollector`]: crate::RefCollector
     #[inline]
-    fn unzip<C>(self, other: C) -> Unzip<Self, C>
+    fn unzip<C>(self, other: C) -> Unzip<Self, C::IntoCollector>
     where
-        C: Collector,
+        C: IntoCollector,
     {
-        assert_collector(Unzip::new(self, other))
+        assert_collector(Unzip::new(self, other.into_collector()))
     }
 
     /// Creates a [`Collector`] with a custom collection logic.

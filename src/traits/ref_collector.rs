@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, Funnel, Then, assert_collector, assert_ref_collector};
+use crate::{Collector, Funnel, IntoCollector, Then, assert_collector, assert_ref_collector};
 
 /// A [`Collector`] that can also collect items by mutable reference.
 ///
@@ -150,11 +150,11 @@ pub trait RefCollector: Collector {
     ///
     /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
     #[inline]
-    fn then<C>(self, other: C) -> Then<Self, C>
+    fn then<C>(self, other: C) -> Then<Self, C::IntoCollector>
     where
-        C: Collector<Item = Self::Item>,
+        C: IntoCollector<Item = Self::Item>,
     {
-        assert_collector(Then::new(self, other))
+        assert_collector(Then::new(self, other.into_collector()))
     }
 
     /// Creates a [`RefCollector`] that maps a mutable reference to an item
