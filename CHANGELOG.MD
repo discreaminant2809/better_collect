@@ -6,6 +6,8 @@
 
 - `Collector::skip()`.
 - `(Ref)Collector` implementations for `&mut C`, where `C: (Ref)Collector`.
+- `IntoCollector`.
+- `Collector`s for `std::sync::mpsc`.
 - `unstable` feature flag.
 
 ## 0.2.0

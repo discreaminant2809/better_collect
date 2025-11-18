@@ -13,6 +13,8 @@ mod sink;
 #[cfg(feature = "alloc")]
 pub mod string;
 mod sum;
+#[cfg(feature = "std")]
+pub mod sync;
 mod try_fold;
 mod unit;
 #[cfg(feature = "alloc")]
