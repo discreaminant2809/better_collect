@@ -153,6 +153,8 @@
 //!
 //! # Traits
 //!
+//! ## Main traits
+//!
 //! Unlike [`std::iter`], this crate defines two main traits instead. Roughly:
 //!
 //! ```no_run
@@ -186,10 +188,14 @@
 //! letting each item pass through safely by reference until the final collector
 //! takes ownership.
 //!
-//! Finally, [`BetterCollect`] extends [`Iterator`] with the
+//! ## Other traits
+//!
+//! [`BetterCollect`] extends [`Iterator`] with the
 //! [`better_collect()`] method, which feeds all items from an iterator
 //! into a [`Collector`] and returns the collector’s result.
 //! To use this method, the [`BetterCollect`] trait must be imported.
+//!
+//! [`IntoCollector`] is a conversion trait that converts a type into a [`Collector`].
 //!
 //! More details can be found in their respective documentation.
 //!

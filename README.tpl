@@ -5,6 +5,7 @@
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
 [`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
 [`BetterCollect`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html
+[`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.IntoCollector.html
 [`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
 [`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
 [`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
