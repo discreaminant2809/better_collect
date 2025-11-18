@@ -1,3 +1,5 @@
+//! [`Collector`]s for [`Sender`] and [`SyncSender`].
+//!
 //! This module corresponds to the [`std::sync::mpsc`] module.
 
 use std::{
