@@ -1,3 +1,3 @@
-//! This module corresponds to the [`std::sync`] module.
+//! This module corresponds to [`std::sync`].
 
 pub mod mpsc;
