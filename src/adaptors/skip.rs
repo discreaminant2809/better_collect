@@ -112,3 +112,43 @@ fn drop_n_items(items: &mut impl Iterator, n: usize) -> bool {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+
+    use crate::Collector;
+
+    proptest! {
+        #[test]
+        fn collect_many(
+            vec1 in propvec(any::<i32>(), 0..100),
+            vec2 in propvec(any::<i32>(), 0..100),
+            skip_count in 0_usize..210,
+        ) {
+            let (collector_way, iter_way) = collect_many_helper(vec1, vec2, skip_count);
+            prop_assert_eq!(collector_way, iter_way);
+        }
+    }
+
+    fn collect_many_helper(
+        vec1: Vec<i32>,
+        vec2: Vec<i32>,
+        skip_count: usize,
+    ) -> (Vec<i32>, Vec<i32>) {
+        let iter1 = vec1
+            .iter()
+            .copied()
+            .chain(vec2.iter().copied().filter(|num| num % 4 != 0));
+        let iter2 = iter1.clone().skip(skip_count);
+
+        let mut collector = vec![].skip(skip_count);
+        let _ = collector.collect_many(iter1);
+        let collector_way = collector.finish();
+
+        let iter_way: Vec<_> = iter2.collect();
+
+        (collector_way, iter_way)
+    }
+}

@@ -16,3 +16,6 @@ default = ["std"]
 alloc = []
 std = ["alloc"]
 unstable = []
+
+[dev-dependencies]
+proptest = { version = "1.9.0", default-features = false, features = ["std"] }
