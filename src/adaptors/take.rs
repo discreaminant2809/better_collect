@@ -84,7 +84,7 @@ impl<C: Collector> Collector for Take<C> {
         if self.remaining <= lower_sh {
             let n = self.remaining;
             self.remaining = 0;
-            return self.collect_many(items.take(n));
+            return self.collector.collect_many(items.take(n));
         }
 
         self.remaining -= lower_sh;
@@ -111,5 +111,45 @@ impl<C: RefCollector> RefCollector for Take<C> {
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_ref(item))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+
+    use crate::Collector;
+
+    proptest! {
+        #[test]
+        fn collect_many(
+            vec1 in propvec(any::<i32>(), ..100),
+            vec2 in propvec(any::<i32>(), ..100),
+            take_count in 0_usize..210,
+        ) {
+            let (collector_way, iter_way) = collect_many_helper(vec1, vec2, take_count);
+            prop_assert_eq!(collector_way, iter_way);
+        }
+    }
+
+    fn collect_many_helper(
+        vec1: Vec<i32>,
+        vec2: Vec<i32>,
+        take_count: usize,
+    ) -> (Vec<i32>, Vec<i32>) {
+        let iter1 = vec1
+            .iter()
+            .copied()
+            .chain(vec2.iter().copied().filter(|num| num % 4 != 0));
+        let iter2 = iter1.clone().take(take_count);
+
+        let mut collector = vec![].take(take_count);
+        let _ = collector.collect_many(iter1);
+        let collector_way = collector.finish();
+
+        let iter_way: Vec<_> = iter2.collect();
+
+        (collector_way, iter_way)
     }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Fixed
+
+- Unintended recursion in `Take::collect_many()`.
+
 ## 0.2.1
 
 ### Added
