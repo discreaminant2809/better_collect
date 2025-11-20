@@ -81,3 +81,34 @@ impl<C: Debug, F> Debug for TakeWhile<C, F> {
             .finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+
+    use crate::Collector;
+
+    proptest! {
+        #[test]
+        fn collect_many(
+            nums in propvec(any::<i32>(), ..100),
+        ) {
+            let (collector_way, iter_way) = collect_many_helper(nums);
+            prop_assert_eq!(collector_way, iter_way);
+        }
+    }
+
+    fn collect_many_helper(nums: Vec<i32>) -> (Vec<i32>, Vec<i32>) {
+        let iter1 = nums.iter().copied();
+        let iter2 = iter1.clone().take_while(|&num| num % 4 == 0);
+
+        let mut collector = vec![].take_while(|&num| num % 4 == 0);
+        let _ = collector.collect_many(iter1);
+        let collector_way = collector.finish();
+
+        let iter_way = iter2.collect();
+
+        (collector_way, iter_way)
+    }
+}
