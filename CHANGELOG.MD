@@ -5,6 +5,8 @@
 ### Fixed
 
 - Unintended recursion in `Take::collect_many()`.
+- `Unzip::collect(_ref)()` should not return `Break` early on one returning `Break` to be consistent
+  with `Unzip::collect_many()` and `Unzip::collect_then_finish()`.
 
 ## 0.2.1
 

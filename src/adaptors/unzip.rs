@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, RefCollector};
+use crate::{Collector, Fuse, RefCollector};
 
 /// A [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
 /// `A` goes to the first collector, and `B` goes to the second collector.
@@ -8,15 +8,17 @@ use crate::{Collector, RefCollector};
 /// This `struct` is created by [`Collector::unzip()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Unzip<C1, C2> {
-    collector1: C1,
-    collector2: C2,
+    // `Fuse` is neccessary since either may end earlier.
+    // It can ease the implementation.
+    collector1: Fuse<C1>,
+    collector2: Fuse<C2>,
 }
 
 impl<C1, C2> Unzip<C1, C2> {
     pub(crate) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
-            collector1,
-            collector2,
+            collector1: Fuse::new(collector1),
+            collector2: Fuse::new(collector2),
         }
     }
 }
@@ -33,8 +35,11 @@ where
         let res1 = self.collector1.collect(item1);
         let res2 = self.collector2.collect(item2);
 
-        res1?;
-        res2
+        if res1.is_break() && res2.is_break() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
+        }
     }
 
     fn finish(self) -> Self::Output {
@@ -96,8 +101,11 @@ where
         let res1 = self.collector1.collect_ref(item1);
         let res2 = self.collector2.collect_ref(item2);
 
-        res1?;
-        res2
+        if res1.is_break() && res2.is_break() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
+        }
     }
 }
 
