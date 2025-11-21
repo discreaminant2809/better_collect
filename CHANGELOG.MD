@@ -2,6 +2,10 @@
 
 ## 0.3.0
 
+### Changed
+
+- `Vec` now implements `IntoCollector` instead of `(Ref)Collector`.
+
 ## 0.2.2
 
 ### Fixed
