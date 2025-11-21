@@ -87,7 +87,7 @@ mod tests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
-    use crate::Collector;
+    use crate::{Collector, IntoCollector};
 
     proptest! {
         #[test]
@@ -103,7 +103,7 @@ mod tests {
         let iter1 = nums.iter().copied();
         let iter2 = iter1.clone().take_while(|&num| num % 4 == 0);
 
-        let mut collector = vec![].take_while(|&num| num % 4 == 0);
+        let mut collector = vec![].into_collector().take_while(|&num| num % 4 == 0);
         let _ = collector.collect_many(iter1);
         let collector_way = collector.finish();
 

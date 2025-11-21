@@ -18,13 +18,13 @@ pub trait BetterCollect: Iterator {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     BetterCollect, Collector, RefCollector, IntoCollector,
     ///     cmp::Max,
     /// };
     ///
     /// let (nums, max) = [4, 2, 6, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].then(Max::new()));
+    ///     .better_collect(vec![].into_collector().then(Max::new()));
     ///
     /// assert_eq!(nums, [4, 2, 6, 3]);
     /// assert_eq!(max, Some(6));

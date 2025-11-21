@@ -146,9 +146,9 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let mut collector = vec![].take(3); // only takes 3 items
+    /// let mut collector = vec![].into_collector().take(3); // only takes 3 items
     ///
     /// // It has not reached its 3-item quota yet.
     /// assert!(collector.collect(1).is_continue());
@@ -185,9 +185,10 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
     /// let v = vec![1, 2, 3]
+    ///     .into_collector()
     ///     .take(999)
     ///     .fuse()
     ///     .filter(|&x| x > 0);
@@ -207,12 +208,12 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let mut v = vec![1, 2];
-    /// v.collect_many([3, 4, 5]);
+    /// let mut collector = vec![1, 2].into_collector();
+    /// collector.collect_many([3, 4, 5]);
     ///
-    /// assert_eq!(v, [1, 2, 3, 4, 5]);
+    /// assert_eq!(collector.finish(), [1, 2, 3, 4, 5]);
     /// ```
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
@@ -232,11 +233,11 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let v = vec![1, 2];
+    /// let collector = vec![1, 2].into_collector();
     ///
-    /// assert_eq!(v.collect_then_finish([3, 4, 5]), [1, 2, 3, 4, 5]);
+    /// assert_eq!(collector.collect_then_finish([3, 4, 5]), [1, 2, 3, 4, 5]);
     /// ```
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         // Do this instead of putting `mut` in `self` since some IDEs are stupid
@@ -261,10 +262,10 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
     /// // `take_while()` is one of a few collectors that do NOT fuse internally.
-    /// let mut collector = vec![].take_while(|&x| x != 3);
+    /// let mut collector = vec![].into_collector().take_while(|&x| x != 3);
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -279,7 +280,7 @@ pub trait Collector: Sized {
     /// # assert_ne!(collector.finish(), [1, 2]);
     ///
     /// // Now try `fuse()`.
-    /// let mut collector = vec![].take_while(|&x| x != 3).fuse();
+    /// let mut collector = vec![].into_collector().take_while(|&x| x != 3).fuse();
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -319,7 +320,7 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{BetterCollect, Collector, RefCollector};
+    /// use better_collect::{BetterCollect, Collector, RefCollector, IntoCollector};
     ///
     /// let collector_res = ["a", "b", "c"]
     ///     .into_iter()
@@ -328,7 +329,7 @@ pub trait Collector: Sized {
     ///     // so we must call `cloned()` to make it `then`-able.
     ///     // Otherwise, the first `Vec` would consume each item,
     ///     // leaving nothing for the second.
-    ///     .better_collect(vec![].cloned().then(vec![]));
+    ///     .better_collect(vec![].into_collector().cloned().then(vec![]));
     ///
     /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
     /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
@@ -346,13 +347,13 @@ pub trait Collector: Sized {
     /// For [`Copy`] types, this adaptor is usually unnecessary:
     ///
     /// ```
-    /// use better_collect::{BetterCollect, Collector, RefCollector};
+    /// use better_collect::{BetterCollect, Collector, RefCollector, IntoCollector};
     ///
     /// let collector_res = [1, 2, 3]
     ///     .into_iter()
     ///     // Just `then` normally.
     ///     // `Vec<i32>` implements `RefCollector` since `i32` is `Copy`.
-    ///     .better_collect(vec![].then(vec![]));
+    ///     .better_collect(vec![].into_collector().then(vec![]));
     ///
     /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -388,11 +389,11 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{BetterCollect, Collector, RefCollector};
+    /// use better_collect::{BetterCollect, Collector, RefCollector, IntoCollector};
     ///
     /// let collector_copied_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].copied().then(vec![]));
+    ///     .better_collect(vec![].into_collector().copied().then(vec![]));
     ///
     /// assert_eq!(collector_copied_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -407,7 +408,7 @@ pub trait Collector: Sized {
     /// // Also equivalent to using `then` directly, since `Vec<i32>` implements `RefCollector`.
     /// let collector_normal_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].then(vec![]));
+    ///     .better_collect(vec![].into_collector().then(vec![]));
     ///
     /// assert_eq!(collector_copied_res, collector_normal_res);
     /// ```
@@ -437,11 +438,11 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{BetterCollect, Collector};
+    /// use better_collect::{BetterCollect, Collector, IntoCollector};
     ///
     /// // Collect the first 5 squared numbers.
     /// let collector_squares = (1..=5)
-    ///     .better_collect(vec![].map(|num| num * num));
+    ///     .better_collect(vec![].into_collector().map(|num| num * num));
     ///
     /// assert_eq!(collector_squares, [1, 4, 9, 16, 25]);
     /// ```
@@ -450,7 +451,7 @@ pub trait Collector: Sized {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     BetterCollect, Collector, RefCollector, IntoCollector,
     ///     string::ConcatStr,
     /// };
     ///
@@ -459,7 +460,7 @@ pub trait Collector: Sized {
     ///     .better_collect(
     ///         ConcatStr::new()
     ///             // Limitation: type annotation may be needed.
-    ///             .then(vec![].map(|s: &str| s.len()))
+    ///             .then(vec![].into_collector().map(|s: &str| s.len()))
     ///     );
     ///
     /// assert_eq!(lens, [1, 3, 2]);
@@ -491,7 +492,7 @@ pub trait Collector: Sized {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     BetterCollect, Collector, RefCollector, IntoCollector,
     ///     string::ConcatString,
     /// };
     ///
@@ -499,6 +500,7 @@ pub trait Collector: Sized {
     ///     .into_iter()
     ///     .better_collect(
     ///         vec![]
+    ///             .into_collector()
     ///             // Since we can only "view" the string via &mut,
     ///             // we use this adaptor to avoid cloning.
     ///             // (Limitation: type annotation may be required.)
@@ -532,9 +534,9 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let mut collector = vec![].filter(|&x| x % 2 == 0);
+    /// let mut collector = vec![].into_collector().filter(|&x| x % 2 == 0);
     ///
     /// assert!(collector.collect(2).is_continue());
     /// assert!(collector.collect(4).is_continue());
@@ -550,17 +552,18 @@ pub trait Collector: Sized {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     BetterCollect, Collector, RefCollector, IntoCollector,
     ///     string::ConcatString,
     /// };
     ///
     /// let (evens, negs) = (-5..=5)
     ///     .better_collect(
     ///         vec![]
+    ///             .into_collector()
     ///             .filter(|&x| x % 2 == 0)
     ///             // Since `Vec<i32>` implements `RefCollector`,
     ///             // this adaptor does too!
-    ///             .then(vec![].filter(|&x| x < 0))
+    ///             .then(vec![].into_collector().filter(|&x| x < 0))
     ///     );
     ///
     /// assert_eq!(evens, [-4, -2, 0, 2, 4]);
@@ -598,9 +601,9 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let mut collector = vec![].take(3);
+    /// let mut collector = vec![].into_collector().take(3);
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -661,9 +664,9 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let mut collector = vec![].skip(3);
+    /// let mut collector = vec![].into_collector().skip(3);
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -698,9 +701,9 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let mut collector = vec![].take(2).chain(vec![]);
+    /// let mut collector = vec![].into_collector().take(2).chain(vec![]);
     ///
     /// assert!(collector.collect(1).is_continue());
     ///
@@ -734,9 +737,9 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     ///
-    /// let collector = vec![].partition(|&mut x| x % 2 == 0, vec![]);
+    /// let collector = vec![].into_collector().partition(|&mut x| x % 2 == 0, vec![]);
     /// let (evens, odds) = collector.collect_then_finish(-5..5);
     ///
     /// assert_eq!(evens, [-4, -2, 0, 2, 4]);
@@ -764,7 +767,7 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{BetterCollect, Collector};
+    /// use better_collect::{BetterCollect, Collector, IntoCollector};
     ///
     /// struct User {
     ///     id: u32,
@@ -789,6 +792,7 @@ pub trait Collector: Sized {
     ///     .into_iter()
     ///     .better_collect(
     ///         vec![]
+    ///             .into_collector()
     ///             .unzip(vec![])
     ///             .unzip(vec![])
     ///             .map(|user: User| ((user.id, user.name), user.email)),
@@ -823,10 +827,11 @@ pub trait Collector: Sized {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::Collector;
+    /// use better_collect::{Collector, IntoCollector};
     /// use std::ops::ControlFlow;
     ///
     /// let mut collector = vec![]
+    ///     .into_collector()
     ///     .unbatching(|v, arr: &[_]| {
     ///         v.collect_many(arr.iter().copied());
     ///         ControlFlow::Continue(())
@@ -864,7 +869,7 @@ pub trait Collector: Sized {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     BetterCollect, Collector, RefCollector, IntoCollector,
     ///     Sink,
     /// };
     /// use std::ops::ControlFlow;
@@ -879,6 +884,7 @@ pub trait Collector: Sized {
     ///     .into_iter()
     ///     .better_collect(
     ///         vec![]
+    ///             .into_collector()
     ///             .unbatching_ref(|v, row: &mut Vec<_>| {
     ///                 v.collect_many(row.iter().copied());
     ///                 ControlFlow::Continue(())

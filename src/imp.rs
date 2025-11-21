@@ -18,7 +18,7 @@ pub mod sync;
 mod try_fold;
 mod unit;
 #[cfg(feature = "alloc")]
-mod vec;
+pub mod vec;
 
 pub use all_any::*;
 pub use count::*;

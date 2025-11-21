@@ -73,11 +73,11 @@ pub trait RefCollector: Collector {
     ///
     /// ```
     /// use better_collect::{
-    ///     Collector, RefCollector,
+    ///     Collector, RefCollector, IntoCollector,
     ///     cmp::Max,
     /// };
     ///
-    /// let mut collector = vec![].then(Max::new());
+    /// let mut collector = vec![].into_collector().then(Max::new());
     ///
     /// assert!(collector.collect(4).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -91,13 +91,13 @@ pub trait RefCollector: Collector {
     /// It only stops when **both** collectors stop.
     ///
     /// ```
-    /// use better_collect::{Collector, RefCollector};
+    /// use better_collect::{Collector, RefCollector, IntoCollector};
     ///
-    /// let mut collector = vec![].take(3).then(()); // `()` always stops collecting.
+    /// let mut collector = vec![].into_collector().take(3).then(()); // `()` always stops collecting.
     ///
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_continue());
-    /// // Since `vec![].take(3)` only takes 3 items,
+    /// // Since `.take(3)` only takes 3 items,
     /// // it hints a stop right after the 3rd item is collected.
     /// assert!(collector.collect(()).is_break());
     /// # // Internal assertion.
@@ -177,7 +177,7 @@ pub trait RefCollector: Collector {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     BetterCollect, Collector, RefCollector, IntoCollector,
     ///     string::ConcatString,
     /// };
     ///
@@ -195,7 +195,7 @@ pub trait RefCollector: Collector {
     ///             // `funnel` lets us avoid cloning by transforming &mut Vec<_> → &mut String.
     ///             // Otherwise, we have to clone with `map_ref`.
     ///             .funnel(|v: &mut Vec<_>| &mut v[0])
-    ///             .then(vec![].map(|v: Vec<_>| v.len()))
+    ///             .then(vec![].into_collector().map(|v: Vec<_>| v.len()))
     ///     );
     ///
     /// assert_eq!(concat_firsts, "a1swordswoman");
