@@ -1,5 +1,3 @@
-use crate::aggregate::OccupiedEntry;
-
 ///
 pub trait AggregateOp {
     type Key;
@@ -8,12 +6,8 @@ pub trait AggregateOp {
 
     type AggregatedValue;
 
-    fn initialize(&mut self, entry: &Self::Key, value: Self::AggregatedValue) -> Self::Value;
+    fn new(&mut self, key: &Self::Key, value: Self::AggregatedValue) -> Self::Value;
 
     ///
-    fn modify(
-        &mut self,
-        entry: &mut impl OccupiedEntry<Key = Self::Key, Value = Self::Value>,
-        value: Self::AggregatedValue,
-    );
+    fn modify(&mut self, entry_value: &mut Self::Value, value: Self::AggregatedValue);
 }
