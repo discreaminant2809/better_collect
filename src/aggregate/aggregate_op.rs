@@ -1,13 +1,22 @@
+mod tee;
+
+pub use tee::*;
+
 ///
 pub trait AggregateOp {
     type Key;
 
     type Value;
 
-    type AggregatedValue;
+    type Item;
 
-    fn new(&mut self, key: &Self::Key, value: Self::AggregatedValue) -> Self::Value;
+    fn new_value(&mut self, key: &Self::Key, item: Self::Item) -> Self::Value;
 
     ///
-    fn modify(&mut self, entry_value: &mut Self::Value, value: Self::AggregatedValue);
+    fn modify(&mut self, value: &mut Self::Value, item: Self::Item);
+}
+
+#[inline(always)]
+fn assert_op<Op: AggregateOp>(op: Op) -> Op {
+    op
 }

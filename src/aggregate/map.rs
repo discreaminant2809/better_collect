@@ -1,5 +1,4 @@
 use crate::{
-    Collector,
     aggregate::{AggregateOp, Entry, OccupiedEntry, VacantEntry, into_aggregate::IntoAggregate},
     assert_collector,
 };

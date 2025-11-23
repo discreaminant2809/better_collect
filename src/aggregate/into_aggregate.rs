@@ -21,7 +21,7 @@ where
     M: Map,
     Op: AggregateOp<Key = M::Key, Value = M::Value>,
 {
-    type Item = (M::Key, Op::AggregatedValue);
+    type Item = (M::Key, Op::Item);
 
     type Output = M;
 
@@ -29,7 +29,7 @@ where
         match self.map.entry(key) {
             Entry::Occupied(mut entry) => self.op.modify(entry.value_mut(), value),
             Entry::Vacant(entry) => {
-                let value = self.op.new(entry.key(), value);
+                let value = self.op.new_value(entry.key(), value);
                 entry.insert(value);
             }
         }
