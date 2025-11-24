@@ -2,7 +2,10 @@
 ///
 /// This enum is created by [`GroupMap::group()`](super::GroupMap::group).
 /// See its documentation for more.
-pub enum Group<Occupied, Vacant> {
+pub enum Group<
+    Occupied: OccupiedGroup,
+    Vacant: VacantGroup<Key = Occupied::Key, Value = Occupied::Value>,
+> {
     /// A group that exists.
     Occupied(Occupied),
 
