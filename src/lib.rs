@@ -242,6 +242,7 @@ extern crate alloc;
 extern crate core as std;
 
 mod adaptors;
+#[cfg(feature = "unstable")]
 pub mod aggregate;
 mod imp;
 mod traits;

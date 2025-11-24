@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{
     Collector,
-    aggregate::{AggregateOp, Entry, Map, OccupiedEntry, VacantEntry},
+    aggregate::{AggregateOp, Group, GroupMap, OccupiedGroup, VacantGroup},
 };
 
 pub struct IntoAggregate<M, Op> {
@@ -18,7 +18,7 @@ impl<M, Op> IntoAggregate<M, Op> {
 
 impl<M, Op> Collector for IntoAggregate<M, Op>
 where
-    M: Map,
+    M: GroupMap,
     Op: AggregateOp<Key = M::Key, Value = M::Value>,
 {
     type Item = (M::Key, Op::Item);
@@ -26,9 +26,9 @@ where
     type Output = M;
 
     fn collect(&mut self, (key, value): Self::Item) -> ControlFlow<()> {
-        match self.map.entry(key) {
-            Entry::Occupied(mut entry) => self.op.modify(entry.value_mut(), value),
-            Entry::Vacant(entry) => {
+        match self.map.group(key) {
+            Group::Occupied(mut entry) => self.op.modify(entry.value_mut(), value),
+            Group::Vacant(entry) => {
                 let value = self.op.new_value(entry.key(), value);
                 entry.insert(value);
             }

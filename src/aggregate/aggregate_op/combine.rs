@@ -2,7 +2,13 @@ use std::marker::PhantomData;
 
 use crate::aggregate::{AggregateOp, RefAggregateOp, assert_op};
 
+/// An [`AggregateOp`] that combines multiple [`AggregateOp`]s.
 ///
+/// # Examples
+///
+/// ```
+///
+/// ```
 pub struct Combine<V, F, G, Ops> {
     new_fn: F,
     get_mut_fn: G,

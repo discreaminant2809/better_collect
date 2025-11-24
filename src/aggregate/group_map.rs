@@ -1,28 +1,29 @@
 use crate::{
-    aggregate::{AggregateOp, Entry, OccupiedEntry, VacantEntry, into_aggregate::IntoAggregate},
+    aggregate::{AggregateOp, Group, OccupiedGroup, VacantGroup, into_aggregate::IntoAggregate},
     assert_collector,
 };
 
-///
-pub trait Map {
-    ///
+/// A group map.
+pub trait GroupMap {
+    /// The key of each group.
     type Key;
 
-    ///
+    /// The value of each group.
     type Value;
 
-    ///
-    type Occupied<'a>: OccupiedEntry<Key = Self::Key, Value = Self::Value>
+    /// An existing group.
+    type Occupied<'a>: OccupiedGroup<Key = Self::Key, Value = Self::Value>
     where
         Self: 'a;
 
-    ///
-    type Vacant<'a>: VacantEntry<Key = Self::Key, Value = Self::Value>
+    /// A group not existing yet.
+    type Vacant<'a>: VacantGroup<Key = Self::Key, Value = Self::Value>
     where
         Self: 'a;
 
-    ///
-    fn entry<'a>(&'a mut self, key: Self::Key) -> Entry<Self::Occupied<'a>, Self::Vacant<'a>>;
+    /// Returns a [`Group`] for the given `key`, representing either an
+    /// existing group or a new group that can be created.
+    fn group<'a>(&'a mut self, key: Self::Key) -> Group<Self::Occupied<'a>, Self::Vacant<'a>>;
 
     ///
     fn into_aggregate<Op>(self, op: Op) -> IntoAggregate<Self, Op>
@@ -40,9 +41,9 @@ mod hash_map {
     use std::collections::hash_map::*;
     use std::hash::Hash;
 
-    use crate::aggregate::{self, Map};
+    use crate::aggregate::{self, GroupMap};
 
-    impl<'a, K, V> aggregate::VacantEntry for VacantEntry<'a, K, V> {
+    impl<'a, K, V> aggregate::VacantGroup for VacantEntry<'a, K, V> {
         type Key = K;
 
         type Value = V;
@@ -56,7 +57,7 @@ mod hash_map {
         }
     }
 
-    impl<'a, K, V> aggregate::OccupiedEntry for OccupiedEntry<'a, K, V> {
+    impl<'a, K, V> aggregate::OccupiedGroup for OccupiedEntry<'a, K, V> {
         type Key = K;
 
         type Value = V;
@@ -74,7 +75,7 @@ mod hash_map {
         }
     }
 
-    impl<K: Eq + Hash, V> Map for HashMap<K, V> {
+    impl<K: Eq + Hash, V> GroupMap for HashMap<K, V> {
         type Key = K;
 
         type Value = V;
@@ -89,13 +90,13 @@ mod hash_map {
         where
             Self: 'a;
 
-        fn entry<'a>(
+        fn group<'a>(
             &'a mut self,
             key: Self::Key,
-        ) -> aggregate::Entry<Self::Occupied<'a>, Self::Vacant<'a>> {
+        ) -> aggregate::Group<Self::Occupied<'a>, Self::Vacant<'a>> {
             match self.entry(key) {
-                Entry::Occupied(entry) => aggregate::Entry::Occupied(entry),
-                Entry::Vacant(entry) => aggregate::Entry::Vacant(entry),
+                Entry::Occupied(entry) => aggregate::Group::Occupied(entry),
+                Entry::Vacant(entry) => aggregate::Group::Vacant(entry),
             }
         }
     }

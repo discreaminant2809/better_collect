@@ -1,14 +1,14 @@
-//!
+//! Module containing items for aggregation.
 
 mod aggregate_op;
-mod entry;
+mod group;
+mod group_map;
 mod into_aggregate;
-mod map;
 mod ref_aggregate_op;
 
 pub use aggregate_op::*;
-pub use entry::*;
-pub use map::*;
+pub use group::*;
+pub use group_map::*;
 pub use ref_aggregate_op::*;
 
 #[inline(always)]
