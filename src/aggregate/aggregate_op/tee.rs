@@ -1,10 +1,11 @@
 use std::marker::PhantomData;
 
-use crate::aggregate::AggregateOp;
+use crate::aggregate::{AggregateOp, RefAggregateOp, assert_op};
 
+///
 pub struct Combine<V, F, G, Ops> {
     new_fn: F,
-    modify_fn: G,
+    get_mut_fn: G,
     ops: Ops,
     _marker: PhantomData<fn(&mut V) -> V>,
 }
@@ -12,24 +13,25 @@ pub struct Combine<V, F, G, Ops> {
 impl<V, F, G, Ops> Combine<V, F, G, Ops>
 where
     Ops: Tuple<V, F, G>,
-    F: FnMut(&Ops::Key, Ops::Item) -> V,
-    G: FnMut(&mut V, Ops::TeeModifier<'_>),
+    F: FnMut(&Ops::Key, Ops::Values) -> V,
+    G: FnMut(&mut V) -> Ops::ValuesMut<'_>,
 {
-    pub fn new(new_fn: F, modify_fn: G, ops: Ops) -> Self {
-        Self {
+    /// Creates a new instance of this aggregate op.
+    pub fn new(new_fn: F, get_mut_fn: G, ops: Ops) -> Self {
+        assert_op(Self {
             new_fn,
-            modify_fn,
+            get_mut_fn,
             ops,
             _marker: PhantomData,
-        }
+        })
     }
 }
 
 impl<V, F, G, Ops> AggregateOp for Combine<V, F, G, Ops>
 where
     Ops: Tuple<V, F, G>,
-    F: FnMut(&Ops::Key, Ops::Item) -> V,
-    G: FnMut(&mut V, Ops::TeeModifier<'_>),
+    F: FnMut(&Ops::Key, Ops::Values) -> V,
+    G: FnMut(&mut V) -> Ops::ValuesMut<'_>,
 {
     type Key = Ops::Key;
 
@@ -39,30 +41,14 @@ where
 
     #[inline]
     fn new_value(&mut self, key: &Self::Key, item: Self::Item) -> Self::Value {
-        (self.new_fn)(key, item)
+        let values = self.ops.new_value(key, item);
+        (self.new_fn)(key, values)
     }
 
     #[inline]
     fn modify(&mut self, value: &mut Self::Value, item: Self::Item) {
-        (self.modify_fn)(value, self.ops.tee_modifier(item));
-    }
-}
-
-pub struct CombineModifier<'a, Op>
-where
-    Op: AggregateOp,
-{
-    op: &'a mut Op,
-    item: Op::Item,
-}
-
-impl<Op> CombineModifier<'_, Op>
-where
-    Op: AggregateOp,
-{
-    #[inline]
-    pub fn modify(self, value: &mut Op::Value) {
-        self.op.modify(value, self.item);
+        let values = (self.get_mut_fn)(value);
+        self.ops.modify(values, item);
     }
 }
 
@@ -75,45 +61,55 @@ pub trait Tuple<V, F, G>: Sealed + Sized {
 
     type Item;
 
-    type TeeModifier<'a>
+    type Values;
+
+    type ValuesMut<'a>
     where
         Self: 'a;
 
-    fn tee_modifier(&mut self, item: Self::Item) -> Self::TeeModifier<'_>;
+    fn new_value(&mut self, key: &Self::Key, item: Self::Item) -> Self::Values;
+
+    fn modify<'a>(&mut self, values: Self::ValuesMut<'a>, item: Self::Item)
+    where
+        Self: 'a;
 }
 
 impl<K, Op0, Op1> Sealed for (Op0, Op1)
 where
-    Op0: AggregateOp<Key = K>,
+    Op0: RefAggregateOp<Key = K>,
     Op1: AggregateOp<Key = K>,
 {
 }
 
-impl<Op0, Op1, K, V, F, G> Tuple<V, F, G> for (Op0, Op1)
+impl<Op0, Op1, K, It, V, F, G> Tuple<V, F, G> for (Op0, Op1)
 where
-    Op0: AggregateOp<Key = K>,
-    Op1: AggregateOp<Key = K>,
+    Op0: RefAggregateOp<Key = K, Item = It>,
+    Op1: AggregateOp<Key = K, Item = It>,
 {
     type Key = K;
 
-    type Item = (Op0::Item, Op1::Item);
+    type Item = It;
 
-    type TeeModifier<'a>
-        = (CombineModifier<'a, Op0>, CombineModifier<'a, Op1>)
+    type Values = (Op0::Value, Op1::Value);
+
+    type ValuesMut<'a>
+        = (&'a mut Op0::Value, &'a mut Op1::Value)
     where
         Self: 'a;
 
-    #[inline]
-    fn tee_modifier(&mut self, item: Self::Item) -> Self::TeeModifier<'_> {
-        (
-            CombineModifier {
-                op: &mut self.0,
-                item: item.0,
-            },
-            CombineModifier {
-                op: &mut self.1,
-                item: item.1,
-            },
-        )
+    fn new_value(&mut self, key: &Self::Key, mut item: Self::Item) -> Self::Values {
+        let (op0, op1) = self;
+        (op0.new_value_ref(key, &mut item), op1.new_value(key, item))
+    }
+
+    fn modify<'a>(&mut self, values: Self::ValuesMut<'a>, mut item: Self::Item)
+    where
+        Self: 'a,
+    {
+        let (op0, op1) = self;
+        let (value0, value1) = values;
+
+        op0.modify_ref(value0, &mut item);
+        op1.modify(value1, item);
     }
 }

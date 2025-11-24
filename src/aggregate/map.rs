@@ -5,20 +5,26 @@ use crate::{
 
 ///
 pub trait Map {
+    ///
     type Key;
 
+    ///
     type Value;
 
+    ///
     type Occupied<'a>: OccupiedEntry<Key = Self::Key, Value = Self::Value>
     where
         Self: 'a;
 
+    ///
     type Vacant<'a>: VacantEntry<Key = Self::Key, Value = Self::Value>
     where
         Self: 'a;
 
+    ///
     fn entry<'a>(&'a mut self, key: Self::Key) -> Entry<Self::Occupied<'a>, Self::Vacant<'a>>;
 
+    ///
     fn into_aggregate<Op>(self, op: Op) -> IntoAggregate<Self, Op>
     where
         Self: Sized,
