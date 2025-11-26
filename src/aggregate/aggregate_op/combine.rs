@@ -36,9 +36,9 @@ use crate::aggregate::{AggregateOp, RefAggregateOp, assert_op};
 /// // TODO: more later.
 /// ```
 pub struct Combine<V, F, G, Ops> {
+    ops: Ops,
     new_fn: F,
     get_mut_fn: G,
-    ops: Ops,
     _marker: PhantomData<fn(&mut V) -> V>,
 }
 
@@ -49,11 +49,11 @@ where
     G: FnMut(&mut V) -> Ops::ValuesMut<'_>,
 {
     /// Creates a new instance of this aggregate op.
-    pub fn new(new_fn: F, get_mut_fn: G, ops: Ops) -> Self {
+    pub fn new(ops: Ops, new_fn: F, get_mut_fn: G) -> Self {
         assert_op(Self {
+            ops,
             new_fn,
             get_mut_fn,
-            ops,
             _marker: PhantomData,
         })
     }
