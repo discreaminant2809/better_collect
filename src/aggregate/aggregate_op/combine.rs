@@ -2,12 +2,38 @@ use std::marker::PhantomData;
 
 use crate::aggregate::{AggregateOp, RefAggregateOp, assert_op};
 
-/// An [`AggregateOp`] that combines multiple [`AggregateOp`]s.
+/// An [`AggregateOp`] that combines multiple aggregate ops into a single one.
+///
+/// In a tuple of [`AggregateOp`]s, **every op except the last must also implement
+/// [`RefAggregateOp`]**.
+///
+/// Alongside the tuple of aggregate ops, `Combine` requires two additional closures:
+///
+/// - **`new_fn`** - Defines how a new group's *grand value* is initialized from the values
+///   produced by each individual op when the group is first created.
+///   This receives a reference to the group's key and a tuple of new values,
+///   and returns the "grand" value.
+///   
+///   Signature: `FnMut(&Key, (Value0, Value1, …, ValueN)) -> GrandValue`.
+///
+/// - **`get_mut_fn`** - Takes mutable references to the values of every op
+///   stored inside the grand value.
+///   The returned references should correspond to
+///   the new values that were passed into `new_fn`.
+///   
+///   Signature: `FnMut(&mut GrandValue) -> (&mut Value0, &mut Value1, …, &mut ValueN)`.
+///
+/// Currently, 1-ary to 12-ary tuples are supported.
 ///
 /// # Examples
 ///
 /// ```
+/// struct Stats {
+///     sum: i32,
+///     max: i32,
+/// }
 ///
+/// // TODO: more later.
 /// ```
 pub struct Combine<V, F, G, Ops> {
     new_fn: F,
