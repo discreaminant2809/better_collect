@@ -80,42 +80,135 @@ pub trait Tuple<V, F, G>: Sealed + Sized {
         Self: 'a;
 }
 
-impl<K, Op0, Op1> Sealed for (Op0, Op1)
-where
-    Op0: RefAggregateOp<Key = K>,
-    Op1: AggregateOp<Key = K>,
-{
+macro_rules! tuple_impl {
+    (
+        $($tys:ident)*,
+        $($ops:ident)*,
+        $($values:ident)*,
+    ) => {
+        impl<K, It, $($tys,)* OpLast> Sealed for ($($tys,)* OpLast,)
+        where
+            $($tys: RefAggregateOp<Key = K, Item = It>,)*
+            OpLast: AggregateOp<Key = K, Item = It>,
+        {
+        }
+
+        impl<$($tys,)* OpLast, K, It, V, F, G> Tuple<V, F, G> for ($($tys,)* OpLast,)
+        where
+            $($tys: RefAggregateOp<Key = K, Item = It>,)*
+            OpLast: AggregateOp<Key = K, Item = It>,
+        {
+            type Key = K;
+
+            type Item = It;
+
+            type Values = ($($tys::Value,)* OpLast::Value,);
+
+            type ValuesMut<'a>
+                = ($(&'a mut $tys::Value,)* &'a mut OpLast::Value,)
+            where
+                Self: 'a;
+
+            #[allow(unused_mut)]
+            fn new_value(&mut self, key: &Self::Key, mut item: Self::Item) -> Self::Values {
+                let ($($ops,)* last_op,) = self;
+                // (op0.new_value_ref(key, &mut item), op1.new_value(key, item))
+                (
+                    $($ops.new_value_ref(key, &mut item),)*
+                    last_op.new_value(key, item),
+                )
+            }
+
+            #[allow(unused_mut)]
+            fn modify<'a>(&mut self, values: Self::ValuesMut<'a>, mut item: Self::Item)
+            where
+                Self: 'a,
+            {
+                let ($($ops,)* last_op,) = self;
+                let ($($values,)* last_value,) = values;
+
+                $($ops.modify_ref($values, &mut item);)*
+                last_op.modify(last_value, item);
+            }
+        }
+    };
 }
 
-impl<Op0, Op1, K, It, V, F, G> Tuple<V, F, G> for (Op0, Op1)
-where
-    Op0: RefAggregateOp<Key = K, Item = It>,
-    Op1: AggregateOp<Key = K, Item = It>,
-{
-    type Key = K;
+tuple_impl!(
+    ,
+    ,
+    ,
+);
 
-    type Item = It;
+#[rustfmt::skip]
+tuple_impl!(
+    Op0,
+    op0,
+    value0,
+);
 
-    type Values = (Op0::Value, Op1::Value);
+tuple_impl!(
+    Op0 Op1,
+    op0 op1,
+    value0 value1,
+);
 
-    type ValuesMut<'a>
-        = (&'a mut Op0::Value, &'a mut Op1::Value)
-    where
-        Self: 'a;
+tuple_impl!(
+    Op0 Op1 Op2,
+    op0 op1 op2,
+    value0 value1 value2,
+);
 
-    fn new_value(&mut self, key: &Self::Key, mut item: Self::Item) -> Self::Values {
-        let (op0, op1) = self;
-        (op0.new_value_ref(key, &mut item), op1.new_value(key, item))
-    }
+tuple_impl!(
+    Op0 Op1 Op2 Op3,
+    op0 op1 op2 op3,
+    value0 value1 value2 value3,
+);
 
-    fn modify<'a>(&mut self, values: Self::ValuesMut<'a>, mut item: Self::Item)
-    where
-        Self: 'a,
-    {
-        let (op0, op1) = self;
-        let (value0, value1) = values;
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4,
+    op0 op1 op2 op3 op4,
+    value0 value1 value2 value3 value4,
+);
 
-        op0.modify_ref(value0, &mut item);
-        op1.modify(value1, item);
-    }
-}
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5,
+    op0 op1 op2 op3 op4 op5,
+    value0 value1 value2 value3 value4 value5,
+);
+
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5 Op6,
+    op0 op1 op2 op3 op4 op5 op6,
+    value0 value1 value2 value3 value4 value5 value6,
+);
+
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5 Op6 Op7,
+    op0 op1 op2 op3 op4 op5 op6 op7,
+    value0 value1 value2 value3 value4 value5 value6 value7,
+);
+
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5 Op6 Op7 Op8,
+    op0 op1 op2 op3 op4 op5 op6 op7 op8,
+    value0 value1 value2 value3 value4 value5 value6 value7 value8,
+);
+
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5 Op6 Op7 Op8 Op9,
+    op0 op1 op2 op3 op4 op5 op6 op7 op8 op9,
+    value0 value1 value2 value3 value4 value5 value6 value7 value8 value9,
+);
+
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5 Op6 Op7 Op8 Op9 Op10,
+    op0 op1 op2 op3 op4 op5 op6 op7 op8 op9 op10,
+    value0 value1 value2 value3 value4 value5 value6 value7 value8 value9 value10,
+);
+
+tuple_impl!(
+    Op0 Op1 Op2 Op3 Op4 Op5 Op6 Op7 Op8 Op9 Op10 Op11,
+    op0 op1 op2 op3 op4 op5 op6 op7 op8 op9 op10 op11,
+    value0 value1 value2 value3 value4 value5 value6 value7 value8 value9 value10 value11,
+);
