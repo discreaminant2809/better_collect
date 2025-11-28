@@ -10,6 +10,11 @@ use crate::aggregate::{AggregateOp, RefAggregateOp};
 /// you can write `Count<_, _, [count type]>`, or specify the type in the map type.
 /// Currently, all integer types in the standard library are supported.
 ///
+/// # Panics
+///
+/// If the count is the maximum value of the count type, operating on further items
+/// may panic or produce the wrong result.
+///
 /// # Examples
 ///
 /// ```
@@ -19,7 +24,7 @@ use crate::aggregate::{AggregateOp, RefAggregateOp};
 ///     aggregate::{self, GroupMap},
 /// };
 ///
-/// let mut collector = HashMap::<i32, i32>::new()
+/// let mut collector = HashMap::<_, i32>::new()
 ///     .into_aggregate(aggregate::Count::new());
 ///
 /// assert!(collector.collect((1, 1)).is_continue());
