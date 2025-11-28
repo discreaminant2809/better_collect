@@ -5,6 +5,10 @@ use crate::{
     aggregate::{AggregateOp, Group, GroupMap, OccupiedGroup, VacantGroup},
 };
 
+/// A [`Collector`] that aggregates items into groups.
+///
+/// This `struct` is created by [`GroupMap::into_aggregate()`].
+/// See its documentation for more.
 pub struct IntoAggregate<M, Op> {
     map: M,
     op: Op,

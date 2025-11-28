@@ -25,7 +25,7 @@ pub trait GroupMap {
     /// existing group or a new group that can be created.
     fn group<'a>(&'a mut self, key: Self::Key) -> Group<Self::Occupied<'a>, Self::Vacant<'a>>;
 
-    /// Creates a [`Collector`] that aggregates items into groups
+    /// Creates a [`Collector`] that aggregates items into groups.
     ///
     /// This collects `(K, V)`s. Items that have the same key `K` go to the same group, and the way
     /// all values `V` of the same key are grouped is determined by the provided `op`.
