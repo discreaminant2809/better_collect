@@ -15,6 +15,11 @@ pub use into_aggregate::*;
 pub use ref_aggregate_op::*;
 
 #[inline(always)]
-pub(crate) fn assert_op<Op: AggregateOp>(op: Op) -> Op {
+const fn assert_op<Op: AggregateOp>(op: Op) -> Op {
+    op
+}
+
+#[inline(always)]
+const fn assert_ref_op<Op: RefAggregateOp>(op: Op) -> Op {
     op
 }

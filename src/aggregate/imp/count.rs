@@ -2,7 +2,7 @@
 
 use std::{fmt::Debug, marker::PhantomData};
 
-use crate::aggregate::{AggregateOp, RefAggregateOp};
+use crate::aggregate::{AggregateOp, RefAggregateOp, assert_ref_op};
 
 /// A [`RefAggregateOp`] that counts how many items it has operated on.
 ///
@@ -46,9 +46,9 @@ impl<K, T, C: SupportedCountTy> Count<K, T, C> {
     /// Creates a new instance of this aggregate op.
     #[inline]
     pub const fn new() -> Self {
-        Self {
+        assert_ref_op(Self {
             _maker: PhantomData,
-        }
+        })
     }
 }
 

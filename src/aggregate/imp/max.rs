@@ -34,7 +34,7 @@ pub struct Max<K, V> {
 impl<K, V: Ord> Max<K, V> {
     /// Creates a new instance of this aggregate op.
     #[inline]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         assert_op(Self {
             _marker: PhantomData,
         })

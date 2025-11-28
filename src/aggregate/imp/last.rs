@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData};
 
-use crate::aggregate::AggregateOp;
+use crate::aggregate::{AggregateOp, assert_op};
 
 /// An [`AggregateOp`] that sets the last item it operated on.
 ///
@@ -36,10 +36,10 @@ pub struct Last<K, V> {
 impl<K, V> Last<K, V> {
     /// Creates a new instance of this aggregate op.
     #[inline]
-    pub fn new() -> Self {
-        Self {
+    pub const fn new() -> Self {
+        assert_op(Self {
             _marker: PhantomData,
-        }
+        })
     }
 }
 
