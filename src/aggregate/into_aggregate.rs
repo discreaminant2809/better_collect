@@ -3,6 +3,7 @@ use std::ops::ControlFlow;
 use crate::{
     Collector,
     aggregate::{AggregateOp, Group, GroupMap, OccupiedGroup, VacantGroup},
+    assert_collector,
 };
 
 /// A [`Collector`] that aggregates items into groups.
@@ -14,9 +15,24 @@ pub struct IntoAggregate<M, Op> {
     op: Op,
 }
 
-impl<M, Op> IntoAggregate<M, Op> {
+impl<M, Op> IntoAggregate<M, Op>
+where
+    M: GroupMap,
+    Op: AggregateOp<Key = M::Key, Value = M::Value>,
+{
+    #[inline]
     pub(super) fn new(map: M, op: Op) -> Self {
-        Self { map, op }
+        assert_collector(Self { map, op })
+    }
+
+    fn collect_impl(&mut self, key: M::Key, item: Op::Item) {
+        match self.map.group(key) {
+            Group::Occupied(mut entry) => self.op.modify(entry.value_mut(), item),
+            Group::Vacant(entry) => {
+                let value = self.op.new_value(entry.key(), item);
+                entry.insert(value);
+            }
+        }
     }
 }
 
@@ -29,19 +45,32 @@ where
 
     type Output = M;
 
-    fn collect(&mut self, (key, value): Self::Item) -> ControlFlow<()> {
-        match self.map.group(key) {
-            Group::Occupied(mut entry) => self.op.modify(entry.value_mut(), value),
-            Group::Vacant(entry) => {
-                let value = self.op.new_value(entry.key(), value);
-                entry.insert(value);
-            }
-        }
+    #[inline]
+    fn collect(&mut self, (key, item): Self::Item) -> ControlFlow<()> {
+        self.collect_impl(key, item);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.map
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        items
+            .into_iter()
+            .for_each(|(key, item)| self.collect_impl(key, item));
 
         ControlFlow::Continue(())
     }
 
-    fn finish(self) -> Self::Output {
+    #[inline]
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        items
+            .into_iter()
+            .for_each(|(key, item)| self.collect_impl(key, item));
+
         self.map
     }
 }
