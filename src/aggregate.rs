@@ -35,9 +35,13 @@ pub use ref_aggregate_op::*;
 /// # Examples
 ///
 /// ```
-/// use better_collect::{aggregate_struct, aggregate::{self, GroupMap}};
+/// use std::collections::HashMap;
+/// use better_collect::{
+///     BetterCollect, aggregate_struct,
+///     aggregate::{self, AggregateOp, GroupMap},
+/// };
 ///
-/// #[derive(Default)]
+/// #[derive(Debug, Default, PartialEq)]
 /// struct Stats {
 ///     sum: i32,
 ///     max: i32,
@@ -49,7 +53,7 @@ pub use ref_aggregate_op::*;
 ///     .better_collect(
 ///         HashMap::new()
 ///             .into_aggregate(aggregate_struct!(Stats {
-///                 sum: aggregate::Sum::new().copying(),
+///                 sum: aggregate::Sum::new().cloning(),
 ///                 max: aggregate::Max::new(),
 ///                 ..Default::default()
 ///             }))
@@ -73,7 +77,7 @@ macro_rules! aggregate_struct {
         $crate::aggregate::Combine::new(
             ($($aggregate_ops,)+),
             |_, ($($fields,)+)| $ty_name { $($fields,)+ $(..$base_struct)? },
-            |$ty_name { $($fields,)+ }| ($($fields,)+),
+            |&mut $ty_name { $(ref mut $fields,)+ .. }| ($($fields,)+),
         )
     };
 
