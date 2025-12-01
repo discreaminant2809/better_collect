@@ -1,7 +1,9 @@
+mod cloning;
 mod combine;
 mod map;
 mod map_ref;
 
+pub use cloning::*;
 pub use combine::*;
 pub use map::*;
 pub use map_ref::*;
@@ -76,5 +78,26 @@ pub trait AggregateOp {
         F: FnMut(&mut T) -> Self::Item,
     {
         assert_ref_op(MapRef::new(self, f))
+    }
+
+    /// Creates a [`RefAggregateOp`] that [`clone`](Clone::clone)s every operated item.
+    ///
+    /// This is useful when you need ownership of items, but you still want the agregate op
+    /// to be in the middle of [`Combine`].
+    ///
+    /// As a [`AggregateOp`], `cloning()` does nothing (effectively a no-op) and is usually useless
+    /// at the end of [`Combine`].
+    /// It only performs its intended behavior when used as a [`RefAggregateOp`].
+    ///
+    /// # Examples
+    ///
+    /// [`RefAggregateOp`]: super::RefAggregateOp
+    #[inline]
+    fn cloning(self) -> Cloning<Self>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        assert_ref_op(Cloning::new(self))
     }
 }
