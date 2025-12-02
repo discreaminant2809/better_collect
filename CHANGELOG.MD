@@ -2,6 +2,10 @@
 
 ## 0.3.0
 
+### Added
+
+- Unstable: Aggregate API.
+
 ### Changed
 
 - `Vec` now implements `IntoCollector` instead of `(Ref)Collector`.
