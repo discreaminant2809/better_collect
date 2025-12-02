@@ -1,5 +1,11 @@
+mod aggregate;
+mod into_aggregate;
+
+pub use aggregate::*;
+pub use into_aggregate::*;
+
 use crate::{
-    aggregate::{AggregateOp, Group, IntoAggregate, OccupiedGroup, VacantGroup},
+    aggregate::{AggregateOp, Group, OccupiedGroup, VacantGroup},
     assert_collector,
 };
 
@@ -25,7 +31,8 @@ pub trait GroupMap {
     /// existing group or a new group that can be created.
     fn group(&mut self, key: Self::Key) -> Group<Self::Occupied<'_>, Self::Vacant<'_>>;
 
-    /// Creates a [`Collector`] that aggregates items into groups.
+    /// Creates a [`Collector`] that aggregates items into groups. This method takes
+    /// the ownership of the map.
     ///
     /// This collects `(K, V)`s. Items that have the same key `K` go to the same group, and the way
     /// all values `V` of the same key are grouped is determined by the provided `op`.
@@ -39,5 +46,22 @@ pub trait GroupMap {
         Op: AggregateOp<Key = Self::Key, Value = Self::Value>,
     {
         assert_collector(IntoAggregate::new(self, op))
+    }
+
+    /// Creates a [`Collector`] that aggregates items into groups. This method takes
+    /// a mutable reference to the map.
+    ///
+    /// This collects `(K, V)`s. Items that have the same key `K` go to the same group, and the way
+    /// all values `V` of the same key are grouped is determined by the provided `op`.
+    ///
+    /// # Examples
+    ///
+    /// [`Collector`]: crate::Collector
+    fn aggregate<Op>(&mut self, op: Op) -> Aggregate<'_, Self, Op>
+    where
+        Self: Sized,
+        Op: AggregateOp<Key = Self::Key, Value = Self::Value>,
+    {
+        assert_collector(Aggregate::new(self, op))
     }
 }

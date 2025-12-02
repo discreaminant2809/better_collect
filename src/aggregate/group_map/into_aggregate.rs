@@ -10,6 +10,7 @@ use crate::{
 ///
 /// This `struct` is created by [`GroupMap::into_aggregate()`].
 /// See its documentation for more.
+#[derive(Debug, Clone)]
 pub struct IntoAggregate<M, Op> {
     map: M,
     op: Op,
