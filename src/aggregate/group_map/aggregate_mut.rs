@@ -7,21 +7,21 @@ use crate::{
 
 /// A [`Collector`] that aggregates items into groups.
 ///
-/// This `struct` is created by [`GroupMap::aggregate()`].
+/// This `struct` is created by [`GroupMap::aggregate_mut()`].
 /// See its documentation for more.
 #[derive(Debug)]
-pub struct Aggregate<'a, M, Op> {
+pub struct AggregateMut<'a, M, Op> {
     map: &'a mut M,
     op: Op,
 }
 
-impl<'a, M, Op> Aggregate<'a, M, Op> {
+impl<'a, M, Op> AggregateMut<'a, M, Op> {
     pub(super) fn new(map: &'a mut M, op: Op) -> Self {
         Self { map, op }
     }
 }
 
-impl<M, Op> Aggregate<'_, M, Op>
+impl<M, Op> AggregateMut<'_, M, Op>
 where
     M: GroupMap,
     Op: AggregateOp<Key = M::Key, Value = M::Value>,
@@ -37,7 +37,7 @@ where
     }
 }
 
-impl<'a, M, Op> Collector for Aggregate<'a, M, Op>
+impl<'a, M, Op> Collector for AggregateMut<'a, M, Op>
 where
     M: GroupMap,
     Op: AggregateOp<Key = M::Key, Value = M::Value>,

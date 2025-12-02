@@ -1,7 +1,7 @@
-mod aggregate;
+mod aggregate_mut;
 mod into_aggregate;
 
-pub use aggregate::*;
+pub use aggregate_mut::*;
 pub use into_aggregate::*;
 
 use crate::{
@@ -57,11 +57,11 @@ pub trait GroupMap {
     /// # Examples
     ///
     /// [`Collector`]: crate::Collector
-    fn aggregate<Op>(&mut self, op: Op) -> Aggregate<'_, Self, Op>
+    fn aggregate_mut<Op>(&mut self, op: Op) -> AggregateMut<'_, Self, Op>
     where
         Self: Sized,
         Op: AggregateOp<Key = Self::Key, Value = Self::Value>,
     {
-        assert_collector(Aggregate::new(self, op))
+        assert_collector(AggregateMut::new(self, op))
     }
 }
