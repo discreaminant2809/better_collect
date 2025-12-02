@@ -67,20 +67,20 @@ pub use ref_aggregate_op::*;
 /// [`Value`]: AggregateOp::Value
 macro_rules! aggregate_struct {
     (
-        $ty_name:ident {
+        $ty_name:path {
             $($fields:ident: $aggregate_ops:expr,)+
             $(..$base_struct:expr)?
         }
     ) => {
         $crate::aggregate::Combine::new(
             ($($aggregate_ops,)+),
-            |_, ($($fields,)+)| $ty_name { $($fields,)+ $(..$base_struct)? },
+            |_, ($($fields,)+)| { $ty_name { $($fields,)+ $(..$base_struct)? } },
             |&mut $ty_name { $(ref mut $fields,)+ .. }| ($($fields,)+),
         )
     };
 
     (
-        $ty_name:ident {
+        $ty_name:path {
             $($fields:ident: $aggregate_ops:expr),+
         }
     ) => {
@@ -100,4 +100,46 @@ const fn assert_op<Op: AggregateOp>(op: Op) -> Op {
 #[inline(always)]
 const fn assert_ref_op<Op: RefAggregateOp>(op: Op) -> Op {
     op
+}
+
+// To fix the macro.
+fn _example() {
+    use crate::{
+        BetterCollect,
+        aggregate::{self, AggregateOp, GroupMap},
+        aggregate_struct,
+    };
+    use std::collections::HashMap;
+    #[derive(Debug, Default, PartialEq)]
+    struct Stats {
+        sum: i32,
+        max: i32,
+        version: u32,
+    }
+    let groups = [(1, 1), (1, 4), (2, 1), (1, 2), (2, 3)]
+        .into_iter()
+        .better_collect(HashMap::new().into_aggregate(aggregate_struct!(Stats {
+            sum: aggregate::Sum::new().cloning(),
+            max: aggregate::Max::new(),
+            ..Default::default()
+        })));
+    let expected_groups = HashMap::from_iter([
+        (
+            1,
+            Stats {
+                sum: 7,
+                max: 4,
+                version: 0,
+            },
+        ),
+        (
+            2,
+            Stats {
+                sum: 4,
+                max: 3,
+                version: 0,
+            },
+        ),
+    ]);
+    assert_eq!(groups, expected_groups);
 }
