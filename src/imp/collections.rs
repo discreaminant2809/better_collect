@@ -107,9 +107,9 @@ collection_impl!("alloc", LinkedList<T>, T, item, push_back(item),);
 
 collection_impl!("alloc", VecDeque<T>, T, item, push_back(item),);
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "unstable"))]
 mod hash_map {
-    use std::collections::hash_map::*;
+    use std::collections::hash_map::{Entry, HashMap, OccupiedEntry, VacantEntry};
     use std::hash::Hash;
 
     use crate::aggregate::{Group, GroupMap, OccupiedGroup, VacantGroup};
@@ -146,7 +146,10 @@ mod hash_map {
         }
     }
 
-    impl<K: Eq + Hash, V> GroupMap for HashMap<K, V> {
+    impl<K, V> GroupMap for HashMap<K, V>
+    where
+        K: Eq + Hash,
+    {
         type Key = K;
 
         type Value = V;
@@ -161,7 +164,78 @@ mod hash_map {
         where
             Self: 'a;
 
-        fn group<'a>(&'a mut self, key: Self::Key) -> Group<Self::Occupied<'a>, Self::Vacant<'a>> {
+        fn group(&mut self, key: Self::Key) -> Group<Self::Occupied<'_>, Self::Vacant<'_>> {
+            match self.entry(key) {
+                Entry::Occupied(entry) => Group::Occupied(entry),
+                Entry::Vacant(entry) => Group::Vacant(entry),
+            }
+        }
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "unstable"))]
+mod btree_map {
+    use std::collections::btree_map::{BTreeMap, Entry, OccupiedEntry, VacantEntry};
+
+    use crate::aggregate::{Group, GroupMap, OccupiedGroup, VacantGroup};
+
+    impl<'a, K, V> VacantGroup for VacantEntry<'a, K, V>
+    where
+        K: Ord,
+    {
+        type Key = K;
+
+        type Value = V;
+
+        fn key(&self) -> &Self::Key {
+            self.key()
+        }
+
+        fn insert(self, value: Self::Value) {
+            self.insert(value);
+        }
+    }
+
+    impl<'a, K, V> OccupiedGroup for OccupiedEntry<'a, K, V>
+    where
+        K: Ord,
+    {
+        type Key = K;
+
+        type Value = V;
+
+        fn key(&self) -> &Self::Key {
+            self.key()
+        }
+
+        fn value(&self) -> &Self::Value {
+            self.get()
+        }
+
+        fn value_mut(&mut self) -> &mut Self::Value {
+            self.get_mut()
+        }
+    }
+
+    impl<K, V> GroupMap for BTreeMap<K, V>
+    where
+        K: Ord,
+    {
+        type Key = K;
+
+        type Value = V;
+
+        type Vacant<'a>
+            = VacantEntry<'a, K, V>
+        where
+            Self: 'a;
+
+        type Occupied<'a>
+            = OccupiedEntry<'a, K, V>
+        where
+            Self: 'a;
+
+        fn group(&mut self, key: Self::Key) -> Group<Self::Occupied<'_>, Self::Vacant<'_>> {
             match self.entry(key) {
                 Entry::Occupied(entry) => Group::Occupied(entry),
                 Entry::Vacant(entry) => Group::Vacant(entry),

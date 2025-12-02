@@ -23,7 +23,7 @@ pub trait GroupMap {
 
     /// Returns a [`Group`] for the given `key`, representing either an
     /// existing group or a new group that can be created.
-    fn group<'a>(&'a mut self, key: Self::Key) -> Group<Self::Occupied<'a>, Self::Vacant<'a>>;
+    fn group(&mut self, key: Self::Key) -> Group<Self::Occupied<'_>, Self::Vacant<'_>>;
 
     /// Creates a [`Collector`] that aggregates items into groups.
     ///
