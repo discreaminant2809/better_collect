@@ -1,7 +1,7 @@
 mod all_any;
 pub mod cmp;
 #[cfg(feature = "alloc")]
-mod collections;
+pub mod collections;
 mod count;
 mod find;
 mod fold;

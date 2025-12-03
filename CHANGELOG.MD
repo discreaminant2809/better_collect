@@ -8,7 +8,12 @@
 
 ### Changed
 
-- `Vec` now implements `IntoCollector` instead of `(Ref)Collector`.
+- `Vec` and collections in the standard library now implements
+  `IntoCollector` instead of `(Ref)Collector`.
+
+### Fixed
+
+- Feature flags.
 
 ## 0.2.2
 

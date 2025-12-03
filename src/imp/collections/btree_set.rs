@@ -1,0 +1,34 @@
+//! [`Collector`]s for [`BTreeSet`]
+//!
+//! This module corresponds to [`std::collections::btree_set`].
+//!
+//! [`Collector`]: crate::Collector
+
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeSet;
+#[cfg(feature = "std")]
+use std::collections::BTreeSet;
+
+/// A [`Collector`] that inserts collected items into a [`BTreeSet`].
+/// Its [`Output`] is [`BTreeSet`].
+///
+/// This also implements [`RefCollector`] if `T` is [`Copy`].
+///
+/// This struct is created by `BTreeSet::into_collector()`.
+///
+/// [`Collector`]: crate::Collector
+/// [`Output`]: crate::Collector::Output
+/// [`RefCollector`]: crate::RefCollector
+pub struct IntoCollector<T>(pub(super) BTreeSet<T>);
+
+/// A [`Collector`] that inserts collected items into a [`&mut BTreeSet`](BTreeSet).
+/// Its [`Output`] is [`&mut BTreeSet`](BTreeSet).
+///
+/// This also implements [`RefCollector`] if `T` is [`Copy`].
+///
+/// This struct is created by `BTreeSet::collector_mut()`.
+///
+/// [`Collector`]: crate::Collector
+/// [`Output`]: crate::Collector::Output
+/// [`RefCollector`]: crate::RefCollector
+pub struct CollectorMut<'a, T>(pub(super) &'a mut BTreeSet<T>);
