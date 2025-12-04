@@ -169,10 +169,6 @@ pub trait RefCollector: Collector {
     /// the [`collect_ref`] method.
     /// This avoids cloning because the underlying collector does not need owndership of items.
     ///
-    /// # Limitations
-    ///
-    /// In certain cases, you may need to annotate the parameter types in the mapping closure.
-    ///
     /// # Examples
     ///
     /// ```
