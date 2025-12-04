@@ -1,7 +1,7 @@
 use crate::Collector;
 
 #[cfg(feature = "unstable")]
-use crate::{Driver, RefCollector, assert_iterator};
+use crate::{Driver, IntoCollector, RefCollector, assert_iterator};
 
 /// Extends [`Iterator`] with the [`better_collect`](BetterCollect::better_collect) method
 /// for working seamlessly with [`Collector`]s.
@@ -32,9 +32,9 @@ pub trait BetterCollect: Iterator {
     #[inline]
     fn better_collect<C>(&mut self, collector: C) -> C::Output
     where
-        C: Collector<Item = Self::Item>,
+        C: IntoCollector<Item = Self::Item>,
     {
-        collector.collect_then_finish(self)
+        collector.into_collector().collect_then_finish(self)
     }
 
     /// Extracts items from this iterator into the provided collector **as far as the
@@ -74,13 +74,14 @@ pub trait BetterCollect: Iterator {
     #[cfg(feature = "unstable")]
     fn better_collect_with_puller<C, R>(
         self,
-        mut collector: C,
-        puller: impl FnOnce(Driver<'_, Self, C>) -> R,
+        collector: C,
+        puller: impl FnOnce(Driver<'_, Self, C::IntoCollector>) -> R,
     ) -> (C::Output, R)
     where
         Self: Sized,
-        C: RefCollector<Item = Self::Item>,
+        C: IntoCollector<Item = Self::Item, IntoCollector: RefCollector>,
     {
+        let mut collector = collector.into_collector();
         let driver = assert_iterator(Driver::new(self, &mut collector));
         let ret = puller(driver);
         (collector.finish(), ret)
