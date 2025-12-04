@@ -189,7 +189,7 @@
 //!
 //! [`IntoCollector`] is a conversion trait that converts a type into a [`Collector`].
 //!
-//! More details can be found in their respective documentation.
+//! More types, traits and functions can be found in this crate's documentation.
 //!
 //! # Features
 //!
