@@ -113,7 +113,7 @@ fn drop_n_items(items: &mut impl Iterator, n: usize) -> bool {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;

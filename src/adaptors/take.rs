@@ -114,7 +114,7 @@ impl<C: RefCollector> RefCollector for Take<C> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;

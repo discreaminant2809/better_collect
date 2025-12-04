@@ -82,7 +82,7 @@ impl<C: Debug, F> Debug for TakeWhile<C, F> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod tests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
