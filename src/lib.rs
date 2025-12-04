@@ -43,10 +43,7 @@
 //! This crate proposes a one-pass, declarative approach:
 //!
 //! ```
-//! use better_collect::{
-//!     Collector, RefCollector, BetterCollect,
-//!     num::Sum, cmp::Max,
-//! };
+//! use better_collect::{prelude::*, num::Sum, cmp::Max};
 //!
 //! let nums = [1, 3, 2];
 //! let (sum, max) = nums
@@ -89,10 +86,7 @@
 //! let expected = (received, byte_read, last_seen);
 //!
 //! // This crate's way:
-//! use better_collect::{
-//!     Collector, RefCollector, BetterCollect, IntoCollector,
-//!     Last, num::Sum,
-//! };
+//! use better_collect::{prelude::*, Last, num::Sum};
 //!
 //! let ((received, byte_read), last_seen) = socket_stream()
 //!     .better_collect(
@@ -117,10 +111,7 @@
 //!
 //! ```
 //! use std::collections::HashSet;
-//! use better_collect::{
-//!     Collector, RefCollector, BetterCollect,
-//!     string::ConcatString,
-//! };
+//! use better_collect::prelude::*;
 //!
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
@@ -250,6 +241,7 @@ mod adaptors;
 #[cfg(feature = "unstable")]
 pub mod aggregate;
 mod imp;
+pub mod prelude;
 mod traits;
 
 pub use adaptors::*;

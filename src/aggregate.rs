@@ -35,7 +35,7 @@ pub use ref_aggregate_op::*;
 /// ```
 /// use std::collections::HashMap;
 /// use better_collect::{
-///     BetterCollect, aggregate_struct,
+///     prelude::*, aggregate_struct,
 ///     aggregate::{self, AggregateOp, GroupMap},
 /// };
 ///

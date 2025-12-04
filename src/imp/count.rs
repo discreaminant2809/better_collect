@@ -16,7 +16,7 @@ use crate::{Collector, RefCollector, assert_ref_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, Count};
+/// use better_collect::{prelude::*, Count};
 ///
 /// let mut collector = Count::new();
 ///

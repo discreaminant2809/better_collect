@@ -13,7 +13,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, Reduce};
+/// use better_collect::{prelude::*, Reduce};
 ///
 /// let mut collector = Reduce::new(|accum, num| accum + num);
 ///
@@ -27,7 +27,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{Collector, Reduce};
+/// use better_collect::{prelude::*, Reduce};
 ///
 /// assert_eq!(Reduce::new(|accum: i32, num| accum + num).finish(), None);
 /// ```

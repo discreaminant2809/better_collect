@@ -12,7 +12,7 @@ use crate::{Collector, RefCollector, assert_collector, assert_ref_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, Fold};
+/// use better_collect::{prelude::*, Fold};
 ///
 /// let mut collector = Fold::new(0, |sum, num| *sum += num);
 ///
@@ -36,7 +36,7 @@ pub struct Fold<A, T, F> {
 /// # Examples
 ///
 /// ```
-/// use better_collect::{BetterCollect, RefCollector, Fold};
+/// use better_collect::{prelude::*, Fold};
 ///
 /// let (sum, _) = [1, 2, 3]
 ///     .into_iter()

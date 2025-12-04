@@ -17,7 +17,7 @@ use crate::{Collector, RefCollector, assert_collector, assert_ref_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, TryFold};
+/// use better_collect::{prelude::*, TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let mut collector = TryFold::new(0_i8, |sum, num| {
@@ -40,7 +40,7 @@ use crate::{Collector, RefCollector, assert_collector, assert_ref_collector};
 /// Short-circuiting:
 ///
 /// ```
-/// use better_collect::{Collector, TryFold};
+/// use better_collect::{prelude::*, TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let mut collector = TryFold::new(0_i8, |sum, num| {
@@ -78,10 +78,7 @@ pub struct TryFold<A, T, F> {
 /// # Examples
 ///
 /// ```
-/// use better_collect::{
-///     BetterCollect, RefCollector,
-///     TryFold, string::ConcatString,
-/// };
+/// use better_collect::{prelude::*, TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let (total_len, concatenated) = ["abc", "de", "fgh"]
@@ -102,10 +99,7 @@ pub struct TryFold<A, T, F> {
 /// Short-circuiting:
 ///
 /// ```
-/// use better_collect::{
-///     BetterCollect, RefCollector,
-///     TryFold, string::ConcatString,
-/// };
+/// use better_collect::{prelude::*, TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let (concatenated_till_empty, concatenated) = ["abc", "de", "", "fgh"]

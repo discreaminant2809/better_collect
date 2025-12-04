@@ -11,7 +11,7 @@ use crate::aggregate::{AggregateOp, assert_op};
 /// ```
 /// use std::collections::HashMap;
 /// use better_collect::{
-///     Collector,
+///     prelude::*,
 ///     aggregate::{self, GroupMap},
 /// };
 ///

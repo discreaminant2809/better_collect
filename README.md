@@ -45,10 +45,7 @@ assert_eq!(max, 3);
 This crate proposes a one-pass, declarative approach:
 
 ```rust
-use better_collect::{
-    Collector, RefCollector, BetterCollect,
-    num::Sum, cmp::Max,
-};
+use better_collect::{prelude::*, num::Sum, cmp::Max};
 
 let nums = [1, 3, 2];
 let (sum, max) = nums
@@ -91,10 +88,7 @@ for data in socket_stream() {
 let expected = (received, byte_read, last_seen);
 
 // This crate's way:
-use better_collect::{
-    Collector, RefCollector, BetterCollect, IntoCollector,
-    Last, num::Sum,
-};
+use better_collect::{prelude::*, Last, num::Sum};
 
 let ((received, byte_read), last_seen) = socket_stream()
     .better_collect(
@@ -119,10 +113,7 @@ To demonstrate the difference, take this example:
 
 ```rust
 use std::collections::HashSet;
-use better_collect::{
-    Collector, RefCollector, BetterCollect,
-    string::ConcatString,
-};
+use better_collect::prelude::*;
 
 // Suppose we open a connection...
 fn socket_stream() -> impl Iterator<Item = String> {

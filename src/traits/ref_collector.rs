@@ -38,7 +38,7 @@ pub trait RefCollector: Collector {
     /// like this:
     ///
     /// ```no_run
-    /// # use better_collect::{Collector, RefCollector};
+    /// # use better_collect::prelude::*;
     /// # use std::ops::ControlFlow;
     /// # struct Foo;
     /// # impl Collector for Foo {
@@ -72,10 +72,7 @@ pub trait RefCollector: Collector {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{
-    ///     Collector, RefCollector, IntoCollector,
-    ///     cmp::Max,
-    /// };
+    /// use better_collect::{prelude::*, cmp::Max};
     ///
     /// let mut collector = vec![].into_collector().then(Max::new());
     ///
@@ -91,7 +88,7 @@ pub trait RefCollector: Collector {
     /// It only stops when **both** collectors stop.
     ///
     /// ```
-    /// use better_collect::{Collector, RefCollector, IntoCollector};
+    /// use better_collect::prelude::*;
     ///
     /// let mut collector = vec![].into_collector().take(3).then(()); // `()` always stops collecting.
     ///
@@ -113,7 +110,7 @@ pub trait RefCollector: Collector {
     ///
     /// ```
     /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector,
+    ///     prelude::*,
     ///     cmp::{Min, Max}, num::Sum, Count,
     /// };
     ///
@@ -172,10 +169,7 @@ pub trait RefCollector: Collector {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector, IntoCollector,
-    ///     string::ConcatString,
-    /// };
+    /// use better_collect::prelude::*;
     ///
     /// let vecs = [
     ///     vec!["a".to_owned(), "b".to_owned(), "c".to_owned()],

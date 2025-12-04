@@ -17,10 +17,7 @@ pub trait BetterCollect: Iterator {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{
-    ///     BetterCollect, Collector, RefCollector, IntoCollector,
-    ///     cmp::Max,
-    /// };
+    /// use better_collect::{prelude::*, cmp::Max};
     ///
     /// let (nums, max) = [4, 2, 6, 3]
     ///     .into_iter()
@@ -59,7 +56,7 @@ pub trait BetterCollect: Iterator {
     /// # Examples
     ///
     /// ```rust
-    /// use better_collect::{BetterCollect, string::ConcatStr};
+    /// use better_collect::prelude::*;
     ///
     /// let (s_no_ws, len_no_ws) = "the noble and the singer"
     ///     .split_whitespace()

@@ -12,7 +12,7 @@ use crate::{Collector, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, cmp::Min};
+/// use better_collect::{prelude::*, cmp::Min};
 ///
 /// let mut collector = Min::new();
 ///
@@ -28,7 +28,7 @@ use crate::{Collector, assert_collector};
 /// Its output is `None` if it has not encountered any items.
 ///
 /// ```
-/// use better_collect::{Collector, cmp::Min};
+/// use better_collect::{prelude::*, cmp::Min};
 ///
 /// assert_eq!(Min::<i32>::new().finish(), None);
 /// ```

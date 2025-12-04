@@ -12,7 +12,7 @@ use crate::{Collector, RefCollector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{BetterCollect, string::ConcatStr};
+/// use better_collect::prelude::*;
 ///
 /// let s = "abc de fghi j";
 ///

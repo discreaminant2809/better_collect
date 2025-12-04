@@ -15,7 +15,7 @@ use super::{Max, value_key::ValueKey};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, cmp::MaxByKey};
+/// use better_collect::{prelude::*, cmp::MaxByKey};
 ///
 /// let mut collector = MaxByKey::new(|s: &&str| s.len());
 ///
@@ -31,7 +31,7 @@ use super::{Max, value_key::ValueKey};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{Collector, cmp::MaxByKey};
+/// use better_collect::{prelude::*, cmp::MaxByKey};
 ///
 /// assert_eq!(MaxByKey::new(|s: &&str| s.len()).finish(), None);
 /// ```

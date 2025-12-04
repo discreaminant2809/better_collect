@@ -20,7 +20,7 @@ use crate::aggregate::{AggregateOp, RefAggregateOp, assert_ref_op};
 /// ```
 /// use std::collections::HashMap;
 /// use better_collect::{
-///     Collector,
+///     prelude::*,
 ///     aggregate::{self, GroupMap},
 /// };
 ///

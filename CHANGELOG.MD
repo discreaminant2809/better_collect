@@ -5,6 +5,7 @@
 ### Added
 
 - Unstable: Aggregate API.
+- `prelude` module.
 
 ### Changed
 

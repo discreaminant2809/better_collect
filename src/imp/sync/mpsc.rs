@@ -19,7 +19,7 @@ use std::{
 ///
 /// ```
 /// use std::{thread, sync::mpsc};
-/// use better_collect::{Collector, IntoCollector};
+/// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::channel();
 /// let mut tx = tx.into_collector();
@@ -49,7 +49,7 @@ pub struct IntoCollector<T> {
 ///
 /// ```
 /// use std::{thread, sync::mpsc};
-/// use better_collect::{Collector, CollectorByRef};
+/// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::channel();
 ///
@@ -76,7 +76,7 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 ///
 /// ```
 /// use std::{thread, sync::mpsc};
-/// use better_collect::{Collector, IntoCollector};
+/// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
 /// let mut tx = tx.into_collector();
@@ -106,7 +106,7 @@ pub struct IntoSyncCollector<T> {
 ///
 /// ```
 /// use std::{thread, sync::mpsc};
-/// use better_collect::{Collector, CollectorByRef};
+/// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
 ///

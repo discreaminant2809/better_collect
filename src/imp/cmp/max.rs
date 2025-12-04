@@ -12,7 +12,7 @@ use crate::{Collector, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, cmp::Max};
+/// use better_collect::{prelude::*, cmp::Max};
 ///
 /// let mut collector = Max::new();
 ///
@@ -28,7 +28,7 @@ use crate::{Collector, assert_collector};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{Collector, cmp::Max};
+/// use better_collect::{prelude::*, cmp::Max};
 ///
 /// assert_eq!(Max::<i32>::new().finish(), None);
 /// ```

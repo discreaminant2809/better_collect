@@ -12,7 +12,7 @@ use crate::{Collector, RefCollector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{BetterCollect, string::ConcatString};
+/// use better_collect::prelude::*;
 ///
 /// let url = ["https://", "website.com", "/login"]
 ///     .into_iter()

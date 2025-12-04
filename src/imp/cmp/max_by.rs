@@ -17,7 +17,7 @@ use crate::{Collector, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, cmp::MaxBy};
+/// use better_collect::{prelude::*, cmp::MaxBy};
 ///
 /// let mut collector = MaxBy::new(f64::total_cmp);
 ///
@@ -33,7 +33,7 @@ use crate::{Collector, assert_collector};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{Collector, cmp::MaxBy};
+/// use better_collect::{prelude::*, cmp::MaxBy};
 ///
 /// assert_eq!(MaxBy::new(f64::total_cmp).finish(), None);
 /// ```

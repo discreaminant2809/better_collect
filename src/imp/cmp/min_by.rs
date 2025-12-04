@@ -17,7 +17,7 @@ use crate::{Collector, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{Collector, cmp::MinBy};
+/// use better_collect::{prelude::*, cmp::MinBy};
 ///
 /// let mut collector = MinBy::new(f64::total_cmp);
 ///
@@ -33,7 +33,7 @@ use crate::{Collector, assert_collector};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{Collector, cmp::MinBy};
+/// use better_collect::{prelude::*, cmp::MinBy};
 ///
 /// assert_eq!(MinBy::new(f64::total_cmp).finish(), None);
 /// ```
