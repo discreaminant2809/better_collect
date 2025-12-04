@@ -39,6 +39,21 @@ use crate::{
 /// Implementors **must not** cause memory corruption, undefined behavior,
 /// or any other safety violations — and callers **must not** rely on such outcomes.
 ///
+/// # Dyn Compatibility
+///
+/// This trait is *dyn-compatible*, meaning it can be used as a trait object.
+/// You do not need to specify the [`Output`](crate::Collector::Output) type -
+/// providing the [`Item`](crate::Collector::Item) type is enough.
+///
+/// For example:
+///
+/// ```no_run
+/// # use better_collect::prelude::*;
+/// # fn foo(_:
+/// &mut dyn Collector<Item = i32>
+/// # ) {}
+/// ```
+///
 /// # Limitations
 ///
 /// In some cases, you may need to explicitly annotate the parameter types in closures,
@@ -105,7 +120,7 @@ use crate::{
 /// ```
 ///
 /// [`Break(())`]: std::ops::ControlFlow::Break
-pub trait Collector: Sized {
+pub trait Collector {
     /// Type of items this collector collects and accumulates.
     // Although it is tempting to put it in generic instead (since `String` can collect
     // `char` and `&str`, and `Count` can collect basically everything),
@@ -114,7 +129,11 @@ pub trait Collector: Sized {
     type Item;
 
     /// The result this collector yields, via the [`finish`](Collector::finish) method.
-    type Output;
+    ///
+    /// This assosciated type does not appear in trait objects.
+    type Output
+    where
+        Self: Sized;
 
     /// Collects an item and returns a [`ControlFlow`] indicating whether the collector is “closed”
     /// — meaning it will no longer accumulate items **right after** this operation.
@@ -195,7 +214,9 @@ pub trait Collector: Sized {
     ///
     /// assert_eq!(v.finish(), [1, 2, 3]);
     /// ```
-    fn finish(self) -> Self::Output;
+    fn finish(self) -> Self::Output
+    where
+        Self: Sized;
 
     /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether the collector is “closed”
     /// — meaning it will no longer accumulate items **right after** the last possible item is collected,
@@ -215,7 +236,10 @@ pub trait Collector: Sized {
     ///
     /// assert_eq!(collector.finish(), [1, 2, 3, 4, 5]);
     /// ```
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()>
+    where
+        Self: Sized,
+    {
         // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
         // (e.g. `skip`, `chain`, etc.)
         items.into_iter().try_for_each(|item| self.collect(item))
@@ -239,7 +263,10 @@ pub trait Collector: Sized {
     ///
     /// assert_eq!(collector.collect_then_finish([3, 4, 5]), [1, 2, 3, 4, 5]);
     /// ```
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output
+    where
+        Self: Sized,
+    {
         // Do this instead of putting `mut` in `self` since some IDEs are stupid
         // and just put `mut self` in every generated code.
         let mut this = self;
@@ -299,7 +326,10 @@ pub trait Collector: Sized {
     /// [`Continue(())`]: ControlFlow::Continue
     /// [`Break(())`]: ControlFlow::Break
     #[inline]
-    fn fuse(self) -> Fuse<Self> {
+    fn fuse(self) -> Fuse<Self>
+    where
+        Self: Sized,
+    {
         assert_collector(Fuse::new(self))
     }
 
@@ -371,6 +401,7 @@ pub trait Collector: Sized {
     #[inline]
     fn cloned(self) -> Cloned<Self>
     where
+        Self: Sized,
         Self::Item: Clone,
     {
         assert_ref_collector(Cloned::new(self))
@@ -418,6 +449,7 @@ pub trait Collector: Sized {
     #[inline]
     fn copied(self) -> Copied<Self>
     where
+        Self: Sized,
         Self::Item: Copy,
     {
         assert_ref_collector(Copied::new(self))
@@ -468,6 +500,7 @@ pub trait Collector: Sized {
     #[inline]
     fn map<F, T>(self, f: F) -> Map<Self, T, F>
     where
+        Self: Sized,
         F: FnMut(T) -> Self::Item,
     {
         assert_collector(Map::new(self, f))
@@ -510,6 +543,7 @@ pub trait Collector: Sized {
     #[inline]
     fn map_ref<F, T>(self, f: F) -> MapRef<Self, T, F>
     where
+        Self: Sized,
         F: FnMut(&mut T) -> Self::Item,
     {
         assert_ref_collector(MapRef::new(self, f))
@@ -567,6 +601,7 @@ pub trait Collector: Sized {
     #[inline]
     fn filter<F>(self, pred: F) -> Filter<Self, F>
     where
+        Self: Sized,
         F: FnMut(&Self::Item) -> bool,
     {
         assert_collector(Filter::new(self, pred))
@@ -609,7 +644,10 @@ pub trait Collector: Sized {
     ///
     /// [`RefCollector`]: crate::RefCollector
     #[inline]
-    fn take(self, n: usize) -> Take<Self> {
+    fn take(self, n: usize) -> Take<Self>
+    where
+        Self: Sized,
+    {
         Take::new(self, n)
     }
 
@@ -639,6 +677,7 @@ pub trait Collector: Sized {
     /// [`RefCollector`]: crate::RefCollector
     fn take_while<F>(self, pred: F) -> TakeWhile<Self, F>
     where
+        Self: Sized,
         F: FnMut(&Self::Item) -> bool,
     {
         assert_collector(TakeWhile::new(self, pred))
@@ -671,7 +710,10 @@ pub trait Collector: Sized {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    fn skip(self, n: usize) -> Skip<Self> {
+    fn skip(self, n: usize) -> Skip<Self>
+    where
+        Self: Sized,
+    {
         assert_collector(Skip::new(self, n))
     }
 
@@ -713,6 +755,7 @@ pub trait Collector: Sized {
     #[inline]
     fn chain<C>(self, other: C) -> Chain<Self, C::IntoCollector>
     where
+        Self: Sized,
         C: IntoCollector<Item = Self::Item>,
     {
         assert_collector(Chain::new(self, other.into_collector()))
@@ -741,6 +784,7 @@ pub trait Collector: Sized {
     #[inline]
     fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C::IntoCollector, F>
     where
+        Self: Sized,
         C: IntoCollector<Item = Self::Item>,
         F: FnMut(&mut Self::Item) -> bool,
     {
@@ -798,6 +842,7 @@ pub trait Collector: Sized {
     #[inline]
     fn unzip<C>(self, other: C) -> Unzip<Self, C::IntoCollector>
     where
+        Self: Sized,
         C: IntoCollector,
     {
         assert_collector(Unzip::new(self, other.into_collector()))
@@ -839,6 +884,7 @@ pub trait Collector: Sized {
     /// [`then`]: crate::RefCollector::then
     fn unbatching<T, F>(self, f: F) -> Unbatching<Self, T, F>
     where
+        Self: Sized,
         F: FnMut(&mut Self, T) -> ControlFlow<()>,
     {
         assert_collector(Unbatching::new(self, f))
@@ -887,6 +933,7 @@ pub trait Collector: Sized {
     /// [`then`]: crate::RefCollector::then
     fn unbatching_ref<T, F>(self, f: F) -> UnbatchingRef<Self, T, F>
     where
+        Self: Sized,
         F: FnMut(&mut Self, &mut T) -> ControlFlow<()>,
     {
         assert_ref_collector(UnbatchingRef::new(self, f))
@@ -897,7 +944,10 @@ pub trait Collector: Sized {
 ///
 /// This is useful when you *just* want to feed items to a collector without
 /// finishing it.
-impl<C: Collector> Collector for &mut C {
+impl<C> Collector for &mut C
+where
+    C: Collector,
+{
     type Item = C::Item;
 
     type Output = ();
@@ -912,8 +962,13 @@ impl<C: Collector> Collector for &mut C {
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        // FIXED: specialization for unsized type.
+        // We can't add `?Sized` to the bound of `C` because this method requires `Sized`.
         C::collect_many(self, items)
     }
 
     // The default implementation for `collect_then_finish()` is sufficient.
 }
+
+// `Output` shouldn't be required to ne specified.
+fn _dyn_compatible<T>(_: &mut dyn Collector<Item = T>) {}

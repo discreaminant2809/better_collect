@@ -26,7 +26,33 @@ use crate::{Collector, Funnel, IntoCollector, Then, assert_collector, assert_ref
 /// [`RefCollector`], in contrast, borrows mutably *just long enough* to collect,
 /// then immediately releases the borrow — enabling true chaining.
 ///
+/// # Dyn Compatibility
+///
+/// This trait is *dyn-compatible*, meaning it can be used as a trait object.
+/// You do not need to specify the [`Output`](crate::Collector::Output) type -
+/// providing the [`Item`] type is enough.
+///
+/// For example:
+///
+/// ```no_run
+/// # use better_collect::prelude::*;
+/// # fn foo(_:
+/// &mut dyn RefCollector<Item = i32>
+/// # ) {}
+/// ```
+///
+/// With the same [`Item`] type, a `dyn RefCollector` can be upcast to
+/// a `dyn Collector`.
+///
+/// ```no_run
+/// use better_collect::prelude::*;
+///
+/// let ref_collector: &mut dyn RefCollector<Item = i32> = &mut vec![].into_collector();
+/// let collector: &mut dyn Collector<Item = i32> = ref_collector; // upcast
+/// ```
+///
 /// [`then()`]: RefCollector::then
+/// [`Item`]: crate::Collector::Item
 pub trait RefCollector: Collector {
     /// Collects an item by mutable reference and returns a [`ControlFlow`] indicating whether
     /// the collector is “closed” — meaning it will no longer accumulate items **right after**
@@ -149,6 +175,7 @@ pub trait RefCollector: Collector {
     #[inline]
     fn then<C>(self, other: C) -> Then<Self, C::IntoCollector>
     where
+        Self: Sized,
         C: IntoCollector<Item = Self::Item>,
     {
         assert_collector(Then::new(self, other.into_collector()))
@@ -196,6 +223,7 @@ pub trait RefCollector: Collector {
     #[inline]
     fn funnel<F, T>(self, func: F) -> Funnel<Self, T, F>
     where
+        Self: Sized,
         F: FnMut(&mut T) -> &mut Self::Item,
     {
         assert_ref_collector(Funnel::new(self, func))
@@ -211,4 +239,10 @@ impl<C: RefCollector> RefCollector for &mut C {
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         C::collect_ref(self, item)
     }
+}
+
+fn _dyn_compatible<T>(_: &mut dyn RefCollector<Item = T>) {}
+
+fn _upcastable_to_collector<T>(x: &mut dyn RefCollector<Item = T>) -> &mut dyn Collector<Item = T> {
+    x
 }
