@@ -10,6 +10,7 @@
 
 - `Vec` and collections in the standard library now implements
   `IntoCollector` instead of `(Ref)Collector`.
+- `IntoCollector` for `&(Sync)Sender`.
 
 ### Fixed
 
