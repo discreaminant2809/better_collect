@@ -209,12 +209,6 @@
 //!   discouraged to use them until their designs are finalized and not
 //!   under this flag anymore.
 //!
-//! # Todos
-//!
-//! - More detailed documentation.
-//! - More adaptors (this crate currently only has common ones).
-//! - Possibly foreign implementations for types in other crates.
-//!
 //! [`collect()`]: Collector::collect
 //! [`then()`]: RefCollector::then
 //! [`chain()`]: Collector::chain

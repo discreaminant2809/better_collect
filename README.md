@@ -211,12 +211,6 @@ More details can be found in their respective documentation.
   discouraged to use them until their designs are finalized and not
   under this flag anymore.
 
-## Todos
-
-- More detailed documentation.
-- More adaptors (this crate currently only has common ones).
-- Possibly foreign implementations for types in other crates.
-
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
 [`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
 [`BetterCollect`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html
