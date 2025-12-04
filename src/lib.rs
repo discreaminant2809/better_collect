@@ -213,6 +213,11 @@
 //!   Items gated behind this feature do **not** follow normal semver guarantees
 //!   and may change or be removed at any time.
 //!
+//!   Although the crate as a whole is still experimental, the items under
+//!   `unstable` are **even more** experimental, and it is generally
+//!   discouraged to use them until their designs are finalized and not
+//!   under this flag anymore.
+//!
 //! # Todos
 //!
 //! - More detailed documentation.

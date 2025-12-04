@@ -92,13 +92,14 @@ let expected = (received, byte_read, last_seen);
 
 // This crate's way:
 use better_collect::{
-    Collector, RefCollector, BetterCollect,
+    Collector, RefCollector, BetterCollect, IntoCollector,
     Last, num::Sum,
 };
 
 let ((received, byte_read), last_seen) = socket_stream()
     .better_collect(
         vec![]
+            .into_collector()
             .cloned()
             // Use `map_ref` so that our collector is a `RefCollector`
             // (only a `RefCollector` is then-able)
@@ -213,6 +214,11 @@ More details can be found in their respective documentation.
 - **`unstable`** — Enables experimental and unstable features.
   Items gated behind this feature do **not** follow normal semver guarantees
   and may change or be removed at any time.
+
+  Although the crate as a whole is still experimental, the items under
+  `unstable` are **even more** experimental, and it is generally
+  discouraged to use them until their designs are finalized and not
+  under this flag anymore.
 
 ## Todos
 
