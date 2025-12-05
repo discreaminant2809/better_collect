@@ -3,7 +3,7 @@
 //! This module provides [`Collector`] implementations for [`String`] as well as
 //! collectors for string concatenation.
 //!
-//! [`String`] as a collector can collect `char`s. If you want to concat strings instead,
+//! Collectors from [`String`] can collect `char`s. If you want to concat strings instead,
 //! use [`ConcatStr`] or [`ConcatString`].
 //!
 //! This module corresponds to [`std::string`].
@@ -16,113 +16,121 @@ pub use concat_string::*;
 
 use std::ops::ControlFlow;
 
-#[cfg(all(feature = "alloc", not(feature = "std")))]
+#[cfg(not(feature = "std"))]
 use alloc::string::String;
 
-use crate::{Collector, RefCollector};
+use crate::{Collector, RefCollector, assert_ref_collector};
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-impl Collector for String {
+/// A [`RefCollector`] that pushes `char`s into a [`String`].
+/// Its [`Output`] is [`String`].
+///
+/// This struct is created by `String::into_collector()`.
+///
+/// [`Collector`]: crate::Collector
+/// [`Output`]: crate::Collector::Output
+pub struct IntoCollector(String);
+
+/// A [`RefCollector`] that pushes `char`s into a [`&mut String`](String).
+/// Its [`Output`] is [`&mut String`](String).
+///
+/// This struct is created by `String::collector_mut()`.
+///
+/// [`Collector`]: crate::Collector
+/// [`Output`]: crate::Collector::Output
+pub struct CollectorMut<'a>(&'a mut String);
+
+impl crate::IntoCollector for String {
     type Item = char;
+
     type Output = Self;
+
+    type IntoCollector = IntoCollector;
+
+    #[inline]
+    fn into_collector(self) -> Self::IntoCollector {
+        assert_ref_collector(IntoCollector(self))
+    }
+}
+
+impl<'a> crate::IntoCollector for &'a mut String {
+    type Item = char;
+
+    type Output = Self;
+
+    type IntoCollector = CollectorMut<'a>;
+
+    #[inline]
+    fn into_collector(self) -> Self::IntoCollector {
+        assert_ref_collector(CollectorMut(self))
+    }
+}
+
+impl Collector for IntoCollector {
+    type Item = char;
+    type Output = String;
 
     #[inline]
     fn collect(&mut self, ch: char) -> ControlFlow<()> {
-        self.push(ch);
+        self.0.push(ch);
         ControlFlow::Continue(())
     }
 
     #[inline]
     fn finish(self) -> Self::Output {
-        self
+        self.0
     }
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = char>) -> ControlFlow<()> {
-        self.extend(items);
+        self.0.extend(items);
         ControlFlow::Continue(())
     }
 
     #[inline]
     fn collect_then_finish(mut self, items: impl IntoIterator<Item = char>) -> Self::Output {
-        self.extend(items);
-        self
+        self.0.extend(items);
+        self.0
     }
 }
 
-// #[cfg(feature = "alloc")]
-// #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-// impl<'a> Collector<&'a str> for String {
-//     type Output = Self;
-
-//     #[inline]
-//     fn collect(&mut self, s: &'a str) -> ControlFlow<()> {
-//         self.push_str(s);
-//         ControlFlow::Continue(())
-//     }
-
-//     #[inline]
-//     fn finish(self) -> Self::Output {
-//         self
-//     }
-
-//     #[inline]
-//     fn collect_many(&mut self, items: impl IntoIterator<Item = &'a str>) -> ControlFlow<()> {
-//         self.extend(items);
-//         ControlFlow::Continue(())
-//     }
-
-//     #[inline]
-//     fn collect_then_finish(mut self, items: impl IntoIterator<Item = &'a str>) -> Self::Output {
-//         self.extend(items);
-//         self
-//     }
-// }
-
-// #[cfg(feature = "alloc")]
-// #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-// impl Collector<String> for String {
-//     type Output = Self;
-
-//     #[inline]
-//     fn collect(&mut self, s: String) -> ControlFlow<()> {
-//         self.push_str(&s);
-//         ControlFlow::Continue(())
-//     }
-
-//     #[inline]
-//     fn finish(self) -> Self::Output {
-//         self
-//     }
-
-//     #[inline]
-//     fn collect_many(&mut self, items: impl IntoIterator<Item = String>) -> ControlFlow<()> {
-//         self.extend(items);
-//         ControlFlow::Continue(())
-//     }
-
-//     #[inline]
-//     fn collect_then_finish(mut self, items: impl IntoIterator<Item = String>) -> Self::Output {
-//         self.extend(items);
-//         self
-//     }
-// }
-
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-impl RefCollector for String {
+impl RefCollector for IntoCollector {
     #[inline]
     fn collect_ref(&mut self, &mut ch: &mut char) -> ControlFlow<()> {
         self.collect(ch)
     }
 }
 
-// #[cfg(feature = "alloc")]
-// #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-// impl RefCollector<String> for String {
-//     #[inline]
-//     fn collect_ref(&mut self, item: &mut String) -> ControlFlow<()> {
-//         <Self as Collector<&str>>::collect(self, item)
-//     }
-// }
+impl<'a> Collector for CollectorMut<'a> {
+    type Item = char;
+    type Output = &'a mut String;
+
+    #[inline]
+    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+        self.0.push(ch);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.0
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = char>) -> ControlFlow<()> {
+        self.0.extend(items);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_then_finish(self, items: impl IntoIterator<Item = char>) -> Self::Output {
+        self.0.extend(items);
+        self.0
+    }
+}
+
+impl RefCollector for CollectorMut<'_> {
+    #[inline]
+    fn collect_ref(&mut self, &mut ch: &mut char) -> ControlFlow<()> {
+        self.collect(ch)
+    }
+}
