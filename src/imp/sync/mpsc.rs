@@ -1,6 +1,8 @@
 //! [`Collector`]s for [`Sender`] and [`SyncSender`].
 //!
 //! This module corresponds to [`std::sync::mpsc`].
+//!
+//! [`Collector`]: crate::Collector
 
 use std::{
     ops::ControlFlow,
@@ -52,6 +54,8 @@ use std::{
 ///     assert!(handle.join().is_ok());
 /// });
 /// ```
+///
+/// [`Collector`]: crate::Collector
 pub struct IntoCollector<T> {
     sender: Sender<T>,
 }
@@ -101,6 +105,8 @@ pub struct IntoCollector<T> {
 ///     assert!(handle.join().is_ok());
 /// });
 /// ```
+///
+/// [`Collector`]: crate::Collector
 pub struct Collector<'a, T>(&'a Sender<T>);
 
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::sync_channel()`].
@@ -148,6 +154,8 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 ///     assert!(handle.join().is_ok());
 /// });
 /// ```
+///
+/// [`Collector`]: crate::Collector
 pub struct IntoSyncCollector<T> {
     sender: SyncSender<T>,
 }
@@ -197,6 +205,8 @@ pub struct IntoSyncCollector<T> {
 ///     assert!(handle.join().is_ok());
 /// });
 /// ```
+///
+/// [`Collector`]: crate::Collector
 pub struct SyncCollector<'a, T>(&'a SyncSender<T>);
 
 impl<T> crate::IntoCollector for Sender<T> {
