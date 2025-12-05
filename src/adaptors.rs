@@ -1,6 +1,6 @@
 mod chain;
-mod cloned;
-mod copied;
+mod cloning;
+mod copying;
 mod filter;
 mod funnel;
 mod fuse;
@@ -19,8 +19,8 @@ mod unzip;
 // mod filter_map;
 
 pub use chain::*;
-pub use cloned::*;
-pub use copied::*;
+pub use cloning::*;
+pub use copying::*;
 pub use filter::*;
 pub use funnel::*;
 pub use fuse::*;

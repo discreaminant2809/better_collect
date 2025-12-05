@@ -41,7 +41,7 @@ pub trait AggregateOp {
     /// Since it does **not** implement [`RefAggregateOp`], this adaptor should be used
     /// on the **final aggregate op** in [`Combine`], or adapted into a [`RefAggregateOp`]
     /// using the appropriate adaptor.
-    /// If you find yourself writing `map().cloned()` or `map().copied()`,
+    /// If you find yourself writing `map().cloning()` or `map().copying()`,
     /// consider using [`map_ref()`](AggregateOp::map_ref) instead, which avoids unnecessary cloning.
     ///
     /// # Examples

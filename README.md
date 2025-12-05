@@ -94,7 +94,7 @@ let ((received, byte_read), last_seen) = socket_stream()
     .better_collect(
         vec![]
             .into_collector()
-            .cloned()
+            .cloning()
             // Use `map_ref` so that our collector is a `RefCollector`
             // (only a `RefCollector` is then-able)
             .then(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))

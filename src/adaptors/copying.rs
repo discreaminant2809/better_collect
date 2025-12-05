@@ -2,23 +2,23 @@ use crate::{Collector, RefCollector};
 
 use std::ops::ControlFlow;
 
-/// A [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
+/// A [`RefCollector`] that copies every collected item.
 ///
-/// This `struct` is created by [`Collector::cloned()`]. See its documentation for more.
+/// This `struct` is created by [`Collector::copying()`]. See its documentation for more.
 #[derive(Debug, Clone)]
-pub struct Cloning<C>(C);
+pub struct Copying<C>(C);
 
-/// See [`Cloning`].
-#[deprecated(since = "0.3.0", note = "See `Cloning`")]
-pub type Cloned<C> = Cloning<C>;
+/// See [`Copying`].
+#[deprecated(since = "0.3.0", note = "See `Copying`")]
+pub type Copied<C> = Copying<C>;
 
-impl<C> Cloning<C> {
+impl<C> Copying<C> {
     pub(crate) fn new(collector: C) -> Self {
         Self(collector)
     }
 }
 
-impl<C> Collector for Cloning<C>
+impl<C> Collector for Copying<C>
 where
     C: Collector,
 {
@@ -45,13 +45,13 @@ where
     }
 }
 
-impl<C> RefCollector for Cloning<C>
+impl<C> RefCollector for Copying<C>
 where
-    Self::Item: Clone,
+    Self::Item: Copy,
     C: Collector,
 {
     #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        self.0.collect(item.clone())
+    fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
+        self.0.collect(item)
     }
 }

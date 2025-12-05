@@ -355,7 +355,7 @@ pub trait Collector {
     /// since collectors usually implement [`RefCollector`] to collect them seamlessly.
     /// However, for non-[`Copy`] types like [`String`], this adaptor becomes necessary.
     ///
-    /// As a [`Collector`], `cloned()` does nothing (effectively a no-op) and is usually useless
+    /// As a [`Collector`], `cloning()` does nothing (effectively a no-op) and is usually useless
     /// at the end of a [`then`] chain.
     /// It only performs its intended behavior when used as a [`RefCollector`].
     ///
@@ -368,7 +368,7 @@ pub trait Collector {
     ///     .into_iter()
     ///     .map(String::from)
     ///     // `Vec<String>` does not implement `RefCollector`,
-    ///     // so we must call `cloned()` to make it `then`-able.
+    ///     // so we must call `cloning()` to make it `then`-able.
     ///     // Otherwise, the first `Vec` would consume each item,
     ///     // leaving nothing for the second.
     ///     .better_collect(vec![].into_collector().cloning().then(vec![]));
@@ -446,11 +446,11 @@ pub trait Collector {
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let collector_copied_res = [1, 2, 3]
+    /// let collector_copying_res = [1, 2, 3]
     ///     .into_iter()
     ///     .better_collect(vec![].into_collector().copying().then(vec![]));
     ///
-    /// assert_eq!(collector_copied_res, (vec![1, 2, 3], vec![1, 2, 3]));
+    /// assert_eq!(collector_copying_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
     /// // Equivalent to:
     /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
@@ -458,14 +458,14 @@ pub trait Collector {
     ///     .map(|s| (s, s))
     ///     .unzip();
     ///
-    /// assert_eq!(collector_copied_res, unzip_res);
+    /// assert_eq!(collector_copying_res, unzip_res);
     ///
     /// // Also equivalent to using `then` directly, since `Vec<i32>` implements `RefCollector`.
     /// let collector_normal_res = [1, 2, 3]
     ///     .into_iter()
     ///     .better_collect(vec![].into_collector().then(vec![]));
     ///
-    /// assert_eq!(collector_copied_res, collector_normal_res);
+    /// assert_eq!(collector_copying_res, collector_normal_res);
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
@@ -488,7 +488,7 @@ pub trait Collector {
     /// Since it does **not** implement [`RefCollector`], this adaptor should be used
     /// on the **final collector** in a [`then`] chain, or adapted into a [`RefCollector`]
     /// using the appropriate adaptor.
-    /// If you find yourself writing `map().cloned()` or `map().copied()`,
+    /// If you find yourself writing `map().cloning()` or `map().copying()`,
     /// consider using [`map_ref()`](Collector::map_ref) instead, which avoids unnecessary cloning.
     ///
     /// # Examples
@@ -880,7 +880,7 @@ pub trait Collector {
     /// Since it does **not** implement [`RefCollector`], this adaptor should be used
     /// on the **final collector** in a [`then`] chain, or adapted into a [`RefCollector`]
     /// using the appropriate adaptor.
-    /// If you find yourself writing `unbatching().cloned()` or `unbatching().copied()`,
+    /// If you find yourself writing `unbatching().cloning()` or `unbatching().copying()`,
     /// consider using [`unbatching_ref()`](Collector::unbatching_ref) instead,
     /// which avoids unnecessary cloning.
     ///
