@@ -49,6 +49,7 @@ where
     F: FnMut(&T) -> K,
 {
     /// Creates a new instance of this collector with a given key-extraction function.
+    #[deprecated(since = "0.3.0", note = "Use `Min::by_key`")]
     #[inline]
     pub const fn new(f: F) -> Self {
         assert_collector(Self {
