@@ -6,6 +6,7 @@
 
 - Unstable: Aggregate API.
 - `prelude` module.
+- `(Max:Min)::by(_key)()`.
 
 ### Changed
 
@@ -18,6 +19,10 @@
 ### Fixed
 
 - Feature flags.
+
+### Deprecated
+
+- `(Max|Min)By(Key)::new()`.
 
 ## 0.2.2
 

@@ -12,14 +12,16 @@ use crate::{Collector, assert_collector};
 /// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
 /// or `Some` containing the minimum item otherwise.
 ///
+/// This collector is constructed by [`Min::by()`](super::Min::by).
+///
 /// This collector corresponds to [`Iterator::min_by()`].
 ///
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MinBy};
+/// use better_collect::{prelude::*, cmp::Min};
 ///
-/// let mut collector = MinBy::new(f64::total_cmp);
+/// let mut collector = Min::by(f64::total_cmp);
 ///
 /// assert!(collector.collect(1.1).is_continue());
 /// assert!(collector.collect(-2.3).is_continue());
@@ -33,9 +35,9 @@ use crate::{Collector, assert_collector};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MinBy};
+/// use better_collect::{prelude::*, cmp::Min};
 ///
-/// assert_eq!(MinBy::new(f64::total_cmp).finish(), None);
+/// assert_eq!(Min::by(f64::total_cmp).finish(), None);
 /// ```
 #[derive(Clone)]
 pub struct MinBy<T, F> {
@@ -48,6 +50,7 @@ where
     F: FnMut(&T, &T) -> Ordering,
 {
     /// Creates a new instance of this collector with a given comparison function.
+    #[deprecated(since = "0.3.0", note = "Use `Min::by`")]
     #[inline]
     pub const fn new(f: F) -> Self {
         assert_collector(Self { min: None, f })

@@ -10,14 +10,16 @@ use super::{Max, value_key::ValueKey};
 /// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
 /// or `Some` containing the maximum item otherwise.
 ///
+/// This collector is constructed by [`Max::by_key()`](super::Max::by_key).
+///
 /// This collector corresponds to [`Iterator::max_by_key()`].
 ///
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MaxByKey};
+/// use better_collect::{prelude::*, cmp::Max};
 ///
-/// let mut collector = MaxByKey::new(|s: &&str| s.len());
+/// let mut collector = Max::by_key(|s: &&str| s.len());
 ///
 /// assert!(collector.collect("a").is_continue());
 /// assert!(collector.collect("the").is_continue());
@@ -31,9 +33,9 @@ use super::{Max, value_key::ValueKey};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MaxByKey};
+/// use better_collect::{prelude::*, cmp::Max};
 ///
-/// assert_eq!(MaxByKey::new(|s: &&str| s.len()).finish(), None);
+/// assert_eq!(Max::by_key(|s: &&str| s.len()).finish(), None);
 /// ```
 #[derive(Clone)]
 pub struct MaxByKey<T, K, F> {
@@ -47,6 +49,7 @@ where
     F: FnMut(&T) -> K,
 {
     /// Creates a new instance of this collector with a given key-extraction function.
+    #[deprecated(since = "0.3.0", note = "Use `Max::by_key`")]
     #[inline]
     pub const fn new(f: F) -> Self {
         assert_collector(Self {

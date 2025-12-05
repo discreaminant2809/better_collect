@@ -1,5 +1,6 @@
-use std::ops::ControlFlow;
+use std::{cmp::Ordering, ops::ControlFlow};
 
+use super::{MaxBy, MaxByKey};
 use crate::{Collector, assert_collector};
 
 /// A [`Collector`] that computes the maximum value among the items it collects.
@@ -38,11 +39,35 @@ pub struct Max<T> {
     pub(super) max: Option<T>,
 }
 
-impl<T: Ord> Max<T> {
+impl<T> Max<T> {
     /// Creates a new instance of this collector.
     #[inline]
-    pub const fn new() -> Self {
+    pub const fn new() -> Self
+    where
+        T: Ord,
+    {
         assert_collector(Self { max: None })
+    }
+
+    /// Creates a new instance of [`MaxBy`] with a given comparison function.
+    #[inline]
+    pub const fn by<F>(f: F) -> MaxBy<T, F>
+    where
+        F: FnMut(&T, &T) -> Ordering,
+    {
+        #[allow(deprecated)]
+        assert_collector(MaxBy::new(f))
+    }
+
+    /// Creates a new instance of [`MaxByKey`] with a given key-extraction function.
+    #[inline]
+    pub const fn by_key<K, F>(f: F) -> MaxByKey<T, K, F>
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        #[allow(deprecated)]
+        assert_collector(MaxByKey::new(f))
     }
 }
 

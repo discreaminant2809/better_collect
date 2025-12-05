@@ -224,6 +224,8 @@
 #![forbid(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
+// To make doc examples in sync (prevent accidental deprecated items usage in doc).
+#![doc(test(attr(deny(deprecated))))]
 
 #[cfg(any(doc, all(feature = "alloc", not(feature = "std"))))]
 extern crate alloc;

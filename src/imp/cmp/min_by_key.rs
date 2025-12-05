@@ -10,14 +10,16 @@ use super::{Min, value_key::ValueKey};
 /// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
 /// or `Some` containing the minimum item otherwise.
 ///
+/// This collector is constructed by [`Min::by_key()`](super::Min::by_key).
+///
 /// This collector corresponds to [`Iterator::min_by_key()`].
 ///
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MinByKey};
+/// use better_collect::{prelude::*, cmp::Min};
 ///
-/// let mut collector = MinByKey::new(|s: &&str| s.len());
+/// let mut collector = Min::by_key(|s: &&str| s.len());
 ///
 /// assert!(collector.collect("force").is_continue());
 /// assert!(collector.collect("the").is_continue());
@@ -31,9 +33,9 @@ use super::{Min, value_key::ValueKey};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MinByKey};
+/// use better_collect::{prelude::*, cmp::Min};
 ///
-/// assert_eq!(MinByKey::new(|s: &&str| s.len()).finish(), None);
+/// assert_eq!(Min::by_key(|s: &&str| s.len()).finish(), None);
 /// ```
 #[derive(Clone)]
 pub struct MinByKey<T, K, F> {

@@ -1,5 +1,6 @@
-use std::ops::ControlFlow;
+use std::{cmp::Ordering, ops::ControlFlow};
 
+use super::{MinBy, MinByKey};
 use crate::{Collector, assert_collector};
 
 /// A [`Collector`] that computes the minimum value among the items it collects.
@@ -38,11 +39,35 @@ pub struct Min<T> {
     pub(super) min: Option<T>,
 }
 
-impl<T: Ord> Min<T> {
+impl<T> Min<T> {
     /// Creates a new instance of this collector.
     #[inline]
-    pub const fn new() -> Self {
+    pub const fn new() -> Self
+    where
+        T: Ord,
+    {
         assert_collector(Self { min: None })
+    }
+
+    /// Creates a new instance of [`MinBy`] with a given comparison function.
+    #[inline]
+    pub const fn by<F>(f: F) -> MinBy<T, F>
+    where
+        F: FnMut(&T, &T) -> Ordering,
+    {
+        #[allow(deprecated)]
+        assert_collector(MinBy::new(f))
+    }
+
+    /// Creates a new instance of [`MinByKey`] with a given key-extraction function.
+    #[inline]
+    pub const fn by_key<K, F>(f: F) -> MinByKey<T, K, F>
+    where
+        K: Ord,
+        F: FnMut(&T) -> K,
+    {
+        #[allow(deprecated)]
+        assert_collector(MinByKey::new(f))
     }
 }
 
