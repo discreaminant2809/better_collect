@@ -11,7 +11,7 @@
 
 ### Changed
 
-- `Vec`, `String` and collections in the standard library now implements
+- `()`, `Vec`, `String` and collections in the standard library now implements
   `IntoCollector` instead of `(Ref)Collector`.
 - `IntoCollector` for `&(Sync)Sender`.
 - `BetterCollect`'s methods now receive an `IntoCollector` instead.

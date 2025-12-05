@@ -16,7 +16,7 @@ mod sum;
 #[cfg(feature = "std")]
 pub mod sync;
 mod try_fold;
-mod unit;
+pub mod unit;
 #[cfg(feature = "alloc")]
 pub mod vec;
 
