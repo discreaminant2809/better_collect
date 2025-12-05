@@ -9,14 +9,14 @@ use crate::{Collector, RefCollector};
 #[derive(Debug, Clone)]
 pub struct Then<C1, C2> {
     collector1: Fuse<C1>,
-    collector2: C2,
+    collector2: Fuse<C2>,
 }
 
 impl<C1, C2> Then<C1, C2> {
     pub(crate) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
             collector1: Fuse::new(collector1),
-            collector2,
+            collector2: Fuse::new(collector2),
         }
     }
 }
@@ -255,4 +255,48 @@ where
 enum Which<T> {
     First(T),
     Second,
+}
+
+#[cfg(test)]
+mod tests {
+    use core::ops::ControlFlow;
+
+    use crate::*;
+
+    #[test]
+    fn second_collector_stops_earlier() {
+        #[derive(Default)]
+        struct PanicAfterBreak(bool);
+
+        impl Collector for PanicAfterBreak {
+            type Item = ();
+
+            type Output = ();
+
+            fn collect(&mut self, _: Self::Item) -> ControlFlow<()> {
+                if core::mem::replace(&mut self.0, true) {
+                    panic!("collect after break");
+                } else {
+                    ControlFlow::Break(())
+                }
+            }
+
+            fn finish(self) -> Self::Output {}
+        }
+
+        let mut collector = Sink::new()
+            // This stops earlier.
+            .then(PanicAfterBreak::default().skip(10))
+            .take(100);
+
+        while collector.collect(()).is_continue() {}
+
+        assert!(
+            Sink::new()
+                // This stops earlier.
+                .then(PanicAfterBreak::default().skip(10))
+                .collect_many(core::iter::repeat_n((), 100))
+                .is_continue()
+        );
+    }
 }
