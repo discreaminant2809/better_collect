@@ -6,6 +6,7 @@
 
 - Unstable: Aggregate API.
 - `prelude` module.
+- `CollectorByRef` and `CollectorByMut`.
 - `(Max:Min)::by(_key)()`.
 
 ### Changed
