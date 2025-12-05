@@ -970,5 +970,30 @@ where
     // The default implementation for `collect_then_finish()` is sufficient.
 }
 
+macro_rules! dyn_impl {
+    ($($traits:ident)*) => {
+        impl<'a, T> Collector for &mut (dyn Collector<Item = T> $(+ $traits)* + 'a) {
+            type Item = T;
+
+            type Output = ();
+
+            #[inline]
+            fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+                <dyn Collector<Item = T>>::collect(*self, item)
+            }
+
+            #[inline]
+            fn finish(self) -> Self::Output {}
+
+            // The default implementation are sufficient.
+        }
+    };
+}
+
+dyn_impl!();
+dyn_impl!(Send);
+dyn_impl!(Sync);
+dyn_impl!(Send Sync);
+
 // `Output` shouldn't be required to ne specified.
 fn _dyn_compatible<T>(_: &mut dyn Collector<Item = T>) {}

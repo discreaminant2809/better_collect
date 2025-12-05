@@ -241,6 +241,38 @@ impl<C: RefCollector> RefCollector for &mut C {
     }
 }
 
+macro_rules! dyn_impl {
+    ($($traits:ident)*) => {
+        impl<'a, T> Collector for &mut (dyn RefCollector<Item = T> $(+ $traits)* + 'a) {
+            type Item = T;
+
+            type Output = ();
+
+            #[inline]
+            fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+                <dyn RefCollector<Item = T>>::collect(*self, item)
+            }
+
+            #[inline]
+            fn finish(self) -> Self::Output {}
+
+            // The default implementation are sufficient.
+        }
+
+        impl<'a, T> RefCollector for &mut (dyn RefCollector<Item = T> $(+ $traits)* + 'a) {
+            #[inline]
+            fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
+                <dyn RefCollector<Item = T>>::collect_ref(*self, item)
+            }
+        }
+    };
+}
+
+dyn_impl!();
+dyn_impl!(Send);
+dyn_impl!(Sync);
+dyn_impl!(Send Sync);
+
 fn _dyn_compatible<T>(_: &mut dyn RefCollector<Item = T>) {}
 
 fn _upcastable_to_collector<T>(x: &mut dyn RefCollector<Item = T>) -> &mut dyn Collector<Item = T> {
