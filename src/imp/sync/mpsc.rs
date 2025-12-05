@@ -10,6 +10,8 @@ use std::{
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::channel()`].
 /// Its [`Output`](crate::Collector::Output) is [`Sender`].
 ///
+/// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
+///
 /// Unlike [`send`](Sender::send), items collected after the
 /// receiver has hung up are simply lost. They cannot be recovered.
 ///
@@ -18,20 +20,37 @@ use std::{
 /// # Examples
 ///
 /// ```
-/// use std::{thread, sync::mpsc};
+/// use std::{thread, sync::{mpsc, Mutex, Condvar}};
 /// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::channel();
-/// let mut tx = tx.into_collector();
+/// let hung = Mutex::new(false);
+/// let notifier = Condvar::new();
 ///
-/// thread::spawn(move || {
-///     tx.collect_many([1, 2, 3]);
+/// thread::scope(|s| {
+///     let handle = s.spawn(|| {
+///         let mut tx = tx.into_collector();
+///
+///         assert!(tx.collect_many([1, 2, 3]).is_continue());
+///
+///         // Wait until the receiver hangs.
+///         notifier.wait_while(
+///             hung.lock().unwrap(),
+///             |hung| !*hung,
+///         );
+///
+///         assert!(tx.collect(4).is_break());
+///     });
+///
+///     assert_eq!(rx.recv(), Ok(1));
+///     assert_eq!(rx.recv(), Ok(2));
+///     assert_eq!(rx.recv(), Ok(3));
+///     
+///     drop(rx);
+///     *hung.lock().unwrap() = true;
+///     notifier.notify_one();
+///     assert!(handle.join().is_ok());
 /// });
-///
-/// assert_eq!(rx.recv(), Ok(1));
-/// assert_eq!(rx.recv(), Ok(2));
-/// assert_eq!(rx.recv(), Ok(3));
-/// assert!(rx.recv().is_err());
 /// ```
 pub struct IntoCollector<T> {
     sender: Sender<T>,
@@ -39,6 +58,8 @@ pub struct IntoCollector<T> {
 
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::channel()`].
 /// Its [`Output`](crate::Collector::Output) is [`&Sender`](Sender).
+///
+/// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///
 /// Unlike [`send`](Sender::send), items collected after the
 /// receiver has hung up are simply lost. They cannot be recovered.
@@ -48,24 +69,44 @@ pub struct IntoCollector<T> {
 /// # Examples
 ///
 /// ```
-/// use std::{thread, sync::mpsc};
+/// use std::{thread, sync::{mpsc, Mutex, Condvar}};
 /// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::channel();
+/// let hung = Mutex::new(false);
+/// let notifier = Condvar::new();
 ///
-/// thread::spawn(move || {
-///     tx.collector().collect_many([1, 2, 3]);
+/// thread::scope(|s| {
+///     let handle = s.spawn(|| {
+///         let mut tx = tx.collector();
+///
+///         assert!(tx.collect_many([1, 2, 3]).is_continue());
+///
+///         // Wait until the receiver hangs.
+///         notifier.wait_while(
+///             hung.lock().unwrap(),
+///             |hung| !*hung,
+///         );
+///
+///         assert!(tx.collect(4).is_break());
+///     });
+///
+///     assert_eq!(rx.recv(), Ok(1));
+///     assert_eq!(rx.recv(), Ok(2));
+///     assert_eq!(rx.recv(), Ok(3));
+///     
+///     drop(rx);
+///     *hung.lock().unwrap() = true;
+///     notifier.notify_one();
+///     assert!(handle.join().is_ok());
 /// });
-///
-/// assert_eq!(rx.recv(), Ok(1));
-/// assert_eq!(rx.recv(), Ok(2));
-/// assert_eq!(rx.recv(), Ok(3));
-/// assert!(rx.recv().is_err());
 /// ```
 pub struct Collector<'a, T>(&'a Sender<T>);
 
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::sync_channel()`].
 /// Its [`Output`](crate::Collector::Output) is [`SyncSender`].
+///
+/// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///
 /// Unlike [`send`](SyncSender::send), items collected after the
 /// receiver has hung up are simply lost. They cannot be recovered.
@@ -79,16 +120,20 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 /// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
-/// let mut tx = tx.into_collector();
 ///
-/// thread::spawn(move || {
-///     tx.collect_many([1, 2, 3]);
+/// let handle = thread::spawn(move || {
+///     let mut tx = tx.into_collector();
+///
+///     assert!(tx.collect_many([1, 2, 3]).is_continue());
+///     assert!(tx.collect(4).is_break());
 /// });
 ///
 /// assert_eq!(rx.recv(), Ok(1));
 /// assert_eq!(rx.recv(), Ok(2));
 /// assert_eq!(rx.recv(), Ok(3));
-/// assert!(rx.recv().is_err());
+///
+/// drop(rx);
+/// assert!(handle.join().is_ok());
 /// ```
 pub struct IntoSyncCollector<T> {
     sender: SyncSender<T>,
@@ -96,6 +141,8 @@ pub struct IntoSyncCollector<T> {
 
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::sync_channel()`].
 /// Its [`Output`](crate::Collector::Output) is [`&SyncSender`](SyncSender).
+///
+/// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///
 /// Unlike [`send`](SyncSender::send), items collected after the
 /// receiver has hung up are simply lost. They cannot be recovered.
@@ -110,14 +157,19 @@ pub struct IntoSyncCollector<T> {
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
 ///
-/// thread::spawn(move || {
-///     tx.collector().collect_many([1, 2, 3]);
+/// let handle = thread::spawn(move || {
+///     let mut tx = tx.collector();
+///
+///     assert!(tx.collect_many([1, 2, 3]).is_continue());
+///     assert!(tx.collect(4).is_break());
 /// });
 ///
 /// assert_eq!(rx.recv(), Ok(1));
 /// assert_eq!(rx.recv(), Ok(2));
 /// assert_eq!(rx.recv(), Ok(3));
-/// assert!(rx.recv().is_err());
+///
+/// drop(rx);
+/// assert!(handle.join().is_ok());
 /// ```
 pub struct SyncCollector<'a, T>(&'a SyncSender<T>);
 
