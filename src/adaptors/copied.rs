@@ -6,15 +6,19 @@ use std::ops::ControlFlow;
 ///
 /// This `struct` is created by [`Collector::copied()`]. See its documentation for more.
 #[derive(Debug, Clone)]
-pub struct Copied<C>(C);
+pub struct Copying<C>(C);
 
-impl<C> Copied<C> {
+/// See [`Copying`].
+#[deprecated(since = "0.3.0", note = "See `Copying`")]
+pub type Copied<C> = Copying<C>;
+
+impl<C> Copying<C> {
     pub(crate) fn new(collector: C) -> Self {
         Self(collector)
     }
 }
 
-impl<C> Collector for Copied<C>
+impl<C> Collector for Copying<C>
 where
     C: Collector,
 {
@@ -41,7 +45,7 @@ where
     }
 }
 
-impl<C> RefCollector for Copied<C>
+impl<C> RefCollector for Copying<C>
 where
     Self::Item: Copy,
     C: Collector,

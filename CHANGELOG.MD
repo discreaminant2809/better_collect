@@ -16,6 +16,7 @@
 - `IntoCollector` for `&(Sync)Sender`.
 - `BetterCollect`'s methods now receive an `IntoCollector` instead.
 - `(Ref)Collector` are now dyn compatible.
+- `Copied` is renamed to `Copying`.
 
 ### Fixed
 
@@ -24,6 +25,7 @@
 ### Deprecated
 
 - `(Max|Min)By(Key)::new()`.
+- `Copied`.
 
 ## 0.2.2
 

@@ -147,8 +147,8 @@ pub trait RefCollector: Collector {
     ///             .into_iter()
     ///             .better_collect(
     ///                 Min::new()
-    ///                     .copied()
-    ///                     .then(Max::new().copied())
+    ///                     .copying()
+    ///                     .then(Max::new().copying())
     ///                     .then(Count::new())
     ///                     .then(Sum::<i32>::new())
     ///             );

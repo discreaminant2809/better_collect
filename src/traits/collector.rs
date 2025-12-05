@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Copied, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
+    Chain, Cloned, Copying, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
     TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
@@ -407,6 +407,18 @@ pub trait Collector {
         assert_ref_collector(Cloned::new(self))
     }
 
+    /// Use [`copying()`](Collector::copying).
+    #[inline]
+    #[deprecated(since = "0.3.0", note = "Use `copying()`")]
+    #[allow(deprecated)]
+    fn copied(self) -> Copying<Self>
+    where
+        Self: Sized,
+        Self::Item: Copy,
+    {
+        self.copying()
+    }
+
     /// Creates a [`RefCollector`] that copies every collected item.
     ///
     /// This is useful when you need ownership of items, but you still want to [`then`]
@@ -424,7 +436,7 @@ pub trait Collector {
     ///
     /// let collector_copied_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].into_collector().copied().then(vec![]));
+    ///     .better_collect(vec![].into_collector().copying().then(vec![]));
     ///
     /// assert_eq!(collector_copied_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -447,12 +459,12 @@ pub trait Collector {
     /// [`RefCollector`]: crate::RefCollector
     /// [`then`]: crate::RefCollector::then
     #[inline]
-    fn copied(self) -> Copied<Self>
+    fn copying(self) -> Copying<Self>
     where
         Self: Sized,
         Self::Item: Copy,
     {
-        assert_ref_collector(Copied::new(self))
+        assert_ref_collector(Copying::new(self))
     }
 
     /// Creates a [`Collector`] that calls a closure on each item before collecting.
