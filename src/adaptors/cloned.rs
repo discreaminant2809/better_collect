@@ -6,15 +6,19 @@ use std::ops::ControlFlow;
 ///
 /// This `struct` is created by [`Collector::cloned()`]. See its documentation for more.
 #[derive(Debug, Clone)]
-pub struct Cloned<C>(C);
+pub struct Cloning<C>(C);
 
-impl<C> Cloned<C> {
+/// See [`Cloning`].
+#[deprecated(since = "0.3.0", note = "See `Cloning`")]
+pub type Cloned<C> = Cloning<C>;
+
+impl<C> Cloning<C> {
     pub(crate) fn new(collector: C) -> Self {
         Self(collector)
     }
 }
 
-impl<C> Collector for Cloned<C>
+impl<C> Collector for Cloning<C>
 where
     C: Collector,
 {
@@ -41,7 +45,7 @@ where
     }
 }
 
-impl<C> RefCollector for Cloned<C>
+impl<C> RefCollector for Cloning<C>
 where
     Self::Item: Clone,
     C: Collector,

@@ -17,6 +17,7 @@
 - `BetterCollect`'s methods now receive an `IntoCollector` instead.
 - `(Ref)Collector` are now dyn compatible.
 - `Copied` is renamed to `Copying`.
+- `Cloned` is renamed to `Cloning`.
 
 ### Fixed
 
@@ -26,6 +27,7 @@
 
 - `(Max|Min)By(Key)::new()`.
 - `Copied`.
+- `Cloned`.
 
 ## 0.2.2
 

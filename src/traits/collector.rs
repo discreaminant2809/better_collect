@@ -1,7 +1,7 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloned, Copying, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
+    Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
     TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
@@ -333,6 +333,18 @@ pub trait Collector {
         assert_collector(Fuse::new(self))
     }
 
+    /// Use [`cloning()`](Collector::cloning).
+    #[inline]
+    #[deprecated(since = "0.3.0", note = "Use `cloning()`")]
+    #[allow(deprecated)]
+    fn cloned(self) -> Cloning<Self>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        self.cloning()
+    }
+
     /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
     ///
     /// This is useful when you need ownership of items, but you still want to [`then`]
@@ -359,7 +371,7 @@ pub trait Collector {
     ///     // so we must call `cloned()` to make it `then`-able.
     ///     // Otherwise, the first `Vec` would consume each item,
     ///     // leaving nothing for the second.
-    ///     .better_collect(vec![].into_collector().cloned().then(vec![]));
+    ///     .better_collect(vec![].into_collector().cloning().then(vec![]));
     ///
     /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
     /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
@@ -399,12 +411,12 @@ pub trait Collector {
     /// [`RefCollector`]: crate::RefCollector
     /// [`then`]: crate::RefCollector::then
     #[inline]
-    fn cloned(self) -> Cloned<Self>
+    fn cloning(self) -> Cloning<Self>
     where
         Self: Sized,
         Self::Item: Clone,
     {
-        assert_ref_collector(Cloned::new(self))
+        assert_ref_collector(Cloning::new(self))
     }
 
     /// Use [`copying()`](Collector::copying).
