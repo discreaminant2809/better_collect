@@ -116,24 +116,37 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 /// # Examples
 ///
 /// ```
-/// use std::{thread, sync::mpsc};
+/// use std::{thread, sync::{mpsc, Mutex, Condvar}};
 /// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
+/// let hung = Mutex::new(false);
+/// let notifier = Condvar::new();
 ///
-/// let handle = thread::spawn(move || {
-///     let mut tx = tx.into_collector();
+/// thread::scope(|s| {
+///     let handle = s.spawn(|| {
+///         let mut tx = tx.into_collector();
 ///
-///     assert!(tx.collect_many([1, 2, 3]).is_continue());
-///     assert!(tx.collect(4).is_break());
+///         assert!(tx.collect_many([1, 2, 3]).is_continue());
+///
+///         // Wait until the receiver hangs.
+///         notifier.wait_while(
+///             hung.lock().unwrap(),
+///             |hung| !*hung,
+///         );
+///
+///         assert!(tx.collect(4).is_break());
+///     });
+///
+///     assert_eq!(rx.recv(), Ok(1));
+///     assert_eq!(rx.recv(), Ok(2));
+///     assert_eq!(rx.recv(), Ok(3));
+///     
+///     drop(rx);
+///     *hung.lock().unwrap() = true;
+///     notifier.notify_one();
+///     assert!(handle.join().is_ok());
 /// });
-///
-/// assert_eq!(rx.recv(), Ok(1));
-/// assert_eq!(rx.recv(), Ok(2));
-/// assert_eq!(rx.recv(), Ok(3));
-///
-/// drop(rx);
-/// assert!(handle.join().is_ok());
 /// ```
 pub struct IntoSyncCollector<T> {
     sender: SyncSender<T>,
@@ -152,24 +165,37 @@ pub struct IntoSyncCollector<T> {
 /// # Examples
 ///
 /// ```
-/// use std::{thread, sync::mpsc};
+/// use std::{thread, sync::{mpsc, Mutex, Condvar}};
 /// use better_collect::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
+/// let hung = Mutex::new(false);
+/// let notifier = Condvar::new();
 ///
-/// let handle = thread::spawn(move || {
-///     let mut tx = tx.collector();
+/// thread::scope(|s| {
+///     let handle = s.spawn(|| {
+///         let mut tx = tx.collector();
 ///
-///     assert!(tx.collect_many([1, 2, 3]).is_continue());
-///     assert!(tx.collect(4).is_break());
+///         assert!(tx.collect_many([1, 2, 3]).is_continue());
+///
+///         // Wait until the receiver hangs.
+///         notifier.wait_while(
+///             hung.lock().unwrap(),
+///             |hung| !*hung,
+///         );
+///
+///         assert!(tx.collect(4).is_break());
+///     });
+///
+///     assert_eq!(rx.recv(), Ok(1));
+///     assert_eq!(rx.recv(), Ok(2));
+///     assert_eq!(rx.recv(), Ok(3));
+///     
+///     drop(rx);
+///     *hung.lock().unwrap() = true;
+///     notifier.notify_one();
+///     assert!(handle.join().is_ok());
 /// });
-///
-/// assert_eq!(rx.recv(), Ok(1));
-/// assert_eq!(rx.recv(), Ok(2));
-/// assert_eq!(rx.recv(), Ok(3));
-///
-/// drop(rx);
-/// assert!(handle.join().is_ok());
 /// ```
 pub struct SyncCollector<'a, T>(&'a SyncSender<T>);
 
