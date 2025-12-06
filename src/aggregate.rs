@@ -103,6 +103,7 @@ const fn assert_ref_op<Op: RefAggregateOp>(op: Op) -> Op {
 }
 
 // To fix the macro.
+#[cfg(feature = "std")]
 fn _example() {
     use crate::{
         BetterCollect,

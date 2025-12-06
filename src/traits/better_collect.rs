@@ -1,7 +1,8 @@
 use crate::Collector;
 
+use crate::IntoCollector;
 #[cfg(feature = "unstable")]
-use crate::{Driver, IntoCollector, RefCollector, assert_iterator};
+use crate::{Driver, RefCollector, assert_iterator};
 
 /// Extends [`Iterator`] with the [`better_collect`](BetterCollect::better_collect) method
 /// for working seamlessly with [`Collector`]s.
