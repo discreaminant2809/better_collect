@@ -5,14 +5,18 @@ use crate::{Collector, RefCollector};
 
 /// A [`Collector`] that lets **both** collectors collect the same item.
 ///
-/// This `struct` is created by [`RefCollector::then()`]. See its documentation for more.
+/// This `struct` is created by [`RefCollector::combine()`]. See its documentation for more.
 #[derive(Debug, Clone)]
-pub struct Then<C1, C2> {
+pub struct Combine<C1, C2> {
     collector1: Fuse<C1>,
     collector2: Fuse<C2>,
 }
 
-impl<C1, C2> Then<C1, C2> {
+/// See [`Combine`].
+#[deprecated(since = "0.3.0", note = "See `Combine`")]
+pub type Then<C1, C2> = Combine<C1, C2>;
+
+impl<C1, C2> Combine<C1, C2> {
     pub(crate) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
             collector1: Fuse::new(collector1),
@@ -21,7 +25,7 @@ impl<C1, C2> Then<C1, C2> {
     }
 }
 
-impl<C1, C2> Collector for Then<C1, C2>
+impl<C1, C2> Collector for Combine<C1, C2>
 where
     C1: RefCollector,
     C2: Collector<Item = C1::Item>,
@@ -234,7 +238,7 @@ where
     }
 }
 
-impl<C1, C2> RefCollector for Then<C1, C2>
+impl<C1, C2> RefCollector for Combine<C1, C2>
 where
     C1: RefCollector,
     C2: RefCollector<Item = C1::Item>,
@@ -286,7 +290,7 @@ mod tests {
 
         let mut collector = Sink::new()
             // This stops earlier.
-            .then(PanicAfterBreak::default().skip(10))
+            .combine(PanicAfterBreak::default().skip(10))
             .take(100);
 
         while collector.collect(()).is_continue() {}
@@ -294,7 +298,7 @@ mod tests {
         assert!(
             Sink::new()
                 // This stops earlier.
-                .then(PanicAfterBreak::default().skip(10))
+                .combine(PanicAfterBreak::default().skip(10))
                 .collect_many(core::iter::repeat_n((), 100))
                 .is_continue()
         );

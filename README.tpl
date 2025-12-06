@@ -9,7 +9,7 @@
 [`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
 [`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
 [`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
-[`then()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.then
+[`combine()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
 [`Iterator::fold`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold

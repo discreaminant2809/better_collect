@@ -1,18 +1,18 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, Funnel, IntoCollector, Then, assert_collector, assert_ref_collector};
+use crate::{Collector, Combine, Funnel, IntoCollector, assert_collector, assert_ref_collector};
 
 /// A [`Collector`] that can also collect items by mutable reference.
 ///
 /// This trait introduces one additional method, [`collect_ref`](RefCollector::collect_ref),
 /// which takes a mutable reference to an item.
 ///
-/// It exists primarily to support [`then()`].
+/// It exists primarily to support [`combine()`].
 /// Since [`Collector`] consumes items by ownership, each item cannot normally be passed further.
 /// A type implementing this trait essentially declares: “A view of an item is enough for me
 /// to collect it — feel free to keep using it elsewhere.”
 /// This enables items to flow through multiple collectors while maintaining composability.
-/// See [`then()`] for a deeper explanation.
+/// See [`combine()`] for a deeper explanation.
 ///
 /// # Difference from [`Collector<Item = &mut T>`]
 ///
@@ -51,7 +51,7 @@ use crate::{Collector, Funnel, IntoCollector, Then, assert_collector, assert_ref
 /// let collector: &mut dyn Collector<Item = i32> = ref_collector; // upcast
 /// ```
 ///
-/// [`then()`]: RefCollector::then
+/// [`combine()`]: RefCollector::combine
 /// [`Item`]: crate::Collector::Item
 pub trait RefCollector: Collector {
     /// Collects an item by mutable reference and returns a [`ControlFlow`] indicating whether
@@ -83,16 +83,27 @@ pub trait RefCollector: Collector {
     /// ```
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
 
+    /// Use [`combine()`](RefCollector::combine).
+    #[inline]
+    #[deprecated(since = "0.3.0", note = "Use `combine()`")]
+    fn then<C>(self, other: C) -> Combine<Self, C::IntoCollector>
+    where
+        Self: Sized,
+        C: IntoCollector<Item = Self::Item>,
+    {
+        self.combine(other)
+    }
+
     /// The most important adaptor — the reason why this crate exists.
     ///
     /// Creates a [`Collector`] that lets **both** collectors collect the same item.
     /// For each item collected, the first collector collects the item by mutable reference,
-    /// **then** the second one collects it by either mutable reference or ownership.
+    /// then the second one collects it by either mutable reference or ownership.
     /// Together, they form a *pipeline* where each collector processes the item in turn,
     /// and the final one consumes by ownership.
     ///
     /// If the second collector implements [`RefCollector`], this adaptor implements [`RefCollector`],
-    /// allowing the chain to be extended further with additional `then()` calls.
+    /// allowing the chain to be extended further with additional `combine()` calls.
     /// Otherwise, it becomes the endpoint of the pipeline.
     ///
     /// # Examples
@@ -100,7 +111,7 @@ pub trait RefCollector: Collector {
     /// ```
     /// use better_collect::{prelude::*, cmp::Max};
     ///
-    /// let mut collector = vec![].into_collector().then(Max::new());
+    /// let mut collector = vec![].into_collector().combine(Max::new());
     ///
     /// assert!(collector.collect(4).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -110,13 +121,13 @@ pub trait RefCollector: Collector {
     /// assert_eq!(collector.finish(), (vec![4, 2, 6, 3], Some(6)));
     /// ```
     ///
-    /// Even if one collector stops, `then()` continues as the other does.
+    /// Even if one collector stops, `combine()` continues as the other does.
     /// It only stops when **both** collectors stop.
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let mut collector = vec![].into_collector().take(3).then(()); // `()` always stops collecting.
+    /// let mut collector = vec![].into_collector().take(3).combine(()); // `()` always stops collecting.
     ///
     /// assert!(collector.collect(()).is_continue());
     /// assert!(collector.collect(()).is_continue());
@@ -129,10 +140,10 @@ pub trait RefCollector: Collector {
     /// assert_eq!(collector.finish(), (vec![(); 3], ()));
     /// ```
     ///
-    /// Collectors can be chained with `then()` as many as you want,
+    /// Collectors can be chained with `combine()` as many as you want,
     /// as long as every of them except the last implements [`RefCollector`].
     ///
-    /// Here’s the solution to [LeetCode #1491] — a perfect demo of its power:
+    /// Here’s the solution to [LeetCode #1491] to demonstrate it:
     ///
     /// ```
     /// use better_collect::{
@@ -148,9 +159,9 @@ pub trait RefCollector: Collector {
     ///             .better_collect(
     ///                 Min::new()
     ///                     .copying()
-    ///                     .then(Max::new().copying())
-    ///                     .then(Count::new())
-    ///                     .then(Sum::<i32>::new())
+    ///                     .combine(Max::new().copying())
+    ///                     .combine(Count::new())
+    ///                     .combine(Sum::<i32>::new())
     ///             );
     ///                 
     ///         let (min, max) = (min.unwrap(), max.unwrap());
@@ -173,18 +184,18 @@ pub trait RefCollector: Collector {
     ///
     /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
     #[inline]
-    fn then<C>(self, other: C) -> Then<Self, C::IntoCollector>
+    fn combine<C>(self, other: C) -> Combine<Self, C::IntoCollector>
     where
         Self: Sized,
         C: IntoCollector<Item = Self::Item>,
     {
-        assert_collector(Then::new(self, other.into_collector()))
+        assert_collector(Combine::new(self, other.into_collector()))
     }
 
     /// Creates a [`RefCollector`] that maps a mutable reference to an item
     /// into another mutable reference.
     ///
-    /// This is used when a [`then`] chain expects to collect `T`,
+    /// This is used when a [`combine`] chain expects to collect `T`,
     /// but you have a collector that collects `U`. In that case,
     /// you can use `funnel()` to transform `U` into `T` before passing it along.
     ///
@@ -212,14 +223,14 @@ pub trait RefCollector: Collector {
     ///             // `funnel` lets us avoid cloning by transforming &mut Vec<_> → &mut String.
     ///             // Otherwise, we have to clone with `map_ref`.
     ///             .funnel(|v: &mut Vec<_>| &mut v[0])
-    ///             .then(vec![].into_collector().map(|v: Vec<_>| v.len()))
+    ///             .combine(vec![].into_collector().map(|v: Vec<_>| v.len()))
     ///     );
     ///
     /// assert_eq!(concat_firsts, "a1swordswoman");
     /// ```
     ///
     /// [`collect_ref`]: RefCollector::collect_ref
-    /// [`then`]: RefCollector::then
+    /// [`combine`]: RefCollector::combine
     #[inline]
     fn funnel<F, T>(self, func: F) -> Funnel<Self, T, F>
     where

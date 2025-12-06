@@ -18,6 +18,7 @@
 - `(Ref)Collector` are now dyn compatible.
 - `Copied` is renamed to `Copying`.
 - `Cloned` is renamed to `Cloning`.
+- `Then` is renamed to `Combine`.
 
 ### Fixed
 
@@ -28,6 +29,7 @@
 - `(Max|Min)By(Key)::new()`.
 - `Copied`.
 - `Cloned`.
+- `Then`.
 
 ## 0.2.2
 

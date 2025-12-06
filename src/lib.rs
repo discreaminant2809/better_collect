@@ -48,7 +48,7 @@
 //! let nums = [1, 3, 2];
 //! let (sum, max) = nums
 //!     .into_iter()
-//!     .better_collect(Sum::<i32>::new().then(Max::new()));
+//!     .better_collect(Sum::<i32>::new().combine(Max::new()));
 //!
 //! assert_eq!(sum, 6);
 //! assert_eq!(max.unwrap(), 3);
@@ -94,9 +94,9 @@
 //!             .into_collector()
 //!             .cloning()
 //!             // Use `map_ref` so that our collector is a `RefCollector`
-//!             // (only a `RefCollector` is then-able)
-//!             .then(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))
-//!             .then(Last::new())
+//!             // (only a `RefCollector` is `combine`-able)
+//!             .combine(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))
+//!             .combine(Last::new())
 //!     );
 //!
 //! assert_eq!((received, byte_read, last_seen), expected);
@@ -138,7 +138,7 @@
 //! // `Collector`
 //! let collector_way = socket_stream()
 //!     // No clone - the data flows smoothly.
-//!     .better_collect(ConcatString::new().then(HashSet::new()));
+//!     .better_collect(ConcatString::new().combine(HashSet::new()));
 //!
 //! assert_eq!(unzip_way, collector_way);
 //! ```
@@ -168,7 +168,7 @@
 //! [`Collector`] is similar to [`Extend`], but it also returns a [`ControlFlow`]
 //! value to indicate whether it should stop accumulating items after a call to
 //! [`collect()`].
-//! This serves as a hint for adaptors like [`then()`] or [`chain()`]
+//! This serves as a hint for adaptors like [`combine()`] or [`chain()`]
 //! to "vectorize" the remaining items to another collector.
 //! In short, it is like a **composable** [`Extend`].
 //!
@@ -176,7 +176,7 @@
 //! to process it.
 //! This allows items to flow through multiple collectors without being consumed,
 //! avoiding unnecessary cloning.
-//! It powers [`then()`], which creates a pipeline of collectors,
+//! It powers [`combine()`], which creates a pipeline of collectors,
 //! letting each item pass through safely by reference until the final collector
 //! takes ownership.
 //!
@@ -210,7 +210,7 @@
 //!   under this flag anymore.
 //!
 //! [`collect()`]: Collector::collect
-//! [`then()`]: RefCollector::then
+//! [`combine()`]: RefCollector::combine
 //! [`chain()`]: Collector::chain
 //! [`better_collect()`]: BetterCollect::better_collect
 //! [`std::iter`]: std::iter
@@ -222,6 +222,7 @@
 //! [`BTreeSet`]: std::collections::BTreeSet
 
 #![forbid(missing_docs)]
+#![cfg_attr(test, deny(deprecated))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
 // To make doc examples in sync (prevent accidental deprecated items usage in doc).

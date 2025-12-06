@@ -50,7 +50,7 @@ use better_collect::{prelude::*, num::Sum, cmp::Max};
 let nums = [1, 3, 2];
 let (sum, max) = nums
     .into_iter()
-    .better_collect(Sum::<i32>::new().then(Max::new()));
+    .better_collect(Sum::<i32>::new().combine(Max::new()));
 
 assert_eq!(sum, 6);
 assert_eq!(max.unwrap(), 3);
@@ -96,9 +96,9 @@ let ((received, byte_read), last_seen) = socket_stream()
             .into_collector()
             .cloning()
             // Use `map_ref` so that our collector is a `RefCollector`
-            // (only a `RefCollector` is then-able)
-            .then(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))
-            .then(Last::new())
+            // (only a `RefCollector` is `combine`-able)
+            .combine(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))
+            .combine(Last::new())
     );
 
 assert_eq!((received, byte_read, last_seen), expected);
@@ -140,7 +140,7 @@ let unzip_way = (concatenated_data, chunks);
 // `Collector`
 let collector_way = socket_stream()
     // No clone - the data flows smoothly.
-    .better_collect(ConcatString::new().then(HashSet::new()));
+    .better_collect(ConcatString::new().combine(HashSet::new()));
 
 assert_eq!(unzip_way, collector_way);
 ```
@@ -170,7 +170,7 @@ pub trait RefCollector: Collector {
 [`Collector`] is similar to [`Extend`], but it also returns a [`ControlFlow`]
 value to indicate whether it should stop accumulating items after a call to
 [`collect()`].
-This serves as a hint for adaptors like [`then()`] or [`chain()`]
+This serves as a hint for adaptors like [`combine()`] or [`chain()`]
 to "vectorize" the remaining items to another collector.
 In short, it is like a **composable** [`Extend`].
 
@@ -178,7 +178,7 @@ In short, it is like a **composable** [`Extend`].
 to process it.
 This allows items to flow through multiple collectors without being consumed,
 avoiding unnecessary cloning.
-It powers [`then()`], which creates a pipeline of collectors,
+It powers [`combine()`], which creates a pipeline of collectors,
 letting each item pass through safely by reference until the final collector
 takes ownership.
 
@@ -209,7 +209,6 @@ More types, traits and functions can be found in this crate's documentation.
   Although the crate as a whole is still experimental, the items under
   `unstable` are **even more** experimental, and it is generally
   discouraged to use them until their designs are finalized and not
-  under this flag anymore.
 
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
 [`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
@@ -218,7 +217,7 @@ More types, traits and functions can be found in this crate's documentation.
 [`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
 [`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
 [`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
-[`then()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.then
+[`combine()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
 [`Iterator::fold`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold

@@ -347,16 +347,16 @@ pub trait Collector {
 
     /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
     ///
-    /// This is useful when you need ownership of items, but you still want to [`then`]
+    /// This is useful when you need ownership of items, but you still want to [`combine`]
     /// the underlying collector into another collector.
-    /// (Reminder: only [`RefCollector`]s are [`then`]-able.)
+    /// (Reminder: only [`RefCollector`]s are [`combine`]-able.)
     ///
     /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
     /// since collectors usually implement [`RefCollector`] to collect them seamlessly.
     /// However, for non-[`Copy`] types like [`String`], this adaptor becomes necessary.
     ///
     /// As a [`Collector`], `cloning()` does nothing (effectively a no-op) and is usually useless
-    /// at the end of a [`then`] chain.
+    /// at the end of a [`combine`] chain.
     /// It only performs its intended behavior when used as a [`RefCollector`].
     ///
     /// # Examples
@@ -368,10 +368,10 @@ pub trait Collector {
     ///     .into_iter()
     ///     .map(String::from)
     ///     // `Vec<String>` does not implement `RefCollector`,
-    ///     // so we must call `cloning()` to make it `then`-able.
+    ///     // so we must call `cloning()` to make it `combine`-able.
     ///     // Otherwise, the first `Vec` would consume each item,
     ///     // leaving nothing for the second.
-    ///     .better_collect(vec![].into_collector().cloning().then(vec![]));
+    ///     .better_collect(vec![].into_collector().cloning().combine(vec![]));
     ///
     /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
     /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
@@ -393,9 +393,9 @@ pub trait Collector {
     ///
     /// let collector_res = [1, 2, 3]
     ///     .into_iter()
-    ///     // Just `then` normally.
+    ///     // Just `combine` normally.
     ///     // `Vec<i32>` implements `RefCollector` since `i32` is `Copy`.
-    ///     .better_collect(vec![].into_collector().then(vec![]));
+    ///     .better_collect(vec![].into_collector().combine(vec![]));
     ///
     /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -409,7 +409,7 @@ pub trait Collector {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    /// [`then`]: crate::RefCollector::then
+    /// [`combine`]: crate::RefCollector::combine
     #[inline]
     fn cloning(self) -> Cloning<Self>
     where
@@ -433,9 +433,9 @@ pub trait Collector {
 
     /// Creates a [`RefCollector`] that copies every collected item.
     ///
-    /// This is useful when you need ownership of items, but you still want to [`then`]
+    /// This is useful when you need ownership of items, but you still want to [`combine`]
     /// the underlying collector into another collector.
-    /// (Reminder: only [`RefCollector`]s are [`then`]-able.)
+    /// (Reminder: only [`RefCollector`]s are [`combine`]-able.)
     ///
     /// You usually don’t need this adaptor when working with [`Copy`] types (e.g., primitives),
     /// since collectors often implement [`RefCollector`] to collect them seamlessly.
@@ -448,7 +448,7 @@ pub trait Collector {
     ///
     /// let collector_copying_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].into_collector().copying().then(vec![]));
+    ///     .better_collect(vec![].into_collector().copying().combine(vec![]));
     ///
     /// assert_eq!(collector_copying_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -460,16 +460,16 @@ pub trait Collector {
     ///
     /// assert_eq!(collector_copying_res, unzip_res);
     ///
-    /// // Also equivalent to using `then` directly, since `Vec<i32>` implements `RefCollector`.
+    /// // Also equivalent to using `combine` directly, since `Vec<i32>` implements `RefCollector`.
     /// let collector_normal_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].into_collector().then(vec![]));
+    ///     .better_collect(vec![].into_collector().combine(vec![]));
     ///
     /// assert_eq!(collector_copying_res, collector_normal_res);
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    /// [`then`]: crate::RefCollector::then
+    /// [`combine`]: crate::RefCollector::combine
     #[inline]
     fn copying(self) -> Copying<Self>
     where
@@ -481,12 +481,12 @@ pub trait Collector {
 
     /// Creates a [`Collector`] that calls a closure on each item before collecting.
     ///
-    /// This is used when a [`then`] chain expects to collect `T`,
+    /// This is used when a [`combine`] chain expects to collect `T`,
     /// but you have a collector that collects `U`. In that case,
     /// you can use `map()` to transform `U` into `T` before passing it along.
     ///
     /// Since it does **not** implement [`RefCollector`], this adaptor should be used
-    /// on the **final collector** in a [`then`] chain, or adapted into a [`RefCollector`]
+    /// on the **final collector** in a [`combine`] chain, or adapted into a [`RefCollector`]
     /// using the appropriate adaptor.
     /// If you find yourself writing `map().cloning()` or `map().copying()`,
     /// consider using [`map_ref()`](Collector::map_ref) instead, which avoids unnecessary cloning.
@@ -513,14 +513,14 @@ pub trait Collector {
     ///     .better_collect(
     ///         ConcatStr::new()
     ///             // Limitation: type annotation may be needed.
-    ///             .then(vec![].into_collector().map(|s: &str| s.len()))
+    ///             .combine(vec![].into_collector().map(|s: &str| s.len()))
     ///     );
     ///
     /// assert_eq!(lens, [1, 3, 2]);
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    /// [`then`]: crate::RefCollector::then
+    /// [`combine`]: crate::RefCollector::combine
     #[inline]
     fn map<F, T>(self, f: F) -> Map<Self, T, F>
     where
@@ -532,12 +532,12 @@ pub trait Collector {
 
     /// Creates a [`RefCollector`] that calls a closure on each item by mutable reference before collecting.
     ///
-    /// This is used when the [`then`](crate::RefCollector::then) chain expects to collect `T`,
+    /// This is used when the [`combine`](crate::RefCollector::combine) chain expects to collect `T`,
     /// but you have a collector that collects `U`.
     /// In that case, you can use `map_ref()` to transform `T` into `U`.
     ///
     /// Unlike [`map()`](Collector::map), this adaptor only receives a mutable reference to each item.
-    /// Because of that, it can be used **in the middle** of a [`then`] chain,
+    /// Because of that, it can be used **in the middle** of a [`combine`] chain,
     /// since it is a [`RefCollector`].
     /// While it can also appear at the end of the chain, consider using [`map()`](Collector::map) there
     /// instead for better clarity.
@@ -556,14 +556,14 @@ pub trait Collector {
     ///             // we use this adaptor to avoid cloning.
     ///             // (Limitation: type annotation may be required.)
     ///             .map_ref(|s: &mut String| s.len())
-    ///             .then(ConcatString::new())
+    ///             .combine(ConcatString::new())
     ///     );
     ///
     /// assert_eq!(lens, [1, 3, 2]);
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    /// [`then`]: crate::RefCollector::then
+    /// [`combine`]: crate::RefCollector::combine
     #[inline]
     fn map_ref<F, T>(self, f: F) -> MapRef<Self, T, F>
     where
@@ -612,7 +612,7 @@ pub trait Collector {
     ///             .filter(|&x| x % 2 == 0)
     ///             // Since `Vec<i32>` implements `RefCollector`,
     ///             // this adaptor does too!
-    ///             .then(vec![].into_collector().filter(|&x| x < 0))
+    ///             .combine(vec![].into_collector().filter(|&x| x < 0))
     ///     );
     ///
     /// assert_eq!(evens, [-4, -2, 0, 2, 4]);
@@ -878,7 +878,7 @@ pub trait Collector {
     /// through existing adaptors without cloning or intermediate allocations.
     ///
     /// Since it does **not** implement [`RefCollector`], this adaptor should be used
-    /// on the **final collector** in a [`then`] chain, or adapted into a [`RefCollector`]
+    /// on the **final collector** in a [`combine`] chain, or adapted into a [`RefCollector`]
     /// using the appropriate adaptor.
     /// If you find yourself writing `unbatching().cloning()` or `unbatching().copying()`,
     /// consider using [`unbatching_ref()`](Collector::unbatching_ref) instead,
@@ -905,7 +905,7 @@ pub trait Collector {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    /// [`then`]: crate::RefCollector::then
+    /// [`combine`]: crate::RefCollector::combine
     fn unbatching<T, F>(self, f: F) -> Unbatching<Self, T, F>
     where
         Self: Sized,
@@ -921,7 +921,7 @@ pub trait Collector {
     ///
     /// Unlike [`unbatching()`](Collector::unbatching), this adaptor only receives
     /// a mutable reference to each item.
-    /// Because of that, it can be used **in the middle** of a [`then`] chain,
+    /// Because of that, it can be used **in the middle** of a [`combine`] chain,
     /// since it is a [`RefCollector`].
     /// While it can also appear at the end of the chain, consider using
     /// [`unbatching()`](Collector::unbatching) there instead for better clarity.
@@ -947,14 +947,14 @@ pub trait Collector {
     ///                 v.collect_many(row.iter().copied());
     ///                 ControlFlow::Continue(())
     ///             })
-    ///             .then(Sink::new())
+    ///             .combine(Sink::new())
     ///     );
     ///
     /// assert_eq!(flattened, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
-    /// [`then`]: crate::RefCollector::then
+    /// [`combine`]: crate::RefCollector::combine
     fn unbatching_ref<T, F>(self, f: F) -> UnbatchingRef<Self, T, F>
     where
         Self: Sized,

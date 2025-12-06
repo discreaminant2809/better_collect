@@ -89,7 +89,7 @@ pub struct TryFold<A, T, F> {
 ///             *total_len += s.len();
 ///             ControlFlow::Continue(())
 ///         })
-///         .then(ConcatString::new())
+///         .combine(ConcatString::new())
 ///     );
 ///
 /// assert_eq!(total_len, 8);
@@ -114,7 +114,7 @@ pub struct TryFold<A, T, F> {
 ///                 ControlFlow::Continue(())
 ///             }
 ///         })
-///         .then(ConcatString::new())
+///         .combine(ConcatString::new())
 ///     );
 ///
 /// assert_eq!(concatenated_till_empty, "abcde");

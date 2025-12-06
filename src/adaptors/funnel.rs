@@ -45,7 +45,7 @@ where
     //     self.collector
     //         .collect_many(items.into_iter().map(|mut item| (self.f)(&mut item))) // ...due to this.
     // }
-    // Anyway this is fine. This collector is not supposed to be used at the last of the `then` chain.
+    // Anyway this is fine. This collector is not supposed to be used at the last of the `combine` chain.
 }
 
 impl<T, C, F> RefCollector for Funnel<C, T, F>

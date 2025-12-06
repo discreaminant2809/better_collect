@@ -64,7 +64,7 @@ pub struct All<T, F> {
 ///     .into_iter()
 ///     .better_collect(
 ///         All::new_ref(|&mut x| x % 2 == 0)
-///             .then(Sum::<i32>::new())
+///             .combine(Sum::<i32>::new())
 ///     );
 ///
 /// assert!(all_even);
@@ -78,7 +78,7 @@ pub struct All<T, F> {
 ///     .into_iter()
 ///     .better_collect(
 ///         All::new_ref(|&mut x| x % 2 == 0)
-///             .then(Sum::<i32>::new())
+///             .combine(Sum::<i32>::new())
 ///     );
 ///
 /// assert!(!all_even);

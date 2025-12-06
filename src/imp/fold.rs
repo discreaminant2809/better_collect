@@ -42,7 +42,7 @@ pub struct Fold<A, T, F> {
 ///     .into_iter()
 ///     .better_collect(
 ///         Fold::new_ref(0, |sum, num| *sum += *num)
-///             .then(vec![])
+///             .combine(vec![])
 ///     );
 ///
 /// assert_eq!(sum, 6);
