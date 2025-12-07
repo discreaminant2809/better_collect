@@ -83,7 +83,7 @@ impl<C: Debug, F> Debug for TakeWhile<C, F> {
 }
 
 #[cfg(all(test, feature = "std"))]
-mod tests {
+mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
@@ -92,23 +92,28 @@ mod tests {
     proptest! {
         #[test]
         fn collect_many(
-            nums in propvec(any::<i32>(), ..100),
+            vec1 in propvec(any::<i32>(), ..100),
         ) {
-            let (collector_way, iter_way) = collect_many_helper(nums);
-            prop_assert_eq!(collector_way, iter_way);
+            let vec1 = &vec1;
+            prop_assert_eq!(iter_way(vec1), collect_many_way(vec1));
         }
     }
 
-    fn collect_many_helper(nums: Vec<i32>) -> (Vec<i32>, Vec<i32>) {
-        let iter1 = nums.iter().copied();
-        let iter2 = iter1.clone().take_while(|&num| num % 4 == 0);
+    fn iter_way(vec1: &[i32]) -> Vec<i32> {
+        get_iter(vec1).take_while(take_while_pred).collect()
+    }
 
-        let mut collector = vec![].into_collector().take_while(|&num| num % 4 == 0);
-        let _ = collector.collect_many(iter1);
-        let collector_way = collector.finish();
+    fn collect_many_way(vec1: &[i32]) -> Vec<i32> {
+        let mut collector = vec![].into_collector().take_while(take_while_pred);
+        let _ = collector.collect_many(get_iter(vec1));
+        collector.finish()
+    }
 
-        let iter_way = iter2.collect();
+    fn get_iter(vec1: &[i32]) -> impl Iterator<Item = i32> {
+        vec1.iter().copied()
+    }
 
-        (collector_way, iter_way)
+    fn take_while_pred(&num: &i32) -> bool {
+        num % 4 != 0
     }
 }

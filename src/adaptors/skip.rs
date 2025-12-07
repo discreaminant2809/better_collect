@@ -114,41 +114,37 @@ fn drop_n_items(items: &mut impl Iterator, n: usize) -> bool {
 }
 
 #[cfg(all(test, feature = "std"))]
-mod tests {
+mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
-    use crate::{Collector, IntoCollector};
+    use crate::prelude::*;
 
     proptest! {
         #[test]
         fn collect_many(
-            vec1 in propvec(any::<i32>(), 0..100),
-            vec2 in propvec(any::<i32>(), 0..100),
+            vec1 in propvec(any::<i32>(), ..100),
+            vec2 in propvec(any::<i32>(), ..100),
             skip_count in 0_usize..210,
         ) {
-            let (collector_way, iter_way) = collect_many_helper(vec1, vec2, skip_count);
-            prop_assert_eq!(collector_way, iter_way);
+            let (vec1, vec2) = (&vec1, &vec2);
+            prop_assert_eq!(iter_way(vec1, vec2, skip_count), collect_many_way(vec1, vec2, skip_count));
         }
     }
 
-    fn collect_many_helper(
-        vec1: Vec<i32>,
-        vec2: Vec<i32>,
-        skip_count: usize,
-    ) -> (Vec<i32>, Vec<i32>) {
-        let iter1 = vec1
-            .iter()
-            .copied()
-            .chain(vec2.iter().copied().filter(|num| num % 4 != 0));
-        let iter2 = iter1.clone().skip(skip_count);
+    fn iter_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
+        get_iter(vec1, vec2).skip(skip_count).collect()
+    }
 
+    fn collect_many_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
         let mut collector = vec![].into_collector().skip(skip_count);
-        let _ = collector.collect_many(iter1);
-        let collector_way = collector.finish();
+        assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
+        collector.finish()
+    }
 
-        let iter_way: Vec<_> = iter2.collect();
-
-        (collector_way, iter_way)
+    fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {
+        vec1.iter()
+            .copied()
+            .chain(vec2.iter().copied().filter(|num| num % 2 != 0))
     }
 }

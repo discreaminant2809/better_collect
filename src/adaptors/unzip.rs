@@ -113,3 +113,35 @@ enum Which<T> {
     First { item2: T },
     Second,
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+
+    use crate::prelude::*;
+
+    proptest! {
+        #[test]
+        fn collect_many(
+            vec1 in propvec(any::<i32>(), 0..100),
+        ) {
+            let vec1 = &vec1;
+            prop_assert_eq!(iter_way(vec1), collect_many_way(vec1));
+        }
+    }
+
+    fn iter_way(vec1: &[i32]) -> (Vec<i32>, Vec<i32>) {
+        get_iter(vec1).unzip()
+    }
+
+    fn collect_many_way(vec1: &[i32]) -> (Vec<i32>, Vec<i32>) {
+        let mut collector = vec![].into_collector().unzip(vec![]);
+        assert!(collector.collect_many(get_iter(vec1)).is_continue());
+        collector.finish()
+    }
+
+    fn get_iter(vec1: &[i32]) -> impl Iterator<Item = (i32, i32)> {
+        vec1.iter().copied().map(|num| (num, num))
+    }
+}

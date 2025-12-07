@@ -115,7 +115,7 @@ impl<C: RefCollector> RefCollector for Take<C> {
 }
 
 #[cfg(all(test, feature = "std"))]
-mod tests {
+mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
@@ -126,30 +126,26 @@ mod tests {
         fn collect_many(
             vec1 in propvec(any::<i32>(), ..100),
             vec2 in propvec(any::<i32>(), ..100),
-            take_count in 0_usize..210,
+            take_count in ..250_usize,
         ) {
-            let (collector_way, iter_way) = collect_many_helper(vec1, vec2, take_count);
-            prop_assert_eq!(collector_way, iter_way);
+            let (vec1, vec2) = (&vec1, &vec2);
+            prop_assert_eq!(iter_way(vec1, vec2, take_count), collect_many_way(vec1, vec2, take_count));
         }
     }
 
-    fn collect_many_helper(
-        vec1: Vec<i32>,
-        vec2: Vec<i32>,
-        take_count: usize,
-    ) -> (Vec<i32>, Vec<i32>) {
-        let iter1 = vec1
-            .iter()
-            .copied()
-            .chain(vec2.iter().copied().filter(|num| num % 4 != 0));
-        let iter2 = iter1.clone().take(take_count);
+    fn iter_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
+        get_iter(vec1, vec2).take(take_count).collect()
+    }
 
+    fn collect_many_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
         let mut collector = vec![].into_collector().take(take_count);
-        let _ = collector.collect_many(iter1);
-        let collector_way = collector.finish();
+        assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
+        collector.finish()
+    }
 
-        let iter_way: Vec<_> = iter2.collect();
-
-        (collector_way, iter_way)
+    fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {
+        vec1.iter()
+            .copied()
+            .chain(vec2.iter().copied().filter(|num| num % 2 != 0))
     }
 }
