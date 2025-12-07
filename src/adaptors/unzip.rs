@@ -126,33 +126,60 @@ mod proptests {
         fn collect_many(
             vec1 in propvec(any::<i32>(), 0..100),
         ) {
-            let results = [iter_way, collect_many_way, collect_then_finish_way]
-                .map(|f| f(&vec1));
+            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
+            let mut results = fns
+                .into_iter()
+                .map(|f| f(&vec1))
+                .enumerate();
 
-            prop_assert_eq!(&results[0], &results[1]);
-            prop_assert_eq!(&results[0], &results[2]);
-            prop_assert_eq!(&results[1], &results[2]);
+            let (_, expected) = results.next().unwrap();
+            for (i, res) in results{
+                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
+            }
         }
     }
 
-    fn iter_way(vec1: &[i32]) -> (Vec<i32>, Vec<i32>) {
+    type Item = (i32, i32);
+    type Output = (Vec<i32>, Vec<i32>);
+
+    fn iter_way(vec1: &[i32]) -> Output {
         get_iter(vec1).unzip()
     }
 
-    fn collect_many_way(vec1: &[i32]) -> (Vec<i32>, Vec<i32>) {
+    fn new_collector() -> impl RefCollector<Item = Item, Output = Output> {
+        vec![].into_collector().unzip(vec![])
+    }
+
+    fn collect_way(vec1: &[i32]) -> Output {
+        let mut collector = new_collector();
+        for item in get_iter(vec1) {
+            assert!(collector.collect(item).is_continue());
+        }
+        collector.finish()
+    }
+
+    fn collect_ref_way(vec1: &[i32]) -> Output {
+        let mut collector = new_collector();
+        for mut item in get_iter(vec1) {
+            assert!(collector.collect_ref(&mut item).is_continue());
+        }
+        collector.finish()
+    }
+
+    fn collect_many_way(vec1: &[i32]) -> Output {
         let mut collector = vec![].into_collector().unzip(vec![]);
         assert!(collector.collect_many(get_iter(vec1)).is_continue());
         collector.finish()
     }
 
-    fn collect_then_finish_way(vec1: &[i32]) -> (Vec<i32>, Vec<i32>) {
+    fn collect_then_finish_way(vec1: &[i32]) -> Output {
         vec![]
             .into_collector()
             .unzip(vec![])
             .collect_then_finish(get_iter(vec1))
     }
 
-    fn get_iter(vec1: &[i32]) -> impl Iterator<Item = (i32, i32)> {
+    fn get_iter(vec1: &[i32]) -> impl Iterator<Item = Item> {
         vec1.iter().copied().map(|num| (num, num))
     }
 }

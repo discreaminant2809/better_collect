@@ -119,7 +119,7 @@ mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
-    use crate::{Collector, IntoCollector};
+    use crate::prelude::*;
 
     proptest! {
         #[test]
@@ -128,17 +128,37 @@ mod proptests {
             vec2 in propvec(any::<i32>(), ..100),
             take_count in ..250_usize,
         ) {
-            let results = [iter_way, collect_many_way, collect_then_finish_way]
-                .map(|f| f(&vec1, &vec2, take_count));
+            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
+            let mut results = fns
+                .into_iter()
+                .map(|f| f(&vec1, &vec2, take_count))
+                .enumerate();
 
-            prop_assert_eq!(&results[0], &results[1]);
-            prop_assert_eq!(&results[0], &results[2]);
-            prop_assert_eq!(&results[1], &results[2]);
+            let (_, expected) = results.next().unwrap();
+            for (i, res) in results{
+                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
+            }
         }
     }
 
     fn iter_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
         get_iter(vec1, vec2).take(take_count).collect()
+    }
+
+    fn new_collector(take_count: usize) -> impl RefCollector<Item = i32, Output = Vec<i32>> {
+        vec![].into_collector().take(take_count)
+    }
+
+    fn collect_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
+        let mut collector = new_collector(take_count);
+        let _ = get_iter(vec1, vec2).try_for_each(|item| collector.collect(item));
+        collector.finish()
+    }
+
+    fn collect_ref_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
+        let mut collector = new_collector(take_count);
+        let _ = get_iter(vec1, vec2).try_for_each(|mut item| collector.collect_ref(&mut item));
+        collector.finish()
     }
 
     fn collect_many_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {

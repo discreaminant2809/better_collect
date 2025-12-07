@@ -125,14 +125,18 @@ mod proptests {
         fn collect_many(
             vec1 in propvec(any::<i32>(), ..100),
             vec2 in propvec(any::<i32>(), ..100),
-            skip_count in 0_usize..210,
+            take_count in ..250_usize,
         ) {
-            let results = [iter_way, collect_many_way, collect_then_finish_way]
-                .map(|f| f(&vec1, &vec2, skip_count));
+            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
+            let mut results = fns
+                .into_iter()
+                .map(|f| f(&vec1, &vec2, take_count))
+                .enumerate();
 
-            prop_assert_eq!(&results[0], &results[1]);
-            prop_assert_eq!(&results[0], &results[2]);
-            prop_assert_eq!(&results[1], &results[2]);
+            let (_, expected) = results.next().unwrap();
+            for (i, res) in results{
+                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
+            }
         }
     }
 
@@ -140,17 +144,30 @@ mod proptests {
         get_iter(vec1, vec2).skip(skip_count).collect()
     }
 
+    fn new_collector(skip_count: usize) -> impl RefCollector<Item = i32, Output = Vec<i32>> {
+        vec![].into_collector().skip(skip_count)
+    }
+
+    fn collect_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
+        let mut collector = new_collector(skip_count);
+        let _ = get_iter(vec1, vec2).try_for_each(|item| collector.collect(item));
+        collector.finish()
+    }
+
+    fn collect_ref_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
+        let mut collector = new_collector(skip_count);
+        let _ = get_iter(vec1, vec2).try_for_each(|mut item| collector.collect_ref(&mut item));
+        collector.finish()
+    }
+
     fn collect_many_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        let mut collector = vec![].into_collector().skip(skip_count);
+        let mut collector = new_collector(skip_count);
         assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
         collector.finish()
     }
 
     fn collect_then_finish_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        vec![]
-            .into_collector()
-            .skip(skip_count)
-            .collect_then_finish(get_iter(vec1, vec2))
+        new_collector(skip_count).collect_then_finish(get_iter(vec1, vec2))
     }
 
     fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {

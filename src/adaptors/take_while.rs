@@ -87,19 +87,23 @@ mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
-    use crate::{Collector, IntoCollector};
+    use crate::prelude::*;
 
     proptest! {
         #[test]
         fn collect_many(
             vec1 in propvec(any::<i32>(), ..100),
         ) {
-            let results = [iter_way, collect_many_way, collect_then_finish_way]
-                .map(|f| f(&vec1));
+            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
+            let mut results = fns
+                .into_iter()
+                .map(|f| f(&vec1))
+                .enumerate();
 
-            prop_assert_eq!(&results[0], &results[1]);
-            prop_assert_eq!(&results[0], &results[2]);
-            prop_assert_eq!(&results[1], &results[2]);
+            let (_, expected) = results.next().unwrap();
+            for (i, res) in results{
+                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
+            }
         }
     }
 
@@ -107,24 +111,37 @@ mod proptests {
         get_iter(vec1).take_while(take_while_pred).collect()
     }
 
+    fn new_collector() -> impl RefCollector<Item = i32, Output = Vec<i32>> {
+        vec![].into_collector().take_while(take_while_pred)
+    }
+
+    fn take_while_pred(&num: &i32) -> bool {
+        num % 4 != 0
+    }
+
+    fn collect_way(vec1: &[i32]) -> Vec<i32> {
+        let mut collector = new_collector();
+        let _ = get_iter(vec1).try_for_each(|item| collector.collect(item));
+        collector.finish()
+    }
+
+    fn collect_ref_way(vec1: &[i32]) -> Vec<i32> {
+        let mut collector = new_collector();
+        let _ = get_iter(vec1).try_for_each(|mut item| collector.collect_ref(&mut item));
+        collector.finish()
+    }
+
     fn collect_many_way(vec1: &[i32]) -> Vec<i32> {
-        let mut collector = vec![].into_collector().take_while(take_while_pred);
+        let mut collector = new_collector();
         let _ = collector.collect_many(get_iter(vec1));
         collector.finish()
     }
 
     fn collect_then_finish_way(vec1: &[i32]) -> Vec<i32> {
-        vec![]
-            .into_collector()
-            .take_while(take_while_pred)
-            .collect_then_finish(get_iter(vec1))
+        new_collector().collect_then_finish(get_iter(vec1))
     }
 
     fn get_iter(vec1: &[i32]) -> impl Iterator<Item = i32> {
         vec1.iter().copied()
-    }
-
-    fn take_while_pred(&num: &i32) -> bool {
-        num % 4 != 0
     }
 }
