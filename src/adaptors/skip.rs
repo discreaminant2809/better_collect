@@ -127,8 +127,12 @@ mod proptests {
             vec2 in propvec(any::<i32>(), ..100),
             skip_count in 0_usize..210,
         ) {
-            let (vec1, vec2) = (&vec1, &vec2);
-            prop_assert_eq!(iter_way(vec1, vec2, skip_count), collect_many_way(vec1, vec2, skip_count));
+            let results = [iter_way, collect_many_way, collect_then_finish_way]
+                .map(|f| f(&vec1, &vec2, skip_count));
+
+            prop_assert_eq!(&results[0], &results[1]);
+            prop_assert_eq!(&results[0], &results[2]);
+            prop_assert_eq!(&results[1], &results[2]);
         }
     }
 
@@ -140,6 +144,13 @@ mod proptests {
         let mut collector = vec![].into_collector().skip(skip_count);
         assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
         collector.finish()
+    }
+
+    fn collect_then_finish_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
+        vec![]
+            .into_collector()
+            .skip(skip_count)
+            .collect_then_finish(get_iter(vec1, vec2))
     }
 
     fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {

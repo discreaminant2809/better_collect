@@ -126,8 +126,12 @@ mod proptests {
         fn collect_many(
             vec1 in propvec(any::<i32>(), 0..100),
         ) {
-            let vec1 = &vec1;
-            prop_assert_eq!(iter_way(vec1), collect_many_way(vec1));
+            let results = [iter_way, collect_many_way, collect_then_finish_way]
+                .map(|f| f(&vec1));
+
+            prop_assert_eq!(&results[0], &results[1]);
+            prop_assert_eq!(&results[0], &results[2]);
+            prop_assert_eq!(&results[1], &results[2]);
         }
     }
 
@@ -139,6 +143,13 @@ mod proptests {
         let mut collector = vec![].into_collector().unzip(vec![]);
         assert!(collector.collect_many(get_iter(vec1)).is_continue());
         collector.finish()
+    }
+
+    fn collect_then_finish_way(vec1: &[i32]) -> (Vec<i32>, Vec<i32>) {
+        vec![]
+            .into_collector()
+            .unzip(vec![])
+            .collect_then_finish(get_iter(vec1))
     }
 
     fn get_iter(vec1: &[i32]) -> impl Iterator<Item = (i32, i32)> {
