@@ -123,9 +123,22 @@ mod proptests {
     proptest! {
         #[test]
         fn collect_many(
-            vec1 in propvec(any::<i32>(), ..100),
-            vec2 in propvec(any::<i32>(), ..100),
-            take_count in ..250_usize,
+            (vec1, vec2, take_count) in prop_oneof![
+                9 => (
+                    propvec(any::<i32>(), ..100),
+                    propvec(any::<i32>(), ..100),
+                    ..250_usize,
+                ),
+
+                // skip_count == total length case
+                1 => (
+                    propvec(any::<i32>(), ..100),
+                    propvec(any::<i32>(), ..100),
+                ).prop_map(|(vec1, vec2)| {
+                    let take_count = get_iter(&vec1, &vec2).count();
+                    (vec1, vec2, take_count)
+                }),
+            ]
         ) {
             let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
             let mut results = fns
@@ -173,6 +186,6 @@ mod proptests {
     fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {
         vec1.iter()
             .copied()
-            .chain(vec2.iter().copied().filter(|num| num % 2 != 0))
+            .chain(vec2.iter().copied().filter(|&num| num > 0))
     }
 }

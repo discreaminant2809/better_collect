@@ -119,17 +119,18 @@ mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
 
-    use crate::prelude::*;
+    use crate::{Any, prelude::*};
 
     proptest! {
         #[test]
         fn collect_many(
             vec1 in propvec(any::<i32>(), 0..100),
+            vec2 in propvec(any::<i32>(), 0..100),
         ) {
             let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
             let mut results = fns
                 .into_iter()
-                .map(|f| f(&vec1))
+                .map(|f| f(&vec1, &vec2))
                 .enumerate();
 
             let (_, expected) = results.next().unwrap();
@@ -139,47 +140,44 @@ mod proptests {
         }
     }
 
-    type Item = (i32, i32);
-    type Output = (Vec<i32>, Vec<i32>);
-
-    fn iter_way(vec1: &[i32]) -> Output {
-        get_iter(vec1).unzip()
+    fn iter_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
+        get_iter(vec1, vec2).fold((false, false), |(any1, any2), (num1, num2)| {
+            (any1 || any_pred(num1), any2 || any_pred(num2))
+        })
     }
 
-    fn new_collector() -> impl RefCollector<Item = Item, Output = Output> {
-        vec![].into_collector().unzip(vec![])
-    }
-
-    fn collect_way(vec1: &[i32]) -> Output {
+    fn collect_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
         let mut collector = new_collector();
-        for item in get_iter(vec1) {
-            assert!(collector.collect(item).is_continue());
-        }
+        let _ = get_iter(vec1, vec2).try_for_each(|item| collector.collect(item));
         collector.finish()
     }
 
-    fn collect_ref_way(vec1: &[i32]) -> Output {
+    fn collect_ref_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
         let mut collector = new_collector();
-        for mut item in get_iter(vec1) {
-            assert!(collector.collect_ref(&mut item).is_continue());
-        }
+        let _ = get_iter(vec1, vec2).try_for_each(|mut item| collector.collect_ref(&mut item));
         collector.finish()
     }
 
-    fn collect_many_way(vec1: &[i32]) -> Output {
-        let mut collector = vec![].into_collector().unzip(vec![]);
-        assert!(collector.collect_many(get_iter(vec1)).is_continue());
+    fn collect_many_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
+        let mut collector = new_collector();
+        let _ = collector.collect_many(get_iter(vec1, vec2));
         collector.finish()
     }
 
-    fn collect_then_finish_way(vec1: &[i32]) -> Output {
-        vec![]
-            .into_collector()
-            .unzip(vec![])
-            .collect_then_finish(get_iter(vec1))
+    fn collect_then_finish_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
+        new_collector().collect_then_finish(get_iter(vec1, vec2))
     }
 
-    fn get_iter(vec1: &[i32]) -> impl Iterator<Item = Item> {
-        vec1.iter().copied().map(|num| (num, num))
+    fn new_collector() -> impl RefCollector<Item = (i32, i32), Output = (bool, bool)> {
+        let collector = Any::new_ref(|&mut num| any_pred(num));
+        collector.clone().unzip(collector)
+    }
+
+    fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = (i32, i32)> {
+        vec1.iter().copied().zip(vec2.iter().copied())
+    }
+
+    fn any_pred(num: i32) -> bool {
+        num > 0
     }
 }

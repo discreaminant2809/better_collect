@@ -116,7 +116,7 @@ mod proptests {
     }
 
     fn take_while_pred(&num: &i32) -> bool {
-        num % 4 != 0
+        num > 0
     }
 
     fn collect_way(vec1: &[i32]) -> Vec<i32> {

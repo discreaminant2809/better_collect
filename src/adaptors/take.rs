@@ -162,21 +162,18 @@ mod proptests {
     }
 
     fn collect_many_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        let mut collector = vec![].into_collector().take(take_count);
+        let mut collector = new_collector(take_count);
         assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
         collector.finish()
     }
 
     fn collect_then_finish_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        vec![]
-            .into_collector()
-            .take(take_count)
-            .collect_then_finish(get_iter(vec1, vec2))
+        new_collector(take_count).collect_then_finish(get_iter(vec1, vec2))
     }
 
     fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {
         vec1.iter()
             .copied()
-            .chain(vec2.iter().copied().filter(|num| num % 2 != 0))
+            .chain(vec2.iter().copied().filter(|&num| num > 0))
     }
 }
