@@ -2,6 +2,10 @@
 
 ## 0.3.1
 
+## Fixed
+
+- All items under the `unstable` flag not shown on `doc.rs`.
+
 ## 0.3.0
 
 ### Added

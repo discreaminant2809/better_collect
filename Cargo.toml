@@ -11,11 +11,15 @@ keywords = ["collector", "fold", "unzip", "composition", "iterator"]
 
 [dependencies]
 
+[dev-dependencies]
+proptest = { version = "1.9.0", default-features = false, features = ["std"] }
+
 [features]
 default = ["std"]
 alloc = []
 std = ["alloc"]
 unstable = []
 
-[dev-dependencies]
-proptest = { version = "1.9.0", default-features = false, features = ["std"] }
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
