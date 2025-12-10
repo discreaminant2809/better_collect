@@ -2,7 +2,8 @@ use std::ops::ControlFlow;
 
 use crate::{
     Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
-    TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
+    TakeWhile, Unbatching, UnbatchingRef, Unzip, accum_hint::AccumHint, assert_collector,
+    assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -21,13 +22,14 @@ use crate::{
 ///
 /// # Panics
 ///
-/// Unless stated otherwise by the collector’s implementation, the behavior of
+/// Unless stated otherwise by the collector’s implementation, **after** any of
 /// [`Collector::collect()`], [`Collector::collect_many()`], and
 /// [`RefCollector::collect_ref()`](crate::RefCollector::collect_ref)
-/// **after** any of them have returned [`Break(())`] is unspecified.
-///
-/// After that point, subsequent calls to **any** method other than [`finish()`](Collector::finish)
-/// may behave arbitrarily. They may panic, overflow, or even resume accumulation
+/// have returned [`Break(())`] once,
+/// or [`accum_hint().finished()`](Collector::accum_hint) has returned `true` once,
+/// behaviors of subsequent calls to **any** method other than
+/// [`finish()`](Collector::finish) and [`accum_hint()`](Collector::accum_hint)
+/// are unspecified. They may panic, overflow, or even resume accumulation
 /// (similar to how [`Iterator::next()`] might yield again after returning [`None`]).
 /// Callers should generally call [`finish()`](Collector::finish) once a collector
 /// returns [`Break(())`].
@@ -218,6 +220,14 @@ pub trait Collector {
     where
         Self: Sized;
 
+    /// Returns the hint of the ongoing accumulation process.
+    ///
+    /// # Example
+    #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        AccumHint::builder().build()
+    }
+
     /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether the collector is “closed”
     /// — meaning it will no longer accumulate items **right after** the last possible item is collected,
     /// possibly none are collected.
@@ -240,9 +250,13 @@ pub trait Collector {
     where
         Self: Sized,
     {
-        // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
-        // (e.g. `skip`, `chain`, etc.)
-        items.into_iter().try_for_each(|item| self.collect(item))
+        if self.accum_hint().finished() {
+            ControlFlow::Break(())
+        } else {
+            // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
+            // (e.g. `skip`, `chain`, etc.)
+            items.into_iter().try_for_each(|item| self.collect(item))
+        }
     }
 
     /// Collects items from an iterator, consumes the collector, and produces the accumulated result.
@@ -985,6 +999,11 @@ where
     fn finish(self) -> Self::Output {}
 
     #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        C::accum_hint(self)
+    }
+
+    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         // FIXED: specialization for unsized type.
         // We can't add `?Sized` to the bound of `C` because this method requires `Sized`.
@@ -1009,6 +1028,11 @@ macro_rules! dyn_impl {
             #[inline]
             fn finish(self) -> Self::Output {}
 
+            #[inline]
+            fn accum_hint(&self) -> AccumHint {
+                <dyn Collector<Item = T>>::accum_hint(self)
+            }
+
             // The default implementation are sufficient.
         }
     };
@@ -1021,3 +1045,20 @@ dyn_impl!(Send Sync);
 
 // `Output` shouldn't be required to ne specified.
 fn _dyn_compatible<T>(_: &mut dyn Collector<Item = T>) {}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Sink, prelude::*};
+
+    #[test]
+    fn accum_hint_needed() {
+        let mut iter = [(); 3].into_iter();
+        Sink::new()
+            .take(0)
+            .combine(())
+            .combine(())
+            .collect_then_finish(&mut iter);
+
+        assert_eq!(iter.count(), 3);
+    }
+}

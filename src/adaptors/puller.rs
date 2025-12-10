@@ -1,6 +1,6 @@
 use std::{iter::FusedIterator, ops::ControlFlow};
 
-use crate::{Fuse as CollectorFuse, RefCollector};
+use crate::{Collector, Fuse as CollectorFuse, RefCollector};
 
 /// An [`Iterator`] that "drives" the underlying iterator to feed the underlying collector.
 ///
@@ -14,7 +14,11 @@ pub struct Driver<'a, I, C> {
     collector: CollectorFuse<&'a mut C>,
 }
 
-impl<'a, I: Iterator, C> Driver<'a, I, C> {
+impl<'a, I, C> Driver<'a, I, C>
+where
+    I: Iterator,
+    C: Collector,
+{
     pub(crate) fn new(iter: I, collector: &'a mut C) -> Self {
         Self {
             iter,

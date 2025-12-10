@@ -2,7 +2,11 @@
 
 ## 0.3.1
 
-## Fixed
+### Added
+
+- Accumulation hint via `AccumHint`.
+
+### Fixed
 
 - All items under the `unstable` flag not shown on `doc.rs`.
 

@@ -14,7 +14,11 @@ pub struct Unzip<C1, C2> {
     collector2: Fuse<C2>,
 }
 
-impl<C1, C2> Unzip<C1, C2> {
+impl<C1, C2> Unzip<C1, C2>
+where
+    C1: Collector,
+    C2: Collector,
+{
     pub(crate) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
             collector1: Fuse::new(collector1),

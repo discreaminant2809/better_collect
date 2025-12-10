@@ -16,7 +16,11 @@ pub struct Combine<C1, C2> {
 #[deprecated(since = "0.3.0", note = "See `Combine`")]
 pub type Then<C1, C2> = Combine<C1, C2>;
 
-impl<C1, C2> Combine<C1, C2> {
+impl<C1, C2> Combine<C1, C2>
+where
+    C1: Collector,
+    C2: Collector,
+{
     pub(crate) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
             collector1: Fuse::new(collector1),

@@ -13,15 +13,20 @@ pub struct Fuse<C> {
     finished: bool,
 }
 
-impl<C> Fuse<C> {
+impl<C> Fuse<C>
+where
+    C: Collector,
+{
     #[inline]
     pub(crate) fn new(collector: C) -> Self {
         Self {
+            finished: collector.accum_hint().finished(),
             collector,
-            finished: false,
         }
     }
+}
 
+impl<C> Fuse<C> {
     /// Returns whether the collector is "fisnished" and will not accept more items.
     #[inline]
     pub fn finished(&self) -> bool {

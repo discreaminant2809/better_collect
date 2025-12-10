@@ -9,6 +9,7 @@
 //! use better_collect::prelude::*;
 //! ```
 
+pub use crate::accum_hint::AccumHint;
 #[cfg(feature = "alloc")]
 pub use crate::string::{ConcatStr, ConcatString};
 pub use crate::traits::*;
