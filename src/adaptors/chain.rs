@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, Fuse, RefCollector};
+use crate::{Collector, Fuse, RefCollector, prelude::AccumHint};
 
 /// A [`Collector`] that feeds the first collector until it stop accumulating,
 /// then feeds the second collector.
@@ -46,6 +46,20 @@ where
     #[inline]
     fn finish(self) -> Self::Output {
         (self.collector1.finish(), self.collector2.finish())
+    }
+
+    #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        // We're sure that whether this collector has finished or not is
+        // entirely based on the 2nd collector.
+        // Also, by this method being called it is assumed that
+        // this collector has not finished, which mean the 2nd collector
+        // has not finished, which means it's always sound to call here.
+        let accum_hint2 = self.collector2.accum_hint();
+
+        AccumHint::builder()
+            .finished(self.collector1.finished() && accum_hint2.finished())
+            .build()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
