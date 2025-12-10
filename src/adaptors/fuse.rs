@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, RefCollector};
+use crate::{Collector, RefCollector, prelude::AccumHint};
 
 /// A [`Collector`] that stops accumulating permanently after the first [`Break(())`].
 ///
@@ -64,6 +64,11 @@ where
     }
 
     #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        AccumHint::builder().finished(self.finished).build()
+    }
+
+    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_many(items))
     }
@@ -85,5 +90,35 @@ where
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_ref(item))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+
+    #[test]
+    fn must_finished_for_empty_collector_on_construct() {
+        struct MockCollector;
+
+        impl Collector for MockCollector {
+            type Item = ();
+
+            type Output = ();
+
+            fn collect(&mut self, _: Self::Item) -> core::ops::ControlFlow<()> {
+                unimplemented!()
+            }
+
+            fn finish(self) -> Self::Output {
+                unimplemented!()
+            }
+
+            fn accum_hint(&self) -> AccumHint {
+                AccumHint::builder().finished(true).build()
+            }
+        }
+
+        assert!(MockCollector.fuse().finished());
     }
 }
