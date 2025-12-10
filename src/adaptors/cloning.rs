@@ -1,4 +1,4 @@
-use crate::{Collector, RefCollector, prelude::AccumHint};
+use crate::{Collector, RefCollector};
 
 use std::ops::ControlFlow;
 
@@ -36,8 +36,8 @@ where
     }
 
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        self.0.accum_hint()
+    fn has_stopped(&self) -> bool {
+        self.0.has_stopped()
     }
 
     #[inline]

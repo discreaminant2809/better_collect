@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{Collector, RefCollector, prelude::AccumHint};
+use crate::{Collector, RefCollector};
 
 /// A [`Collector`] that stops accumulating permanently after the first [`Break(())`].
 ///
@@ -20,7 +20,7 @@ where
     #[inline]
     pub(crate) fn new(collector: C) -> Self {
         Self {
-            finished: collector.accum_hint().finished(),
+            finished: collector.has_stopped(),
             collector,
         }
     }
@@ -64,8 +64,8 @@ where
     }
 
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        AccumHint::builder().finished(self.finished).build()
+    fn has_stopped(&self) -> bool {
+        self.finished
     }
 
     #[inline]
@@ -114,8 +114,8 @@ mod tests {
                 unimplemented!()
             }
 
-            fn accum_hint(&self) -> AccumHint {
-                AccumHint::builder().finished(true).build()
+            fn has_stopped(&self) -> bool {
+                true
             }
         }
 

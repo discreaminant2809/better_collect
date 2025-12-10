@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
-use crate::{Collector, RefCollector, prelude::AccumHint};
+use crate::{Collector, RefCollector};
 
 /// A [`RefCollector`] that calls a closure on each item by mutable reference before collecting.
 ///
@@ -40,8 +40,8 @@ where
     }
 
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        self.collector.accum_hint()
+    fn has_stopped(&self) -> bool {
+        self.collector.has_stopped()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

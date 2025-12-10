@@ -1,4 +1,4 @@
-use crate::{Collector, RefCollector, prelude::AccumHint};
+use crate::{Collector, RefCollector};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
@@ -40,8 +40,8 @@ where
     }
 
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        self.collector.accum_hint()
+    fn has_stopped(&self) -> bool {
+        self.collector.has_stopped()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

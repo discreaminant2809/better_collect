@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
-use crate::{Collector, RefCollector, prelude::AccumHint};
+use crate::{Collector, RefCollector};
 
 /// A [`RefCollector`] that maps a mutable reference to an item
 /// into another mutable reference.
@@ -41,8 +41,8 @@ where
     }
 
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        self.collector.accum_hint()
+    fn has_stopped(&self) -> bool {
+        self.collector.has_stopped()
     }
 
     // Not doable...

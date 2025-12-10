@@ -234,7 +234,6 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-pub mod accum_hint;
 mod adaptors;
 #[cfg(feature = "unstable")]
 pub mod aggregate;

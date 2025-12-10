@@ -40,8 +40,12 @@ where
         self.collector.finish()
     }
 
-    // Can't meaningfully override the `finished`.
-    // Since the caller may do some other works than accumulating.
+    // Can't meaningfully override `has_stopped()`,
+    // since the caller may do some other works than accumulating
+    // to the underlying collector.
+    // Even if the underlying collector has stopped since creation,
+    // the closure may actually return `Continue(())`,
+    // rendering the signal incorrect.
 
     // Can't meaningfully override `collect_many` and `collect_then_finish`.
 }

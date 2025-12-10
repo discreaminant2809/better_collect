@@ -2,8 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::{
     Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
-    TakeWhile, Unbatching, UnbatchingRef, Unzip, accum_hint::AccumHint, assert_collector,
-    assert_ref_collector,
+    TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -220,12 +219,23 @@ pub trait Collector {
     where
         Self: Sized;
 
-    /// Returns the hint of the ongoing accumulation process.
+    /// Returns whether the collector has stopped accumulating.
+    ///
+    /// As specified in the trait's documentation, after the stop is signaled somewhere else,
+    /// including through `collect` or similar methods, or this method itselfs,
+    /// the behavior of this method is unspecified.
+    /// This may include returning `false` even if the collector has conceptually stopped.
+    ///
+    /// The default implementation always returns `false`.
     ///
     /// # Example
+    ///
+    /// ```
+    /// // TODO: example
+    /// ```
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        AccumHint::builder().build()
+    fn has_stopped(&self) -> bool {
+        false
     }
 
     /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether the collector is “closed”
@@ -250,7 +260,7 @@ pub trait Collector {
     where
         Self: Sized,
     {
-        if self.accum_hint().finished() {
+        if self.has_stopped() {
             ControlFlow::Break(())
         } else {
             // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
@@ -999,8 +1009,8 @@ where
     fn finish(self) -> Self::Output {}
 
     #[inline]
-    fn accum_hint(&self) -> AccumHint {
-        C::accum_hint(self)
+    fn has_stopped(&self) -> bool {
+        C::has_stopped(self)
     }
 
     #[inline]
@@ -1029,8 +1039,8 @@ macro_rules! dyn_impl {
             fn finish(self) -> Self::Output {}
 
             #[inline]
-            fn accum_hint(&self) -> AccumHint {
-                <dyn Collector<Item = T>>::accum_hint(self)
+            fn has_stopped(&self) -> bool {
+                <dyn Collector<Item = T>>::has_stopped(self)
             }
 
             // The default implementation are sufficient.
