@@ -25,18 +25,18 @@ use crate::{
 /// [`Collector::collect()`], [`Collector::collect_many()`], and
 /// [`RefCollector::collect_ref()`](crate::RefCollector::collect_ref)
 /// have returned [`Break(())`] once,
-/// or [`Collector::accum_hint().finished()`](Collector::accum_hint) has returned `true` once,
+/// or [`Collector::has_stopped()`] has returned `true` once,
 /// behaviors of subsequent calls to **any** method other than
 /// [`finish()`](Collector::finish) are unspecified.
 /// They may panic, overflow, or even resume accumulation
 /// (similar to how [`Iterator::next()`] might yield again after returning [`None`]).
 /// Callers should generally call [`finish()`](Collector::finish) once a collector
-/// returns [`Break(())`].
+/// has signaled a stop.
 /// If this invariant cannot be upheld, wrap it with [`fuse()`](Collector::fuse).
 ///
-/// This looseness allows for optimizations (for example, omitting an internal “closed” flag).
+/// This looseness allows for optimizations (for example, omitting an internal "stopped” flag).
 ///
-/// Although the behavior is unspecified, this method is **not** `unsafe`.
+/// Although the behavior is unspecified, none of the aforementioned methods are `unsafe`.
 /// Implementors **must not** cause memory corruption, undefined behavior,
 /// or any other safety violations — and callers **must not** rely on such outcomes.
 ///
@@ -219,12 +219,17 @@ pub trait Collector {
     where
         Self: Sized;
 
-    /// Returns whether the collector has stopped accumulating.
+    /// Returns whether the collector has stopped collecting.
     ///
     /// As specified in the trait's documentation, after the stop is signaled somewhere else,
-    /// including through `collect` or similar methods, or this method itselfs,
-    /// the behavior of this method is unspecified.
+    /// including through [`collect`](Collector::collect) or similar methods,
+    /// or this method itself, the behavior of this method is unspecified.
     /// This may include returning `false` even if the collector has conceptually stopped.
+    ///
+    /// This method should be called once and **only** once before collecting
+    /// items in a loop. It is not intended for repeatedly checking whether the
+    /// collector has stopped. Use [`fuse()`](Collector::fuse) if you find yourself
+    /// needing such behavior.
     ///
     /// The default implementation always returns `false`.
     ///

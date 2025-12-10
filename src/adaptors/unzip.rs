@@ -50,7 +50,17 @@ where
         (self.collector1.finish(), self.collector2.finish())
     }
 
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        self.collector1.has_stopped() && self.collector2.has_stopped()
+    }
+
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        // Avoid consuming one item prematurely.
+        if self.has_stopped() {
+            return ControlFlow::Break(());
+        }
+
         let mut items = items.into_iter();
 
         match items.try_for_each(|(item1, item2)| {

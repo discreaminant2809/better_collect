@@ -70,7 +70,17 @@ where
         )
     }
 
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        self.collector_if_true.has_stopped() && self.collector_if_false.has_stopped()
+    }
+
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        // Avoid consuming one item prematurely.
+        if self.has_stopped() {
+            return ControlFlow::Break(());
+        }
+
         let mut items = items.into_iter();
 
         match items.try_for_each(|mut item| {

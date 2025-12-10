@@ -42,6 +42,11 @@ where
         self.collector.finish()
     }
 
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        self.remaining == 0 && self.collector.has_stopped()
+    }
+
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         // We should ensure that once the iterator ends, we never `next` it again.
         // We don't want to resume it.

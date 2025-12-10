@@ -53,6 +53,11 @@ where
         (self.collector1.finish(), self.collector2.finish())
     }
 
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        self.collector1.has_stopped() && self.collector2.has_stopped()
+    }
+
     // fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
     //     let (lower1, upper1) = self.collector1.size_hint();
 
@@ -120,6 +125,11 @@ where
     // }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        // Avoid consuming one item prematurely.
+        if self.has_stopped() {
+            return ControlFlow::Break(());
+        }
+
         let mut items = items.into_iter();
 
         // DO NOT do this. `Iterator::next` is inefficient for repeated calls if the iterator
