@@ -26,10 +26,10 @@ use crate::{
 /// [`Collector::collect()`], [`Collector::collect_many()`], and
 /// [`RefCollector::collect_ref()`](crate::RefCollector::collect_ref)
 /// have returned [`Break(())`] once,
-/// or [`accum_hint().finished()`](Collector::accum_hint) has returned `true` once,
+/// or [`Collector::accum_hint().finished()`](Collector::accum_hint) has returned `true` once,
 /// behaviors of subsequent calls to **any** method other than
-/// [`finish()`](Collector::finish) and [`accum_hint()`](Collector::accum_hint)
-/// are unspecified. They may panic, overflow, or even resume accumulation
+/// [`finish()`](Collector::finish) are unspecified.
+/// They may panic, overflow, or even resume accumulation
 /// (similar to how [`Iterator::next()`] might yield again after returning [`None`]).
 /// Callers should generally call [`finish()`](Collector::finish) once a collector
 /// returns [`Break(())`].
