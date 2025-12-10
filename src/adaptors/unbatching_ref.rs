@@ -40,6 +40,9 @@ where
         self.collector.finish()
     }
 
+    // Can't meaningfully override the `finished`.
+    // Since the caller may do some other works than accumulating.
+
     // Can't meaningfully override `collect_many` and `collect_then_finish`.
 }
 

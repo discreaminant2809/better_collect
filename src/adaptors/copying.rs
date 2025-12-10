@@ -1,4 +1,4 @@
-use crate::{Collector, RefCollector};
+use crate::{Collector, RefCollector, prelude::AccumHint};
 
 use std::ops::ControlFlow;
 
@@ -33,6 +33,11 @@ where
     #[inline]
     fn finish(self) -> Self::Output {
         self.0.finish()
+    }
+
+    #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        self.0.accum_hint()
     }
 
     #[inline]

@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::{Collector, RefCollector};
+use crate::{Collector, RefCollector, prelude::AccumHint};
 
 /// A [`Collector`] that accumulates items as long as a predicate returns `true`.
 ///
@@ -37,6 +37,13 @@ where
     #[inline]
     fn finish(self) -> Self::Output {
         self.collector.finish()
+    }
+
+    #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        // Despite short-circuiting due to the predicate, we can't
+        // do anything besides delegating to the underlying collector.
+        self.collector.accum_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

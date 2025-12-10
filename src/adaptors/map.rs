@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
-use crate::Collector;
+use crate::{Collector, prelude::AccumHint};
 
 /// A [`Collector`] that calls a closure on each item before collecting.
 ///
@@ -37,6 +37,11 @@ where
     #[inline]
     fn finish(self) -> Self::Output {
         self.collector.finish()
+    }
+
+    #[inline]
+    fn accum_hint(&self) -> AccumHint {
+        self.collector.accum_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
