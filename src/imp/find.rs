@@ -94,6 +94,15 @@ where
         }
     }
 
+    // Technically, we don't need to override it
+    // since when this collector stops the method is useless anyway.
+    // But we will have a support of `FUSED` const variable later,
+    // making this neccessary.
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        matches!(self.state, State::Found(_))
+    }
+
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         if let State::Searching(ref mut pred) = self.state {
             if let Some(item) = items.into_iter().find(pred) {
