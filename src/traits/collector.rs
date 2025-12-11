@@ -222,7 +222,7 @@ pub trait Collector {
     /// Returns whether the collector has stopped collecting.
     ///
     /// As specified in the trait's documentation, after the stop is signaled somewhere else,
-    /// including through [`collect`](Collector::collect) or similar methods,
+    /// including through [`collect()`](Collector::collect) or similar methods,
     /// or this method itself, the behavior of this method is unspecified.
     /// This may include returning `false` even if the collector has conceptually stopped.
     ///
@@ -233,10 +233,48 @@ pub trait Collector {
     ///
     /// The default implementation always returns `false`.
     ///
-    /// # Example
+    /// # Examples
+    ///
+    /// Correct usage:
     ///
     /// ```
-    /// // TODO: example
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take_while(|&x| x != 3);
+    ///
+    /// let mut has_stopped = collector.has_stopped();
+    /// let mut num = 0;
+    /// while !has_stopped {
+    ///     has_stopped = collector.collect(num).is_break();
+    ///     num += 1;
+    /// }
+    ///
+    /// assert_eq!(collector.finish(), [0, 1, 2]);
+    /// ```
+    ///
+    /// Incorrect usage:
+    ///
+    /// ```no_run
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take_while(|&x| x != 3);
+    ///
+    /// let mut num = 0;
+    /// // If `collect()` has returned `Break(())` in the previous iteration,
+    /// // The usage of `has_stopped()` here is NOT valid. ⚠️
+    /// // By the current implementation, this may loop indefinitely
+    /// // until your RAM explodes! (the `Vec` keeps expanding)
+    /// while !collector.has_stopped() {
+    ///     let _ = collector.collect(num);
+    ///     num += 1;
+    /// }
+    ///
+    /// // May not be correct anymore. ⚠️
+    /// assert_eq!(collector.finish(), [0, 1, 2]);
     /// ```
     #[inline]
     fn has_stopped(&self) -> bool {
