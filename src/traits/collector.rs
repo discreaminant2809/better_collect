@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapRef, Partition, Skip, Take,
-    TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
+    Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapOutput, MapRef, Partition, Skip,
+    Take, TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
 
 /// Collects items and produces a final output.
@@ -1029,6 +1029,45 @@ pub trait Collector {
         F: FnMut(&mut Self, &mut T) -> ControlFlow<()>,
     {
         assert_ref_collector(UnbatchingRef::new(self, f))
+    }
+
+    /// Creates a [`Collector`] that transforms the final accumulated result.
+    ///
+    /// This is used when your output gets "ugly" after a chain of adaptors,
+    /// or when you do not want to break your API by (accidentally) rearranging adaptors,
+    /// or when you just want a different output type for your collector.
+    ///
+    /// This also implements [`RefCollector`] if the underlying collector does.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{prelude::*, num::Sum, cmp::Max};
+    ///
+    /// #[derive(Debug, PartialEq)]
+    /// struct Stats {
+    ///     sum: i32,
+    ///     max: i32,
+    /// }
+    ///
+    /// let mut collector = Sum::<i32>::new()
+    ///     .combine(Max::new())
+    ///     .map_output(|(sum, max)| Stats { sum, max: max.unwrap() });
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(3).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), Stats { sum: 6, max: 3 });
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    fn map_output<T, F>(self, f: F) -> MapOutput<Self, T, F>
+    where
+        Self: Sized,
+        F: FnOnce(Self::Output) -> T,
+    {
+        assert_collector(MapOutput::new(self, f))
     }
 }
 

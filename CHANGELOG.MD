@@ -5,6 +5,7 @@
 ### Added
 
 - `Collector::has_stopped()`.
+- `Collector::map_output()`.
 
 ### Fixed
 

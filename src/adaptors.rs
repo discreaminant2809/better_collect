@@ -6,6 +6,7 @@ mod filter;
 mod funnel;
 mod fuse;
 mod map;
+mod map_output;
 mod map_ref;
 mod partition;
 #[cfg(feature = "unstable")]
@@ -26,6 +27,7 @@ pub use filter::*;
 pub use funnel::*;
 pub use fuse::*;
 pub use map::*;
+pub use map_output::*;
 pub use map_ref::*;
 pub use partition::*;
 #[cfg(feature = "unstable")]
