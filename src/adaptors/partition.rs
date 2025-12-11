@@ -126,6 +126,11 @@ where
     }
 
     fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        // Avoid consuming one item prematurely.
+        if self.has_stopped() {
+            return self.finish();
+        }
+
         let mut items = items.into_iter();
 
         match items.try_for_each(|mut item| {

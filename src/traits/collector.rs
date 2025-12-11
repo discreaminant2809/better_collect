@@ -1105,7 +1105,7 @@ mod tests {
     use crate::{Sink, prelude::*};
 
     #[test]
-    fn accum_hint_needed() {
+    fn has_stopped_needed() {
         let mut iter = [(); 3].into_iter();
         Sink::new()
             .take(0)

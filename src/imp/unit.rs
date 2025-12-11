@@ -47,6 +47,11 @@ impl crate::Collector for Collector {
     #[inline]
     fn finish(self) -> Self::Output {}
 
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        true
+    }
+
     /// It won't consume any items in an iterator.
     #[inline]
     fn collect_many(&mut self, _items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
