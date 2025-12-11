@@ -4,7 +4,7 @@
 
 ### Added
 
-- Accumulation hint via `AccumHint`.
+- `Collector::has_stopped()`.
 
 ### Fixed
 
