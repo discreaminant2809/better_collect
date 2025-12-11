@@ -62,4 +62,9 @@ impl<F, const ALL: bool> RawAllAny<F, ALL> {
             .field(if ALL { "all" } else { "any" }, &self.get())
             .finish()
     }
+
+    #[inline]
+    pub fn has_stopped(&self) -> bool {
+        self.pred.is_none()
+    }
 }

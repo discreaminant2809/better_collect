@@ -157,6 +157,11 @@ where
     }
 
     #[inline]
+    fn has_stopped(&self) -> bool {
+        self.inner.has_stopped()
+    }
+
+    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         self.inner.collect_impl(|pred| items.into_iter().any(pred))
     }
@@ -203,6 +208,11 @@ where
     #[inline]
     fn finish(self) -> Self::Output {
         self.get()
+    }
+
+    #[inline]
+    fn has_stopped(&self) -> bool {
+        self.inner.has_stopped()
     }
 
     #[inline]
