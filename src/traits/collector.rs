@@ -136,17 +136,17 @@ pub trait Collector {
     where
         Self: Sized;
 
-    /// Collects an item and returns a [`ControlFlow`] indicating whether the collector is “closed”
-    /// — meaning it will no longer accumulate items **right after** this operation.
+    /// Collects an item and returns a [`ControlFlow`] indicating whether
+    /// the collector has stopped accumulating **right after** this operation.
     ///
     /// Return [`Continue(())`] to indicate the collector can still accumulate more items,
-    /// or [`Break(())`] if it will no longer accumulate from now on and further feeding is meaningless.
+    /// or [`Break(())`] if it will not anymore and hence should no longer be fed further.
     ///
     /// This is analogous to [`Iterator::next()`], which returns an item (instead of collecting one)
     /// and signals with [`None`] whenever it finishes.
     ///
-    /// Implementors should return this hint carefully and inform the caller the closure
-    /// as early as possible. This can usually be upheld, but not always.
+    /// Implementors should inform the caller about it as early as possible.
+    /// This can usually be upheld, but not always.
     /// Some collectors-like [`take(0)`](Collector::take) and [`take_while()`]-only
     /// know when they are done after collecting an item, which might be too late
     /// if the item cannot be “afforded” and is lost forever.
@@ -219,7 +219,7 @@ pub trait Collector {
     where
         Self: Sized;
 
-    /// Returns whether the collector has stopped collecting.
+    /// Returns whether the collector has stopped accumulating.
     ///
     /// As specified in the trait's documentation, after the stop is signaled somewhere else,
     /// including through [`collect()`](Collector::collect) or similar methods,
@@ -281,9 +281,8 @@ pub trait Collector {
         false
     }
 
-    /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether the collector is “closed”
-    /// — meaning it will no longer accumulate items **right after** the last possible item is collected,
-    /// possibly none are collected.
+    /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether
+    /// the collector has stopped collecting **right after** this operation.
     ///
     /// This method can be overridden for optimization and/or to avoid consuming one item prematurely.
     /// Implementors may choose a more efficient way to consume an iterator than a simple `for` loop
@@ -344,12 +343,14 @@ pub trait Collector {
         this.finish()
     }
 
-    /// Creates a [`Collector`] that stops accumulating permanently after the first [`Break(())`].
+    /// Creates a [`Collector`] that can "safely" collect items even after
+    /// the underlying collector has stopped accumulating,
+    /// without triggering undesired behaviors.
     ///
-    /// Normally, a collector that returns [`Break(())`] may behave unpredictably,
-    /// inclluding returning [`Continue(())`] again.
-    /// `fuse()` ensures that once [`Break(())`] has been returned, it will **always**
-    /// return [`Break(())`] forever, and subsequent items will **not** be accumulated.
+    /// Normally, a collector having stopped may behave unpredictably,
+    /// including accumulating again.
+    /// `fuse()` ensures that once a collector has stopped, subsequent items
+    /// are guaranteed to **not** be accumulated.
     ///
     /// This adaptor implements [`RefCollector`] if the underlying collector does.
     ///
@@ -745,7 +746,7 @@ pub trait Collector {
     /// Creates a [`Collector`] that accumulates items as long as a predicate returns `true`.
     ///
     /// `take_while()` collects items until it encounters one for which the predicate returns `false`.
-    /// That item—and all subsequent ones—will **not** be accumulated.
+    /// Conceptually, that item—and all subsequent ones—will **not** be accumulated.
     ///
     /// This also implements [`RefCollector`] if the underlying collector does.
     ///
