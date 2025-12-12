@@ -4,8 +4,8 @@ use crate::aggregate::{AggregateOp, RefAggregateOp, assert_op};
 
 /// An [`AggregateOp`] that combines multiple aggregate ops into a single one.
 ///
-/// In a tuple of [`AggregateOp`]s, **every op except the last must also implement
-/// [`RefAggregateOp`]**.
+/// In a tuple of [`AggregateOp`]s, every op except the last must also implement
+/// [`RefAggregateOp`].
 ///
 /// Alongside the tuple of aggregate ops, `Combine` requires two additional closures:
 ///

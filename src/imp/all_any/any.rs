@@ -7,7 +7,7 @@ use super::raw_all_any::RawAllAny;
 /// A [`Collector`] that tests whether any collected item satisfies a predicate.
 ///
 /// Its [`Output`] is initially `false` and remains `false` as long as every collected item
-/// does **not** satisfy the predicate.
+/// does not satisfy the predicate.
 /// When the collector collects an item that makes the predicate `true`,
 /// it returns [`Break`], and the [`Output`] becomes `true`.
 ///

@@ -10,26 +10,26 @@ use crate::{Collector, Combine, Funnel, IntoCollector, assert_collector, assert_
 /// It exists primarily to support [`combine()`].
 /// Since [`Collector`] consumes items by ownership, each item cannot normally be passed further.
 /// A type implementing this trait essentially declares: “A view of an item is enough for me
-/// to collect it — feel free to keep using it elsewhere.”
+/// to collect it. Feel free to keep using it elsewhere.”
 /// This enables items to flow through multiple collectors while maintaining composability.
 /// See [`combine()`] for a deeper explanation.
 ///
 /// # Difference from [`Collector<Item = &mut T>`]
 ///
 /// Although both can collect mutable references, [`Collector<Item = &mut T>`]
-/// implies *ownership* of those references and their lifetimes.
+/// implies ownership of those references and their lifetimes.
 /// As such, it cannot be safely fed with references to items that will later be consumed.
 ///
 /// For example, imagine a `Vec<&mut T>` collector:
 /// it would hold the references beyond a single iteration,
 /// preventing the item from being passed to another collector.
-/// [`RefCollector`], in contrast, borrows mutably *just long enough* to collect,
-/// then immediately releases the borrow — enabling true chaining.
+/// [`RefCollector`], in contrast, borrows mutably just long enough to collect,
+/// then immediately releases the borrow, enabling true chaining.
 ///
 /// # Dyn Compatibility
 ///
 /// This trait is *dyn-compatible*, meaning it can be used as a trait object.
-/// You do not need to specify the [`Output`](crate::Collector::Output) type -
+/// You do not need to specify the [`Output`](crate::Collector::Output) type;
 /// providing the [`Item`] type is enough.
 ///
 /// For example:
@@ -54,9 +54,8 @@ use crate::{Collector, Combine, Funnel, IntoCollector, assert_collector, assert_
 /// [`combine()`]: RefCollector::combine
 /// [`Item`]: crate::Collector::Item
 pub trait RefCollector: Collector {
-    /// Collects an item by mutable reference and returns a [`ControlFlow`] indicating whether
-    /// the collector is “closed” — meaning it will no longer accumulate items **right after**
-    /// this operation.
+    /// Collects an item and returns a [`ControlFlow`] indicating whether
+    /// the collector has stopped accumulating right after this operation.
     ///
     /// See [`Collector::collect()`] for requirements regarding the returned [`ControlFlow`].
     ///
@@ -94,12 +93,12 @@ pub trait RefCollector: Collector {
         self.combine(other)
     }
 
-    /// The most important adaptor — the reason why this crate exists.
+    /// The most important adaptor. The reason why this crate exists.
     ///
-    /// Creates a [`Collector`] that lets **both** collectors collect the same item.
+    /// Creates a [`Collector`] that lets both collectors collect the same item.
     /// For each item collected, the first collector collects the item by mutable reference,
     /// then the second one collects it by either mutable reference or ownership.
-    /// Together, they form a *pipeline* where each collector processes the item in turn,
+    /// Together, they form a pipeline where each collector processes the item in turn,
     /// and the final one consumes by ownership.
     ///
     /// If the second collector implements [`RefCollector`], this adaptor implements [`RefCollector`],
@@ -122,7 +121,7 @@ pub trait RefCollector: Collector {
     /// ```
     ///
     /// Even if one collector stops, `combine()` continues as the other does.
-    /// It only stops when **both** collectors stop.
+    /// It only stops when both collectors stop.
     ///
     /// ```
     /// use better_collect::prelude::*;
@@ -243,7 +242,7 @@ pub trait RefCollector: Collector {
 
 /// A mutable reference to a collect produce nothing.
 ///
-/// This is useful when you *just* want to feed items to a collector without
+/// This is useful when you just want to feed items to a collector without
 /// finishing it.
 impl<C: RefCollector> RefCollector for &mut C {
     #[inline]

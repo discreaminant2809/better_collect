@@ -1,6 +1,6 @@
 use crate::{Collector, IntoCollector};
 
-/// A type that can be converted into a collector by **shared reference**.
+/// A type that can be converted into a collector by shared reference.
 ///
 /// This trait's main purpose is to provide a convenience method to creates
 /// a collector from `&T`.

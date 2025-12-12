@@ -26,7 +26,7 @@ assert_eq!(max, 3);
 That is fine for arrays, but can be much worse for [`HashSet`], [`LinkedList`],
 or... data from an IO stream.
 
-- Approach 2: [`Iterator::fold`]
+- Approach 2: [`Iterator::fold()`]
 
 ```rust
 let nums = [1, 3, 2];
@@ -40,7 +40,40 @@ assert_eq!(sum, 6);
 assert_eq!(max, 3);
 ```
 
-**Cons:** Not very declarative — the main logic is still kind of procedural. (Doing sum and max by ourselves)
+**Cons:** Not very declarative. The main logic is still kind of procedural.
+(Doing sum and max by ourselves)
+
+- Approach 3: [`Iterator::inspect()`]
+
+```rust
+let nums = [1, 3, 2];
+let mut sum = 0;
+let max = nums
+    .into_iter()
+    .inspect(|i| sum += i)
+    .max()
+    .unwrap();
+
+assert_eq!(sum, 6);
+assert_eq!(max, 3);
+```
+
+**Cons:** This approach has multiple drawbacks:
+
+- If the requirement changes to "calculate sum and find any negative value,"
+  this approach may produce incorrect results.
+  The "any" logic may short-circuit on finding the desired value,
+  preventing the "sum" logic from summing every value.
+  It is possible that we can rearrange so that the "any" logic goes first,
+  but if the requirement changes to "find any negative value and even value,"
+  we cannot escape.
+
+- The state is kept outside. Now the iterator cannot go anywhere else
+  (e.g. sending to another thread, sending through a channel).
+
+- Very unintuitive and hack-y (hard to reason about).
+
+- And most importantly, not declarative enough.
 
 This crate proposes a one-pass, declarative approach:
 
@@ -106,7 +139,7 @@ assert_eq!((received, byte_read, last_seen), expected);
 
 Very declarative! We describe what we want to collect.
 
-You might think this is just like [`Iterator::unzip`], but this crate does a bit better:
+You might think this is just like [`Iterator::unzip()`], but this crate does a bit better:
 it can split the data and feed separately **WITHOUT** additional allocation.
 
 To demonstrate the difference, take this example:
@@ -139,7 +172,7 @@ let unzip_way = (concatenated_data, chunks);
 
 // `Collector`
 let collector_way = socket_stream()
-    // No clone - the data flows smoothly.
+    // No clone. The data flows smoothly.
     .better_collect(ConcatString::new().combine(HashSet::new()));
 
 assert_eq!(unzip_way, collector_way);
@@ -154,12 +187,18 @@ Unlike [`std::iter`], this crate defines two main traits instead. Roughly:
 ```rust
 use std::ops::ControlFlow;
 
-pub trait Collector: Sized {
+pub trait Collector {
     type Item;
-    type Output;
+
+    type Output
+    where
+        Self: Sized;
 
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()>;
-    fn finish(self) -> Self::Output;
+
+    fn finish(self) -> Self::Output
+    where
+        Self: Sized;
 }
 
 pub trait RefCollector: Collector {
@@ -172,7 +211,7 @@ value to indicate whether it should stop accumulating items after a call to
 [`collect()`].
 This serves as a hint for adaptors like [`combine()`] or [`chain()`]
 to "vectorize" the remaining items to another collector.
-In short, it is like a **composable** [`Extend`].
+In short, it is like a composable [`Extend`].
 
 [`RefCollector`] is a collector that does not require ownership of an item
 to process it.
@@ -206,9 +245,10 @@ More types, traits and functions can be found in this crate's documentation.
   Items gated behind this feature do **not** follow normal semver guarantees
   and may change or be removed at any time.
 
-  Although the crate as a whole is still experimental, the items under
-  `unstable` are **even more** experimental, and it is generally
+  Although the crate as a whole is technically still experimental, the items under
+  `unstable` are even more experimental, and it is generally
   discouraged to use them until their designs are finalized and not
+  under this flag anymore.
 
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
 [`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
@@ -220,8 +260,9 @@ More types, traits and functions can be found in this crate's documentation.
 [`combine()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
-[`Iterator::fold`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
-[`Iterator::unzip`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
+[`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
+[`Iterator::inspect()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.inspect
+[`Iterator::unzip()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
 [`std::iter`]: https://doc.rust-lang.org/std/iter/index.html
 [`Vec`]: https://doc.rust-lang.org/1.90.0/std/vec/struct.Vec.html
 [`HashSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashSet.html

@@ -38,8 +38,8 @@ pub trait AggregateOp {
     /// but you have an aggregate op that operates on `U`. In that case,
     /// you can use `map()` to transform `U` into `T` before passing it along.
     ///
-    /// Since it does **not** implement [`RefAggregateOp`], this adaptor should be used
-    /// on the **final aggregate op** in [`Combine`], or adapted into a [`RefAggregateOp`]
+    /// Since it does not implement [`RefAggregateOp`], this adaptor should be used
+    /// on the final aggregate op in [`Combine`], or adapted into a [`RefAggregateOp`]
     /// using the appropriate adaptor.
     /// If you find yourself writing `map().cloning()` or `map().copying()`,
     /// consider using [`map_ref()`](AggregateOp::map_ref) instead, which avoids unnecessary cloning.
@@ -63,7 +63,7 @@ pub trait AggregateOp {
     /// you can use `map_ref()` to transform `U` into `T` before passing it along.
     ///
     /// Unlike [`map()`](AggregateOp::map), this adaptor only receives a mutable reference to each item.
-    /// Because of that, it can be used **in the middle** of [`Combine`],
+    /// Because of that, it can be used in the middle of [`Combine`],
     /// since it is a [`RefAggregateOp`].
     /// While it can also appear at the end of [`Combine`], consider using [`map()`](AggregateOp::map) there
     /// instead for better clarity.

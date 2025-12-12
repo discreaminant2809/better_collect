@@ -1,6 +1,6 @@
 use crate::{Collector, IntoCollector};
 
-/// A type that can be converted into a collector by **mutable reference**.
+/// A type that can be converted into a collector by mutable reference.
 ///
 /// This trait's main purpose is to provide a convenience method to creates
 /// a collector from `&mut T`.

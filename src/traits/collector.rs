@@ -21,12 +21,12 @@ use crate::{
 ///
 /// # Panics
 ///
-/// Unless stated otherwise by the collector’s implementation, **after** any of
+/// Unless stated otherwise by the collector’s implementation, after any of
 /// [`Collector::collect()`], [`Collector::collect_many()`], and
 /// [`RefCollector::collect_ref()`](crate::RefCollector::collect_ref)
 /// have returned [`Break(())`] once,
 /// or [`Collector::break_hint()`] has returned `true` once,
-/// behaviors of subsequent calls to **any** method other than
+/// behaviors of subsequent calls to any method other than
 /// [`finish()`](Collector::finish) are unspecified.
 /// They may panic, overflow, or even resume accumulation
 /// (similar to how [`Iterator::next()`] might yield again after returning [`None`]).
@@ -37,13 +37,13 @@ use crate::{
 /// This looseness allows for optimizations (for example, omitting an internal "stopped” flag).
 ///
 /// Although the behavior is unspecified, none of the aforementioned methods are `unsafe`.
-/// Implementors **must not** cause memory corruption, undefined behavior,
-/// or any other safety violations — and callers **must not** rely on such outcomes.
+/// Implementors must **not** cause memory corruption, undefined behavior,
+/// or any other safety violations, and callers must **not** rely on such outcomes.
 ///
 /// # Dyn Compatibility
 ///
 /// This trait is *dyn-compatible*, meaning it can be used as a trait object.
-/// You do not need to specify the [`Output`](crate::Collector::Output) type -
+/// You do not need to specify the [`Output`](crate::Collector::Output) type;
 /// providing the [`Item`](crate::Collector::Item) type is enough.
 ///
 /// For example:
@@ -63,8 +63,8 @@ use crate::{
 ///
 /// # Example
 ///
-/// Suppose we’re building a tokenizer to process text for an NLP model.
-/// We’ll skip all complicated details for now and simply collect every word we see.
+/// Suppose we are building a tokenizer to process text for an NLP model.
+/// We will skip all complicated details for now and simply collect every word we see.
 ///
 /// ```
 /// use std::{ops::ControlFlow, collections::HashMap};
@@ -87,7 +87,7 @@ use crate::{
 ///
 /// impl Collector for Tokenizer {
 ///     type Item = String;
-///     // Usually, the collector itself is also the final result.
+///     // For now, for simplicity, we just return the struct itself.
 ///     type Output = Self;
 ///
 ///     fn collect(&mut self, word: Self::Item) -> ControlFlow<()> {
@@ -137,7 +137,7 @@ pub trait Collector {
         Self: Sized;
 
     /// Collects an item and returns a [`ControlFlow`] indicating whether
-    /// the collector has stopped accumulating **right after** this operation.
+    /// the collector has stopped accumulating right after this operation.
     ///
     /// Return [`Continue(())`] to indicate the collector can still accumulate more items,
     /// or [`Break(())`] if it will not anymore and hence should no longer be fed further.
@@ -229,7 +229,7 @@ pub trait Collector {
     /// or this method itself, the behavior of this method is unspecified.
     /// This may include returning `false` even if the collector has conceptually stopped.
     ///
-    /// This method should be called once and **only** once before collecting
+    /// This method should be called once and only once before collecting
     /// items in a loop. It is not intended for repeatedly checking whether the
     /// collector has stopped. Use [`fuse()`](Collector::fuse) if you find yourself
     /// needing such behavior.
@@ -292,7 +292,7 @@ pub trait Collector {
     }
 
     /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether
-    /// the collector has stopped collecting **right after** this operation.
+    /// the collector has stopped collecting right after this operation.
     ///
     /// This method can be overridden for optimization and/or to avoid consuming one item prematurely.
     /// Implementors may choose a more efficient way to consume an iterator than a simple `for` loop
@@ -477,7 +477,7 @@ pub trait Collector {
     /// let collector_res = [1, 2, 3]
     ///     .into_iter()
     ///     // Just `combine` normally.
-    ///     // `Vec<i32>` implements `RefCollector` since `i32` is `Copy`.
+    ///     // `Vec<i32>::IntoCollector` implements `RefCollector` since `i32` is `Copy`.
     ///     .better_collect(vec![].into_collector().combine(vec![]));
     ///
     /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
@@ -543,7 +543,8 @@ pub trait Collector {
     ///
     /// assert_eq!(collector_copying_res, unzip_res);
     ///
-    /// // Also equivalent to using `combine` directly, since `Vec<i32>` implements `RefCollector`.
+    /// // Also equivalent to using `combine` directly,
+    /// // since `Vec<i32>::IntoCollector` implements `RefCollector`.
     /// let collector_normal_res = [1, 2, 3]
     ///     .into_iter()
     ///     .better_collect(vec![].into_collector().combine(vec![]));
@@ -568,8 +569,8 @@ pub trait Collector {
     /// but you have a collector that collects `U`. In that case,
     /// you can use `map()` to transform `U` into `T` before passing it along.
     ///
-    /// Since it does **not** implement [`RefCollector`], this adaptor should be used
-    /// on the **final collector** in a [`combine`] chain, or adapted into a [`RefCollector`]
+    /// Since it does not implement [`RefCollector`], this adaptor should be used
+    /// on the final collector in a [`combine`] chain, or adapted into a [`RefCollector`]
     /// using the appropriate adaptor.
     /// If you find yourself writing `map().cloning()` or `map().copying()`,
     /// consider using [`map_ref()`](Collector::map_ref) instead, which avoids unnecessary cloning.
@@ -620,7 +621,7 @@ pub trait Collector {
     /// In that case, you can use `map_ref()` to transform `T` into `U`.
     ///
     /// Unlike [`map()`](Collector::map), this adaptor only receives a mutable reference to each item.
-    /// Because of that, it can be used **in the middle** of a [`combine`] chain,
+    /// Because of that, it can be used in the middle of a [`combine`] chain,
     /// since it is a [`RefCollector`].
     /// While it can also appear at the end of the chain, consider using [`map()`](Collector::map) there
     /// instead for better clarity.
@@ -656,7 +657,7 @@ pub trait Collector {
         assert_ref_collector(MapRef::new(self, f))
     }
 
-    /// Creates a [`Collector`] that uses a closure to determine whether an item should be collected.
+    /// Creates a [`Collector`] that uses a closure to determine whether an item should be accumulated.
     ///
     /// The underlying collector only collects items for which the given predicate returns `true`.
     ///
@@ -693,7 +694,7 @@ pub trait Collector {
     ///         vec![]
     ///             .into_collector()
     ///             .filter(|&x| x % 2 == 0)
-    ///             // Since `Vec<i32>` implements `RefCollector`,
+    ///             // Since `Vec<i32>::IntoCollector` implements `RefCollector`,
     ///             // this adaptor does too!
     ///             .combine(vec![].into_collector().filter(|&x| x < 0))
     ///     );
@@ -761,7 +762,9 @@ pub trait Collector {
     /// Creates a [`Collector`] that accumulates items as long as a predicate returns `true`.
     ///
     /// `take_while()` collects items until it encounters one for which the predicate returns `false`.
-    /// Conceptually, that item—and all subsequent ones—will **not** be accumulated.
+    /// Conceptually, that item and all subsequent ones will **not** be accumulated.
+    /// However, you should ensure that you do not feed more items after it has signaled
+    /// a stop.
     ///
     /// This also implements [`RefCollector`] if the underlying collector does.
     ///
@@ -969,8 +972,8 @@ pub trait Collector {
     /// This adaptor is useful for behaviors that cannot be expressed
     /// through existing adaptors without cloning or intermediate allocations.
     ///
-    /// Since it does **not** implement [`RefCollector`], this adaptor should be used
-    /// on the **final collector** in a [`combine`] chain, or adapted into a [`RefCollector`]
+    /// Since it does not implement [`RefCollector`], this adaptor should be used
+    /// on the final collector in a [`combine`] chain, or adapted into a [`RefCollector`]
     /// using the appropriate adaptor.
     /// If you find yourself writing `unbatching().cloning()` or `unbatching().copying()`,
     /// consider using [`unbatching_ref()`](Collector::unbatching_ref) instead,
@@ -1013,7 +1016,7 @@ pub trait Collector {
     ///
     /// Unlike [`unbatching()`](Collector::unbatching), this adaptor only receives
     /// a mutable reference to each item.
-    /// Because of that, it can be used **in the middle** of a [`combine`] chain,
+    /// Because of that, it can be used in the middle of a [`combine`] chain,
     /// since it is a [`RefCollector`].
     /// While it can also appear at the end of the chain, consider using
     /// [`unbatching()`](Collector::unbatching) there instead for better clarity.

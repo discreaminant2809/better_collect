@@ -35,13 +35,13 @@ pub trait BetterCollect: Iterator {
         collector.into_collector().collect_then_finish(self)
     }
 
-    /// Extracts items from this iterator into the provided collector **as far as the
-    /// puller drives the iterator**, then returns both the collector’s output and
+    /// Extracts items from this iterator into the provided collector as far as the
+    /// puller drives the iterator, then returns both the collector’s output and
     /// the puller’s result.
     ///
     /// The `puller` is a closure that receives an [`Iterator`] as a *driver*
     /// and produces an additional result.
-    /// An item is collected **only when the driver advances pass that item**.
+    /// An item is collected only when the driver advances pass that item.
     /// If the driver is not fully exhausted, the iterator will not be fully
     /// collected either.
     ///

@@ -7,7 +7,7 @@ use crate::{Collector, RefCollector, assert_collector, assert_ref_collector};
 ///
 /// This collector corresponds to [`Iterator::try_fold()`], except that
 /// the accumulated value is mutated in place, and its result type
-/// is **not** wrapped in a control-flow container.
+/// is not wrapped in a control-flow container.
 ///
 /// Currently, it only supports [`ControlFlow`] as the function’s return type.
 /// More types may be supported once the [`Try`](std::ops::Try) trait is stabilized.

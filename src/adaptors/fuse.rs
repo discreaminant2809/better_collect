@@ -2,7 +2,9 @@ use std::ops::ControlFlow;
 
 use crate::{Collector, RefCollector};
 
-/// A [`Collector`] that stops accumulating permanently after the first [`Break(())`].
+/// A [`Collector`] that can "safely" collect items even after
+/// the underlying collector has stopped accumulating,
+/// without triggering undesired behaviors.
 ///
 /// This `struct` is created by [`Collector::fuse()`]. See its documentation for more.
 ///

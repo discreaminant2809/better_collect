@@ -12,8 +12,9 @@
 [`combine()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
-[`Iterator::fold`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
-[`Iterator::unzip`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
+[`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
+[`Iterator::inspect()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.inspect
+[`Iterator::unzip()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
 [`std::iter`]: https://doc.rust-lang.org/std/iter/index.html
 [`Vec`]: https://doc.rust-lang.org/1.90.0/std/vec/struct.Vec.html
 [`HashSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashSet.html

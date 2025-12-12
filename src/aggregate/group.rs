@@ -15,8 +15,8 @@ pub enum Group<
 
 /// A handle to an existing group.
 ///
-/// This represents a group that is already present in a [`GroupMap`](super::GroupMap)
-/// - hence the group's value can be accessed.
+/// This represents a group that is already present in a [`GroupMap`](super::GroupMap),
+/// so the group's value can be accessed.
 pub trait OccupiedGroup {
     /// The key of the group.
     type Key;

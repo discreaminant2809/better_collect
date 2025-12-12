@@ -9,7 +9,7 @@ use crate::Collector;
 /// Using `IntoCollector` in trait bounds allows a function to be generic over both
 /// [`Collector`] and `IntoCollector`.
 /// This is convenient for users of the function, so when they are using it
-/// they don’t have to make an extra call to
+/// they do not have to make an extra call to
 /// [`IntoCollector::into_collector()`] to obtain an instance of [`Collector`].
 pub trait IntoCollector {
     /// The type of the items being collected.

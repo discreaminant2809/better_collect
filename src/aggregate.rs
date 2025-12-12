@@ -22,11 +22,11 @@ pub use ref_aggregate_op::*;
 /// with an [`AggregateOp`] whose [`Value`] matches that field's type.
 ///
 /// Among the specified fields to be aggregated, every field except the last one
-/// **must implement [`RefAggregateOp`]**.
+/// must implement [`RefAggregateOp`].
 ///
 /// # Limitations
 ///
-/// This macro currently supports structs with **1 to 12 aggregated fields**
+/// This macro currently supports structs with 1 to 12 aggregated fields
 /// (i.e., fields explicitly specified with an aggregate op, not those
 /// filled via a base struct such as `..Default::default()`).
 ///
