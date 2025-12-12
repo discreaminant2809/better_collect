@@ -1,3 +1,6 @@
+//! [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
+//! [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
+//!
 //! Provides a composable, declarative way to consume an iterator.
 //!
 //! If [`Iterator`] is the "source half" of data pipeline, [`Collector`] is the "sink half" of the pipeline.
