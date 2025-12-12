@@ -234,6 +234,13 @@ pub trait Collector {
     /// collector has stopped. Use [`fuse()`](Collector::fuse) if you find yourself
     /// needing such behavior.
     ///
+    /// If the collector is uncertain, like "maybe I won’t accumulate… uh, fine, I will,"
+    /// it is recommended to return `false`.
+    /// For example, [`filter()`](Collector::filter) might skip some items it collects,
+    /// but still returns `false` as long as the underlying collector can still accumulate.
+    /// The filter just denies "undesirable" items, not signal termination
+    /// (this is the job of [`take_while()`](Collector::take_while) instead).
+    ///
     /// The default implementation always returns `false`.
     ///
     /// # Examples
@@ -789,6 +796,12 @@ pub trait Collector {
     /// `skip(n)` ignores collected items until `n` items have been collected. After that,
     /// subsequent items are accumulated normally.
     ///
+    /// Note that in the current implementation,
+    /// even if the underlying collector has stopped accumulating from the start,
+    /// its [`collect()`] and similar methods will **not** return [`Break(())`], and
+    /// [`break_hint()`] will **not** return `true` if it has not skipped enough items,
+    /// and will still collect until the number of skipped items is `n`.
+    ///
     /// This also implements [`RefCollector`] if the underlying collector does.
     ///
     /// # Examples
@@ -810,6 +823,9 @@ pub trait Collector {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
+    /// [`Break(())`]: ControlFlow::Break
+    /// [`collect()`]: Collector::collect
+    /// [`break_hint()`]: Collector::break_hint
     fn skip(self, n: usize) -> Skip<Self>
     where
         Self: Sized,
