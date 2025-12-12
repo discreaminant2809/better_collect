@@ -40,10 +40,10 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         // Despite short-circuiting due to the predicate, we can't
         // do anything besides delegating to the underlying collector.
-        self.collector.has_stopped()
+        self.collector.break_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

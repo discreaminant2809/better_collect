@@ -44,8 +44,8 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
-        self.collector.has_stopped()
+    fn break_hint(&self) -> bool {
+        self.collector.break_hint()
     }
 
     #[inline]

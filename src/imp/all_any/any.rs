@@ -157,7 +157,7 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         self.inner.has_stopped()
     }
 
@@ -211,7 +211,7 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         self.inner.has_stopped()
     }
 

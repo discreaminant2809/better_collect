@@ -99,7 +99,7 @@ where
     // But we will have a support of `FUSED` const variable later,
     // making this neccessary.
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         matches!(self.state, State::Found(_))
     }
 

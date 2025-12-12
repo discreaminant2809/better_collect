@@ -48,7 +48,7 @@ impl crate::Collector for Collector {
     fn finish(self) -> Self::Output {}
 
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         true
     }
 

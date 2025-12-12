@@ -25,7 +25,7 @@ use crate::{
 /// [`Collector::collect()`], [`Collector::collect_many()`], and
 /// [`RefCollector::collect_ref()`](crate::RefCollector::collect_ref)
 /// have returned [`Break(())`] once,
-/// or [`Collector::has_stopped()`] has returned `true` once,
+/// or [`Collector::break_hint()`] has returned `true` once,
 /// behaviors of subsequent calls to **any** method other than
 /// [`finish()`](Collector::finish) are unspecified.
 /// They may panic, overflow, or even resume accumulation
@@ -219,7 +219,10 @@ pub trait Collector {
     where
         Self: Sized;
 
-    /// Returns whether the collector has stopped accumulating.
+    /// Returns a hint whether the collector has stopped accumulating.
+    ///
+    /// Returns `true` if it is guaranteed that the collector has stopped accumulating,
+    /// or returns `false` otherwise.
     ///
     /// As specified in the trait's documentation, after the stop is signaled somewhere else,
     /// including through [`collect()`](Collector::collect) or similar methods,
@@ -244,7 +247,7 @@ pub trait Collector {
     ///     .into_collector()
     ///     .take_while(|&x| x != 3);
     ///
-    /// let mut has_stopped = collector.has_stopped();
+    /// let mut has_stopped = collector.break_hint();
     /// let mut num = 0;
     /// while !has_stopped {
     ///     has_stopped = collector.collect(num).is_break();
@@ -265,10 +268,10 @@ pub trait Collector {
     ///
     /// let mut num = 0;
     /// // If `collect()` has returned `Break(())` in the previous iteration,
-    /// // The usage of `has_stopped()` here is NOT valid. ⚠️
+    /// // The usage of `break_hint()` here is NOT valid. ⚠️
     /// // By the current implementation, this may loop indefinitely
     /// // until your RAM explodes! (the `Vec` keeps expanding)
-    /// while !collector.has_stopped() {
+    /// while !collector.break_hint() {
     ///     let _ = collector.collect(num);
     ///     num += 1;
     /// }
@@ -277,7 +280,7 @@ pub trait Collector {
     /// assert_eq!(collector.finish(), [0, 1, 2]);
     /// ```
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         false
     }
 
@@ -302,7 +305,7 @@ pub trait Collector {
     where
         Self: Sized,
     {
-        if self.has_stopped() {
+        if self.break_hint() {
             ControlFlow::Break(())
         } else {
             // Use `try_for_each` instead of `for` loop since the iterator may not be optimal for `for` loop
@@ -350,7 +353,12 @@ pub trait Collector {
     /// Normally, a collector having stopped may behave unpredictably,
     /// including accumulating again.
     /// `fuse()` ensures that once a collector has stopped, subsequent items
-    /// are guaranteed to **not** be accumulated.
+    /// are guaranteed to **not** be accumulated. This means that at that point,
+    /// the following are guaranteed on `fuse()`:
+    ///
+    /// - [`collect()`](Collector::collect) and similar methods always returns
+    ///   [`Break(())`].
+    /// - [`break_hint()`](Collector::break_hint) always return `true`.
     ///
     /// This adaptor implements [`RefCollector`] if the underlying collector does.
     ///
@@ -1092,8 +1100,8 @@ where
     fn finish(self) -> Self::Output {}
 
     #[inline]
-    fn has_stopped(&self) -> bool {
-        C::has_stopped(self)
+    fn break_hint(&self) -> bool {
+        C::break_hint(self)
     }
 
     #[inline]
@@ -1122,8 +1130,8 @@ macro_rules! dyn_impl {
             fn finish(self) -> Self::Output {}
 
             #[inline]
-            fn has_stopped(&self) -> bool {
-                <dyn Collector<Item = T>>::has_stopped(self)
+            fn break_hint(&self) -> bool {
+                <dyn Collector<Item = T>>::break_hint(self)
             }
 
             // The default implementation are sufficient.
@@ -1144,7 +1152,7 @@ mod tests {
     use crate::{Sink, prelude::*};
 
     #[test]
-    fn has_stopped_needed() {
+    fn break_hint_needed() {
         let mut iter = [(); 3].into_iter();
         Sink::new()
             .take(0)

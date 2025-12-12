@@ -36,8 +36,8 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
-        self.0.has_stopped()
+    fn break_hint(&self) -> bool {
+        self.0.break_hint()
     }
 
     #[inline]

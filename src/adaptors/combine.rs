@@ -54,8 +54,8 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
-        self.collector1.has_stopped() && self.collector2.has_stopped()
+    fn break_hint(&self) -> bool {
+        self.collector1.break_hint() && self.collector2.break_hint()
     }
 
     // fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
@@ -126,7 +126,7 @@ where
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         // Avoid consuming one item prematurely.
-        if self.has_stopped() {
+        if self.break_hint() {
             return ControlFlow::Break(());
         }
 
@@ -225,7 +225,7 @@ where
 
     fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         // Avoid consuming one item prematurely.
-        if self.has_stopped() {
+        if self.break_hint() {
             return self.finish();
         }
 

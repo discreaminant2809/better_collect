@@ -43,8 +43,8 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
-        self.remaining == 0 && self.collector.has_stopped()
+    fn break_hint(&self) -> bool {
+        self.remaining == 0 && self.collector.break_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

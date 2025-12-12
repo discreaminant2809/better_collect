@@ -4,7 +4,7 @@
 
 ### Added
 
-- `Collector::has_stopped()`.
+- `Collector::break_hint()`.
 - `Collector::map_output()`.
 
 ### Fixed

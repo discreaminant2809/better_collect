@@ -71,13 +71,13 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
-        self.collector_if_true.has_stopped() && self.collector_if_false.has_stopped()
+    fn break_hint(&self) -> bool {
+        self.collector_if_true.break_hint() && self.collector_if_false.break_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
         // Avoid consuming one item prematurely.
-        if self.has_stopped() {
+        if self.break_hint() {
             return ControlFlow::Break(());
         }
 
@@ -127,7 +127,7 @@ where
 
     fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         // Avoid consuming one item prematurely.
-        if self.has_stopped() {
+        if self.break_hint() {
             return self.finish();
         }
 

@@ -20,7 +20,7 @@ where
     #[inline]
     pub(crate) fn new(collector: C) -> Self {
         Self {
-            finished: collector.has_stopped(),
+            finished: collector.break_hint(),
             collector,
         }
     }
@@ -64,7 +64,7 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         self.finished
     }
 
@@ -114,7 +114,7 @@ mod tests {
                 unimplemented!()
             }
 
-            fn has_stopped(&self) -> bool {
+            fn break_hint(&self) -> bool {
                 true
             }
         }

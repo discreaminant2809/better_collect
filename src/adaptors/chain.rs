@@ -49,7 +49,7 @@ where
     }
 
     #[inline]
-    fn has_stopped(&self) -> bool {
+    fn break_hint(&self) -> bool {
         // We're sure that whether this collector has finished or not is
         // entirely based on the 2nd collector.
         // Also, by this method being called it is assumed that
@@ -58,7 +58,7 @@ where
         //
         // Since the 1st collector is fused, we won't cause any unsoundness
         // by repeatedly calling it.
-        self.collector1.has_stopped() && self.collector2.has_stopped()
+        self.collector1.break_hint() && self.collector2.break_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

@@ -53,8 +53,8 @@ impl<C: Collector> Collector for Take<C> {
         self.collector.finish()
     }
 
-    fn has_stopped(&self) -> bool {
-        self.remaining == 0 || self.collector.has_stopped()
+    fn break_hint(&self) -> bool {
+        self.remaining == 0 || self.collector.break_hint()
     }
 
     // fn size_hint(&self) -> (usize, Option<usize>) {
