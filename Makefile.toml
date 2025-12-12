@@ -1,4 +1,10 @@
-[tasks.test_doc]
+# Feature powerset in `cargo hack` is opt-in.
+# Only enable when needed
+[tasks.test]
+command = "cargo"
+args = ["t", "--lib"]
+
+[tasks.doc_test]
 command = "cargo"
 args = ["t", "--doc", "--all-features"]
 
@@ -15,3 +21,7 @@ args = ["readme", "--output", "README.md"]
 env = { RUSTDOCFLAGS = "--cfg docsrs" }
 command = "rustup"
 args = ["run", "nightly", "cargo", "doc", "--all-features", "--no-deps"]
+
+[tasks.build-feature-powerset]
+command = "cargo"
+args = ["hack", "b", "--feature-powerset"]
