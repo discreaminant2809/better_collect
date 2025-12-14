@@ -20,6 +20,7 @@ use alloc::vec::Vec;
 ///
 /// [`Collector`]: crate::Collector
 /// [`Output`]: crate::Collector::Output
+#[derive(Debug, Default, Clone)]
 pub struct IntoCollector<T>(Vec<T>);
 
 /// A [`Collector`] that pushes collected items into a [`&mut Vec`](Vec).

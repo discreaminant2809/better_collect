@@ -8,6 +8,8 @@ mod fuse;
 mod map;
 mod map_output;
 mod map_ref;
+#[cfg(feature = "unstable")]
+mod nest;
 mod partition;
 #[cfg(feature = "unstable")]
 mod puller;
@@ -29,6 +31,8 @@ pub use fuse::*;
 pub use map::*;
 pub use map_output::*;
 pub use map_ref::*;
+#[cfg(feature = "unstable")]
+pub use nest::*;
 pub use partition::*;
 #[cfg(feature = "unstable")]
 pub use puller::*;

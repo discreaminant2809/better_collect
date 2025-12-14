@@ -1,5 +1,7 @@
 use std::ops::ControlFlow;
 
+#[cfg(feature = "unstable")]
+use crate::Nest;
 use crate::{
     Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapOutput, MapRef, Partition, Skip,
     Take, TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
@@ -1095,6 +1097,49 @@ pub trait Collector {
         F: FnOnce(Self::Output) -> T,
     {
         assert_collector(MapOutput::new(self, f))
+    }
+
+    /// Creates a [`Collector`] that collects all outputs produced by an inner collector.
+    ///
+    /// The inner collector collects items first until it stops accumulating,
+    /// then, the outer collector collects the output produced by the inner collector,
+    /// then repeat.
+    ///
+    /// The inner collector must implement [`Clone`]. Also, it should be finite
+    /// so that the outer can collect more, or else the outer will be stuck with
+    /// one output forever.
+    ///
+    /// This also implements [`RefCollector`] if the inner collector does.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .nest(vec![].into_collector().take(3));
+    ///
+    /// collector.collect_many(1..=9);
+    ///
+    /// assert_eq!(
+    ///     collector.finish(),
+    ///     [
+    ///         [1, 2, 3],
+    ///         [4, 5, 6],
+    ///         [7, 8, 9],
+    ///     ],
+    /// );
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    #[cfg(feature = "unstable")]
+    fn nest<C>(self, inner: C) -> Nest<Self, C::IntoCollector>
+    where
+        Self: Collector<Item = C::Output> + Sized,
+        C: IntoCollector<IntoCollector: Clone>,
+    {
+        assert_collector(Nest::new(self, inner.into_collector()))
     }
 }
 
