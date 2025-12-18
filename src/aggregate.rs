@@ -105,6 +105,7 @@ const fn assert_ref_op<Op: RefAggregateOp>(op: Op) -> Op {
 // To fix the macro.
 #[cfg(feature = "std")]
 fn _example() {
+    #[allow(unused_imports)]
     use crate::{
         BetterCollect,
         aggregate::{self, AggregateOp, GroupMap},
