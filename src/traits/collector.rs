@@ -1120,7 +1120,7 @@ pub trait Collector {
     ///     .into_collector()
     ///     .nest(vec![].into_collector().take(3));
     ///
-    /// collector.collect_many(1..=9);
+    /// assert!(collector.collect_many(1..=9).is_continue());
     ///
     /// assert_eq!(
     ///     collector.finish(),
