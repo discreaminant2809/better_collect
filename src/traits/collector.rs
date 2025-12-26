@@ -1,11 +1,11 @@
 use std::ops::ControlFlow;
 
-#[cfg(feature = "unstable")]
-use crate::Nest;
 use crate::{
     Chain, Cloning, Copying, Filter, Fuse, IntoCollector, Map, MapOutput, MapRef, Partition, Skip,
     Take, TakeWhile, Unbatching, UnbatchingRef, Unzip, assert_collector, assert_ref_collector,
 };
+#[cfg(feature = "unstable")]
+use crate::{Nest, NestExact};
 
 /// Collects items and produces a final output.
 ///
@@ -1140,6 +1140,40 @@ pub trait Collector {
         C: IntoCollector<IntoCollector: Clone>,
     {
         assert_collector(Nest::new(self, inner.into_collector()))
+    }
+
+    /// Creates a [`Collector`] that collects all outputs produced by an inner collector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .nest_exact(vec![].into_collector().take(3));
+    ///
+    /// // Purposely put extra 10 and 11.
+    /// assert!(collector.collect_many(1..=11).is_continue());
+    ///
+    /// assert_eq!(
+    ///     collector.finish(),
+    ///     [
+    ///         [1, 2, 3],
+    ///         [4, 5, 6],
+    ///         [7, 8, 9],
+    ///     ],
+    /// );
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::RefCollector
+    #[cfg(feature = "unstable")]
+    fn nest_exact<C>(self, inner: C) -> NestExact<Self, C::IntoCollector>
+    where
+        Self: Collector<Item = C::Output> + Sized,
+        C: IntoCollector<IntoCollector: Clone>,
+    {
+        assert_collector(NestExact::new(self, inner.into_collector()))
     }
 }
 

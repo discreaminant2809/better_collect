@@ -154,20 +154,39 @@ mod proptests {
     }
 
     fn collect_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
+        let should_break = should_break(vec1, vec2, take_count);
+
         let mut collector = new_collector(take_count);
-        let _ = get_iter(vec1, vec2).try_for_each(|item| collector.collect(item));
+        assert_eq!(
+            get_iter(vec1, vec2)
+                .try_for_each(|item| collector.collect(item))
+                .is_break(),
+            should_break
+        );
         collector.finish()
     }
 
     fn collect_ref_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
+        let should_break = should_break(vec1, vec2, take_count);
+
         let mut collector = new_collector(take_count);
-        let _ = get_iter(vec1, vec2).try_for_each(|mut item| collector.collect_ref(&mut item));
+        assert_eq!(
+            get_iter(vec1, vec2)
+                .try_for_each(|mut item| collector.collect_ref(&mut item))
+                .is_break(),
+            should_break
+        );
         collector.finish()
     }
 
     fn collect_many_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
+        let should_break = should_break(vec1, vec2, take_count);
+
         let mut collector = new_collector(take_count);
-        assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
+        assert_eq!(
+            collector.collect_many(get_iter(vec1, vec2)).is_break(),
+            should_break
+        );
         collector.finish()
     }
 
@@ -179,5 +198,12 @@ mod proptests {
         vec1.iter()
             .copied()
             .chain(vec2.iter().copied().filter(|&num| num > 0))
+    }
+
+    fn should_break(vec1: &[i32], vec2: &[i32], take_count: usize) -> bool {
+        // For methods returning `ControlFlow`,
+        // we do additional check whether it breaks correctly or not.
+        let real_count = get_iter(vec1, vec2).count();
+        real_count >= take_count
     }
 }
