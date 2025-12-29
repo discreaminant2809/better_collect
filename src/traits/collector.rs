@@ -1109,7 +1109,11 @@ pub trait Collector {
     /// so that the outer can collect more, or else the outer will be stuck with
     /// one output forever.
     ///
-    /// This version will collect an unfinished inner after finishinf
+    /// This version collects the unfinished inner (the remainder), if any,
+    /// after calling [`finish()`] or [`collect_then_finish()`].
+    /// Hence, this adaptor is not "exact," similar to [`[_]::chunks()`](slice::chunks).
+    /// Use [`nest_exact()`](Collector::nest_exact) if you do not care about the remainder,
+    /// since the exact verion is generally faster.
     ///
     /// This also implements [`RefCollector`] if the inner collector does.
     ///
@@ -1136,6 +1140,8 @@ pub trait Collector {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
+    /// [`finish()`]: Collector::finish
+    /// [`collect_then_finish()`]: Collector::collect_then_finish
     #[cfg(feature = "unstable")]
     fn nest<C>(self, inner: C) -> Nest<Self, C::IntoCollector>
     where
@@ -1146,6 +1152,23 @@ pub trait Collector {
     }
 
     /// Creates a [`Collector`] that collects all outputs produced by an inner collector.
+    ///
+    /// The inner collector collects items first until it stops accumulating,
+    /// then, the outer collector collects the output produced by the inner collector,
+    /// then repeat.
+    ///
+    /// The inner collector must implement [`Clone`]. Also, it should be finite
+    /// so that the outer can collect more, or else the outer will be stuck with
+    /// one output forever.
+    ///
+    /// This version will only collect all the inners that has stopped accumulating.
+    /// Any unfinished inner (the remainder) is discarded after calling
+    /// [`finish()`] or [`collect_then_finish()`].
+    /// Hence, this adaptor is "exact," similar to [`[_]::chunks_exact()`](slice::chunks_exact).
+    /// Since the implementation is simpler, this adaptor is generally faster.
+    /// Use [`nest()`](Collector::nest) if you care about the remainder.
+    ///
+    /// This also implements [`RefCollector`] if the inner collector does.
     ///
     /// # Examples
     ///
@@ -1169,6 +1192,8 @@ pub trait Collector {
     /// ```
     ///
     /// [`RefCollector`]: crate::RefCollector
+    /// [`finish()`]: Collector::finish
+    /// [`collect_then_finish()`]: Collector::collect_then_finish
     #[cfg(feature = "unstable")]
     fn nest_exact<C>(self, inner: C) -> NestExact<Self, C::IntoCollector>
     where
