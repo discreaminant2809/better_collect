@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2
+
+### Added
+
+- Unstable: `Collector::nest(_exact)()`.
+
+### Fixed
+
+- `Take::collect_many()` not returning `ControlFlow` correctly.
+
 ## 0.3.1
 
 ### Added
