@@ -4,4 +4,3 @@ mod strategy;
 
 pub use nest::*;
 pub use nest_exact::*;
-use strategy::*;

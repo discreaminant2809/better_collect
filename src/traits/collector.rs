@@ -1109,6 +1109,8 @@ pub trait Collector {
     /// so that the outer can collect more, or else the outer will be stuck with
     /// one output forever.
     ///
+    /// This version will collect an unfinished inner after finishinf
+    ///
     /// This also implements [`RefCollector`] if the inner collector does.
     ///
     /// # Examples
@@ -1120,14 +1122,15 @@ pub trait Collector {
     ///     .into_collector()
     ///     .nest(vec![].into_collector().take(3));
     ///
-    /// assert!(collector.collect_many(1..=9).is_continue());
+    /// assert!(collector.collect_many(1..=11).is_continue());
     ///
     /// assert_eq!(
     ///     collector.finish(),
     ///     [
-    ///         [1, 2, 3],
-    ///         [4, 5, 6],
-    ///         [7, 8, 9],
+    ///         vec![1, 2, 3],
+    ///         vec![4, 5, 6],
+    ///         vec![7, 8, 9],
+    ///         vec![10, 11],
     ///     ],
     /// );
     /// ```
@@ -1153,7 +1156,6 @@ pub trait Collector {
     ///     .into_collector()
     ///     .nest_exact(vec![].into_collector().take(3));
     ///
-    /// // Purposely put extra 10 and 11.
     /// assert!(collector.collect_many(1..=11).is_continue());
     ///
     /// assert_eq!(

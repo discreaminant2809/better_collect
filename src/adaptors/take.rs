@@ -88,7 +88,10 @@ impl<C: Collector> Collector for Take<C> {
         if self.remaining <= lower_sh {
             let n = self.remaining;
             self.remaining = 0;
-            return self.collector.collect_many(items.take(n));
+            // Pass bug: we return the result directly,
+            // while no matter what, it's a stop.
+            let _ = self.collector.collect_many(items.take(n));
+            return ControlFlow::Break(());
         }
 
         self.remaining -= lower_sh;
@@ -96,12 +99,21 @@ impl<C: Collector> Collector for Take<C> {
 
         // We don't know how many left after the lower bound,
         // so we carefully track the state with `inspect`.
-        self.collector.collect_many(
+        //
+        // Pass bug: we return the result directly,
+        // while no matter what, it's a stop.
+        let cf = self.collector.collect_many(
             items
                 .take(self.remaining)
                 // Since the collector may not collect all `remaining` items
                 .inspect(|_| self.remaining -= 1),
-        )
+        );
+
+        if self.remaining == 0 {
+            ControlFlow::Break(())
+        } else {
+            cf
+        }
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {

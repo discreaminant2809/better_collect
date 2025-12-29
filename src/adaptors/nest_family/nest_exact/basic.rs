@@ -4,7 +4,11 @@ use crate::{Collector, RefCollector};
 
 use super::{super::strategy::CloneStrategy, with_strategy::WithStrategy};
 
+/// A [`Collector`] that collects all outputs produced by an inner collector.
 ///
+/// This `struct` is created by [`Collector::nest_exact()`]. See its documentation for more.
+// Needed because the "Available on crate feature" does not show up on doc.rs
+#[cfg_attr(docsrs, doc(cfg(feature = "unstable")))]
 pub struct NestExact<CO, CI>(WithStrategy<CO, CloneStrategy<CI>>)
 where
     CI: Collector + Clone;
