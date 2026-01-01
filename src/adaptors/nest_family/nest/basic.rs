@@ -78,7 +78,7 @@ mod proptests {
 
     proptest! {
         #[test]
-        fn collect_many(
+        fn all_collect_methods(
             nums in propvec(any::<i32>(), ..100),
             row in ..25_usize,
             column in 1..25_usize,
@@ -104,12 +104,16 @@ mod proptests {
         let should_break = should_break(nums, row, column);
 
         let mut collector = get_collector(row, column);
-        assert_eq!(
-            get_iter(nums)
+
+        // Simulate the fact that break_hint is used before looping,
+        // which is the intended use case.
+        let has_stopped = collector.break_hint()
+            || get_iter(nums)
                 .try_for_each(|item| collector.collect(item))
-                .is_break(),
-            should_break
-        );
+                .is_break();
+
+        assert_eq!(has_stopped, should_break);
+
         collector.finish()
     }
 
@@ -117,12 +121,16 @@ mod proptests {
         let should_break = should_break(nums, row, column);
 
         let mut collector = get_collector(row, column);
-        assert_eq!(
-            get_iter(nums)
+
+        // Simulate the fact that break_hint is used before looping,
+        // which is the intended use case.
+        let has_stopped = collector.break_hint()
+            || get_iter(nums)
                 .try_for_each(|mut item| collector.collect_ref(&mut item))
-                .is_break(),
-            should_break
-        );
+                .is_break();
+
+        assert_eq!(has_stopped, should_break);
+
         collector.finish()
     }
 
