@@ -2,7 +2,7 @@
 # Only enable when needed
 [tasks.test]
 command = "cargo"
-args = ["t", "--lib"]
+args = ["hack", "t", "--lib", "--feature-powerset"]
 
 [tasks.doc_test]
 command = "cargo"
