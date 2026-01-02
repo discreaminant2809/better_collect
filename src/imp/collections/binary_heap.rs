@@ -9,6 +9,19 @@
 //! which can be less efficient than constructing a [`Vec`] then converting to
 //! a `BinaryHeap` (`O(n)`).
 //!
+//! Do the following instead to construct a [`BinaryHeap`] from scratch:
+//!
+//! ```
+//! use std::collections::BinaryHeap;
+//! use better_collect::prelude::*;
+//!
+//! let mut collector = vec![]
+//!     .into_collector()
+//!     .map_output(BinaryHeap::from);
+//! #
+//! # collector.collect(1);
+//! ```
+//!
 //! [`Collector`]: crate::Collector
 
 #[cfg(not(feature = "std"))]

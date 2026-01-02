@@ -47,6 +47,8 @@ use crate::{Nest, NestExact};
 /// This trait is *dyn-compatible*, meaning it can be used as a trait object.
 /// You do not need to specify the [`Output`](crate::Collector::Output) type;
 /// providing the [`Item`](crate::Collector::Item) type is enough.
+/// The compiler will even emit a warning if you add the
+/// [`Output`](crate::Collector::Output) type.
 ///
 /// For example:
 ///
@@ -152,6 +154,8 @@ pub trait Collector {
     /// Some collectors-like [`take(0)`](Collector::take) and [`take_while()`]-only
     /// know when they are done after collecting an item, which might be too late
     /// if the item cannot be “afforded” and is lost forever.
+    /// In this case, call [`break_hint()`](Collector::break_hint) before collecting
+    /// (see its documentation to use it correctly).
     /// For "infinite" collectors (like most collections), this is not an issue
     /// since they can simply return  [`Continue(())`] every time.
     ///
@@ -232,7 +236,8 @@ pub trait Collector {
     /// This may include returning `false` even if the collector has conceptually stopped.
     ///
     /// This method should be called once and only once before collecting
-    /// items in a loop. It is not intended for repeatedly checking whether the
+    /// items in a loop to avoid consuming one item prematurely.
+    /// It is not intended for repeatedly checking whether the
     /// collector has stopped. Use [`fuse()`](Collector::fuse) if you find yourself
     /// needing such behavior.
     ///
@@ -365,7 +370,7 @@ pub trait Collector {
     /// are guaranteed to **not** be accumulated. This means that at that point,
     /// the following are guaranteed on `fuse()`:
     ///
-    /// - [`collect()`](Collector::collect) and similar methods always returns
+    /// - [`collect()`](Collector::collect) and similar methods always return
     ///   [`Break(())`].
     /// - [`break_hint()`](Collector::break_hint) always return `true`.
     ///
@@ -728,7 +733,7 @@ pub trait Collector {
     /// or fewer if the underlying collector ends sooner.
     ///
     /// `take(n)` collects items until either `n` items have been collected or the underlying collector
-    /// stops - whichever happens first.
+    /// stops, whichever happens first.
     /// For collections, the [`Output`](Collector::Output) will contain at most `n` more items than
     /// it had before construction.
     ///
