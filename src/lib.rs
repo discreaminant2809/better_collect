@@ -283,6 +283,8 @@ mod adaptors;
 pub mod aggregate;
 mod imp;
 pub mod prelude;
+#[cfg(test)]
+mod test_utils;
 mod traits;
 
 pub use adaptors::*;

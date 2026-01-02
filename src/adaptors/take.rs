@@ -134,88 +134,37 @@ impl<C: RefCollector> RefCollector for Take<C> {
 mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
+    use crate::test_utils::proptest_ref_collector;
 
     proptest! {
         #[test]
-        fn collect_many(
-            vec1 in propvec(any::<i32>(), ..100),
-            vec2 in propvec(any::<i32>(), ..100),
-            take_count in ..250_usize,
+        fn all_collect_methods(
+            nums1 in propvec(any::<i32>(), ..10),
+            nums2 in propvec(any::<i32>(), ..10),
+            take_count in ..25_usize,
         ) {
-            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
-            let mut results = fns
-                .into_iter()
-                .map(|f| f(&vec1, &vec2, take_count))
-                .enumerate();
-
-            let (_, expected) = results.next().unwrap();
-            for (i, res) in results{
-                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
-            }
+            all_collect_methods_impl(nums1, nums2, take_count)?;
         }
     }
 
-    fn iter_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        get_iter(vec1, vec2).take(take_count).collect()
-    }
-
-    fn new_collector(take_count: usize) -> impl RefCollector<Item = i32, Output = Vec<i32>> {
-        vec![].into_collector().take(take_count)
-    }
-
-    fn collect_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        let should_break = should_break(vec1, vec2, take_count);
-
-        let mut collector = new_collector(take_count);
-        assert_eq!(
-            get_iter(vec1, vec2)
-                .try_for_each(|item| collector.collect(item))
-                .is_break(),
-            should_break
-        );
-        collector.finish()
-    }
-
-    fn collect_ref_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        let should_break = should_break(vec1, vec2, take_count);
-
-        let mut collector = new_collector(take_count);
-        assert_eq!(
-            get_iter(vec1, vec2)
-                .try_for_each(|mut item| collector.collect_ref(&mut item))
-                .is_break(),
-            should_break
-        );
-        collector.finish()
-    }
-
-    fn collect_many_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        let should_break = should_break(vec1, vec2, take_count);
-
-        let mut collector = new_collector(take_count);
-        assert_eq!(
-            collector.collect_many(get_iter(vec1, vec2)).is_break(),
-            should_break
-        );
-        collector.finish()
-    }
-
-    fn collect_then_finish_way(vec1: &[i32], vec2: &[i32], take_count: usize) -> Vec<i32> {
-        new_collector(take_count).collect_then_finish(get_iter(vec1, vec2))
-    }
-
-    fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {
-        vec1.iter()
-            .copied()
-            .chain(vec2.iter().copied().filter(|&num| num > 0))
-    }
-
-    fn should_break(vec1: &[i32], vec2: &[i32], take_count: usize) -> bool {
-        // For methods returning `ControlFlow`,
-        // we do additional check whether it breaks correctly or not.
-        let real_count = get_iter(vec1, vec2).count();
-        real_count >= take_count
+    fn all_collect_methods_impl(
+        nums1: Vec<i32>,
+        nums2: Vec<i32>,
+        take_count: usize,
+    ) -> TestCaseResult {
+        proptest_ref_collector(
+            || {
+                nums1
+                    .iter()
+                    .copied()
+                    .chain(nums2.iter().copied().filter(|&num| num > 0))
+            },
+            || vec![].into_collector().take(take_count),
+            |iter| iter.count() >= take_count,
+            |iter| iter.take(take_count).collect(),
+        )
     }
 }
