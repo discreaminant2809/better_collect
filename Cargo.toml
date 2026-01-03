@@ -2,6 +2,7 @@
 name = "better_collect"
 version = "0.4.0"
 edition = "2024"
+authors = ["Ayabin"]
 license = "MIT OR Apache-2.0"
 description = "Provides a composable, declarative way to consume an iterator"
 repository = "https://github.com/discreaminant2809/better_collect.git"
