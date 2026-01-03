@@ -122,75 +122,52 @@ fn drop_n_items(items: &mut impl Iterator, n: usize) -> bool {
 mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
-    use crate::prelude::*;
+    use crate::test_utils::proptest_ref_collector;
+    use crate::{Sink, prelude::*};
 
+    // We need to use `take()` to simulate the break case when enough items are skipped.
+    // Precondition:
+    // - `Vec::IntoCollector` is implemented correctly.
+    // - `take()` is implemented correctly.
+    // - `Sink` is implemented correctly.
     proptest! {
         #[test]
-        fn collect_many(
-            (vec1, vec2, take_count) in prop_oneof![
-                9 => (
-                    propvec(any::<i32>(), ..100),
-                    propvec(any::<i32>(), ..100),
-                    ..250_usize,
-                ),
-
-                // skip_count == total length case
-                1 => (
-                    propvec(any::<i32>(), ..100),
-                    propvec(any::<i32>(), ..100),
-                ).prop_map(|(vec1, vec2)| {
-                    let take_count = get_iter(&vec1, &vec2).count();
-                    (vec1, vec2, take_count)
-                }),
-            ]
+        fn all_collect_methods(
+            // We keep just enough "space" for the take count to land on
+            // each size hint interval.
+            // The "diagram" is as below (E = when the take count is equal to either lower or upper bound)
+            // 0 1 2 E 4 5 6 E 8 9
+            nums1 in propvec(any::<i32>(), ..=3),
+            nums2 in propvec(any::<i32>(), ..=4),
+            take_count in ..=9_usize,
+            skip_count in ..=9_usize,
         ) {
-            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
-            let mut results = fns
-                .into_iter()
-                .map(|f| f(&vec1, &vec2, take_count))
-                .enumerate();
-
-            let (_, expected) = results.next().unwrap();
-            for (i, res) in results{
-                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
-            }
+            all_collect_methods_impl(nums1, nums2, take_count,skip_count)?;
         }
     }
 
-    fn iter_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        get_iter(vec1, vec2).skip(skip_count).collect()
-    }
-
-    fn new_collector(skip_count: usize) -> impl RefCollector<Item = i32, Output = Vec<i32>> {
-        vec![].into_collector().skip(skip_count)
-    }
-
-    fn collect_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        let mut collector = new_collector(skip_count);
-        let _ = get_iter(vec1, vec2).try_for_each(|item| collector.collect(item));
-        collector.finish()
-    }
-
-    fn collect_ref_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        let mut collector = new_collector(skip_count);
-        let _ = get_iter(vec1, vec2).try_for_each(|mut item| collector.collect_ref(&mut item));
-        collector.finish()
-    }
-
-    fn collect_many_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        let mut collector = new_collector(skip_count);
-        assert!(collector.collect_many(get_iter(vec1, vec2)).is_continue());
-        collector.finish()
-    }
-
-    fn collect_then_finish_way(vec1: &[i32], vec2: &[i32], skip_count: usize) -> Vec<i32> {
-        new_collector(skip_count).collect_then_finish(get_iter(vec1, vec2))
-    }
-
-    fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = i32> {
-        vec1.iter()
-            .copied()
-            .chain(vec2.iter().copied().filter(|&num| num > 0))
+    fn all_collect_methods_impl(
+        nums1: Vec<i32>,
+        nums2: Vec<i32>,
+        take_count: usize,
+        skip_count: usize,
+    ) -> TestCaseResult {
+        proptest_ref_collector(
+            || {
+                nums1
+                    .iter()
+                    .copied()
+                    .chain(nums2.iter().copied().filter(|&num| num > 0))
+            },
+            || vec![].into_collector().take(take_count).skip(skip_count),
+            |iter| {
+                let mut iter = iter.clone();
+                iter.by_ref().take(skip_count).count() == skip_count
+                    && Sink::new().take(take_count).collect_many(iter).is_break()
+            },
+            |iter| iter.skip(skip_count).take(take_count).collect(),
+        )
     }
 }

@@ -142,9 +142,13 @@ mod proptests {
     proptest! {
         #[test]
         fn all_collect_methods(
-            nums1 in propvec(any::<i32>(), ..10),
-            nums2 in propvec(any::<i32>(), ..10),
-            take_count in ..25_usize,
+            // We keep just enough "space" for the take count to land on
+            // each size hint interval.
+            // The "diagram" is as below (E = when the take count is equal to either lower or upper bound)
+            // 0 1 2 E 4 5 6 E 8 9
+            nums1 in propvec(any::<i32>(), ..=3),
+            nums2 in propvec(any::<i32>(), ..=4),
+            take_count in ..=9_usize,
         ) {
             all_collect_methods_impl(nums1, nums2, take_count)?;
         }

@@ -93,62 +93,30 @@ impl<C: Debug, F> Debug for TakeWhile<C, F> {
 mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
+    use crate::test_utils::proptest_ref_collector;
 
     proptest! {
         #[test]
-        fn collect_many(
-            vec1 in propvec(any::<i32>(), ..100),
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..5),
         ) {
-            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
-            let mut results = fns
-                .into_iter()
-                .map(|f| f(&vec1))
-                .enumerate();
-
-            let (_, expected) = results.next().unwrap();
-            for (i, res) in results{
-                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
-            }
+            all_collect_methods_impl(nums)?;
         }
     }
 
-    fn iter_way(vec1: &[i32]) -> Vec<i32> {
-        get_iter(vec1).take_while(take_while_pred).collect()
-    }
-
-    fn new_collector() -> impl RefCollector<Item = i32, Output = Vec<i32>> {
-        vec![].into_collector().take_while(take_while_pred)
+    fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
+        proptest_ref_collector(
+            || nums.iter().copied(),
+            || vec![].into_collector().take_while(take_while_pred),
+            |iter| !iter.clone().all(|num| take_while_pred(&num)),
+            |iter| iter.take_while(take_while_pred).collect(),
+        )
     }
 
     fn take_while_pred(&num: &i32) -> bool {
         num > 0
-    }
-
-    fn collect_way(vec1: &[i32]) -> Vec<i32> {
-        let mut collector = new_collector();
-        let _ = get_iter(vec1).try_for_each(|item| collector.collect(item));
-        collector.finish()
-    }
-
-    fn collect_ref_way(vec1: &[i32]) -> Vec<i32> {
-        let mut collector = new_collector();
-        let _ = get_iter(vec1).try_for_each(|mut item| collector.collect_ref(&mut item));
-        collector.finish()
-    }
-
-    fn collect_many_way(vec1: &[i32]) -> Vec<i32> {
-        let mut collector = new_collector();
-        let _ = collector.collect_many(get_iter(vec1));
-        collector.finish()
-    }
-
-    fn collect_then_finish_way(vec1: &[i32]) -> Vec<i32> {
-        new_collector().collect_then_finish(get_iter(vec1))
-    }
-
-    fn get_iter(vec1: &[i32]) -> impl Iterator<Item = i32> {
-        vec1.iter().copied()
     }
 }
