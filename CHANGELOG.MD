@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+### Fixed
+
+- `Skip::collect()` and `Skip::collect_ref()` not returning `ControlFlow` correctly.
+
 ## 0.3.2
 
 ### Added
