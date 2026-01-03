@@ -31,7 +31,15 @@ where
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
         if self.remaining > 0 {
             self.remaining -= 1;
-            ControlFlow::Continue(())
+
+            // There is a very edge case that we've skipped enough item,
+            // but the underlying collector has stopped from the beginning.
+            // The correct behavior in this case is to stop.
+            if self.remaining == 0 && self.collector.break_hint() {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
         } else {
             self.collector.collect(item)
         }
@@ -101,7 +109,11 @@ where
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         if self.remaining > 0 {
             self.remaining -= 1;
-            ControlFlow::Continue(())
+            if self.remaining == 0 && self.collector.break_hint() {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
         } else {
             self.collector.collect_ref(item)
         }
