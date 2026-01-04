@@ -2,6 +2,15 @@
 
 ## 0.4.0
 
+### Changed
+
+- Major module restructure:
+  - Collector-related traits and their adapters are now moved to `collector` module.
+  - `BetterCollect` trait is moved to `iter` module and renamed to `IteratorExt`.
+  - `All(Ref)`, `Any(Ref)`, `Count`, `Find`, `Last`, `Reduce` and `(Try)Fold(Ref)`
+    are moved to `iter` module.
+  - `Sum` and `Product` are moved to `ops` module.
+
 ### Fixed
 
 - `Skip::collect()` and `Skip::collect_ref()` not returning `ControlFlow` correctly.

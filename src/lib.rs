@@ -226,10 +226,10 @@
 //!
 //! ## Other traits
 //!
-//! [`BetterCollect`] extends [`Iterator`] with the
+//! [`IteratorExt`] extends [`Iterator`] with the
 //! [`better_collect()`] method, which feeds all items from an iterator
 //! into a [`Collector`] and returns the collector’s result.
-//! To use this method, the [`BetterCollect`] trait must be imported.
+//! To use this method, the [`IteratorExt`] trait must be imported.
 //!
 //! [`IntoCollector`] is a conversion trait that converts a type into a [`Collector`].
 //!
@@ -253,10 +253,14 @@
 //!   discouraged to use them until their designs are finalized and not
 //!   under this flag anymore.
 //!
-//! [`collect()`]: Collector::collect
-//! [`combine()`]: RefCollector::combine
-//! [`chain()`]: Collector::chain
-//! [`better_collect()`]: BetterCollect::better_collect
+//! [`collect()`]: crate::collector::Collector::collect
+//! [`combine()`]: crate::collector::RefCollector::combine
+//! [`chain()`]: crate::collector::Collector::chain
+//! [`better_collect()`]: crate::iter::IteratorExt::better_collect
+//! [`Collector`]: crate::collector::Collector
+//! [`RefCollector`]: crate::collector::RefCollector
+//! [`IntoCollector`]: crate::collector::IntoCollector
+//! [`IteratorExt`]: crate::iter::IteratorExt
 //! [`std::iter`]: std::iter
 //! [`HashSet`]: std::collections::HashSet
 //! [`HashMap`]: std::collections::HashMap
@@ -278,26 +282,34 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-mod adaptors;
 #[cfg(feature = "unstable")]
 pub mod aggregate;
-mod imp;
+pub mod cmp;
+#[cfg(feature = "alloc")]
+pub mod collections;
+pub mod collector;
+pub mod iter;
+pub mod num;
+pub mod ops;
 pub mod prelude;
+#[cfg(feature = "alloc")]
+pub mod string;
+#[cfg(feature = "std")]
+pub mod sync;
+pub mod unit;
+#[cfg(feature = "alloc")]
+pub mod vec;
+
 #[cfg(test)]
 mod test_utils;
-mod traits;
-
-pub use adaptors::*;
-pub use imp::*;
-pub use traits::*;
 
 #[inline(always)]
-const fn assert_collector<C: Collector>(collector: C) -> C {
+const fn assert_collector<C: collector::Collector>(collector: C) -> C {
     collector
 }
 
 #[inline(always)]
-const fn assert_ref_collector<C: RefCollector>(collector: C) -> C {
+const fn assert_ref_collector<C: collector::RefCollector>(collector: C) -> C {
     collector
 }
 

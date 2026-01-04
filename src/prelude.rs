@@ -9,6 +9,9 @@
 //! use better_collect::prelude::*;
 //! ```
 
+pub use crate::collector::{
+    Collector, CollectorByMut, CollectorByRef, IntoCollector, RefCollector,
+};
+pub use crate::iter::IteratorExt;
 #[cfg(feature = "alloc")]
 pub use crate::string::{ConcatStr, ConcatString};
-pub use crate::traits::*;

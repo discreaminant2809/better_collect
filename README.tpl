@@ -2,14 +2,14 @@
 
 {{readme}}
 
-[`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
-[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
-[`BetterCollect`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html
-[`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.IntoCollector.html
-[`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
-[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
-[`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
-[`combine()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.combine
+[`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html
+[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html
+[`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html
+[`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IntoCollector.html
+[`collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#tymethod.collect
+[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.better_collect
+[`chain()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#method.chain
+[`combine()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
 [`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold

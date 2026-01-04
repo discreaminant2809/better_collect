@@ -1,9 +1,9 @@
 use std::ops::ControlFlow;
 
 use crate::{
-    Collector,
     aggregate::{AggregateOp, Group, GroupMap, OccupiedGroup, VacantGroup},
     assert_collector,
+    collector::Collector,
 };
 
 /// A [`Collector`] that aggregates items into groups.

@@ -39,7 +39,7 @@ pub trait GroupMap {
     ///
     /// # Examples
     ///
-    /// [`Collector`]: crate::Collector
+    /// [`Collector`]: crate::collector::Collector
     fn into_aggregate<Op>(self, op: Op) -> IntoAggregate<Self, Op>
     where
         Self: Sized,
@@ -56,7 +56,7 @@ pub trait GroupMap {
     ///
     /// # Examples
     ///
-    /// [`Collector`]: crate::Collector
+    /// [`Collector`]: crate::collector::Collector
     fn aggregate_mut<Op>(&mut self, op: Op) -> AggregateMut<'_, Self, Op>
     where
         Self: Sized,

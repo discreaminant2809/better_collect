@@ -226,10 +226,10 @@ takes ownership.
 
 ### Other traits
 
-[`BetterCollect`] extends [`Iterator`] with the
+[`IteratorExt`] extends [`Iterator`] with the
 [`better_collect()`] method, which feeds all items from an iterator
 into a [`Collector`] and returns the collector’s result.
-To use this method, the [`BetterCollect`] trait must be imported.
+To use this method, the [`IteratorExt`] trait must be imported.
 
 [`IntoCollector`] is a conversion trait that converts a type into a [`Collector`].
 
@@ -253,14 +253,14 @@ More types, traits and functions can be found in this crate's documentation.
   discouraged to use them until their designs are finalized and not
   under this flag anymore.
 
-[`Collector`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html
-[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html
-[`BetterCollect`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html
-[`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/trait.IntoCollector.html
-[`collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#tymethod.collect
-[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/trait.BetterCollect.html#method.better_collect
-[`chain()`]: https://docs.rs/better_collect/latest/better_collect/trait.Collector.html#method.chain
-[`combine()`]: https://docs.rs/better_collect/latest/better_collect/trait.RefCollector.html#method.combine
+[`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html
+[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html
+[`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IteratorExt.html
+[`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IntoCollector.html
+[`collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#tymethod.collect
+[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IteratorExt.html#method.better_collect
+[`chain()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#method.chain
+[`combine()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
 [`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold

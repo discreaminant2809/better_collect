@@ -107,9 +107,9 @@ const fn assert_ref_op<Op: RefAggregateOp>(op: Op) -> Op {
 fn _example() {
     #[allow(unused_imports)]
     use crate::{
-        BetterCollect,
         aggregate::{self, AggregateOp, GroupMap},
         aggregate_struct,
+        prelude::*,
     };
     use std::collections::HashMap;
     #[derive(Debug, Default, PartialEq)]
