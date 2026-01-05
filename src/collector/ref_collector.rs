@@ -149,7 +149,7 @@ pub trait RefCollector: Collector {
     /// ```
     /// use better_collect::{
     ///     prelude::*,
-    ///     cmp::{Min, Max}, num::Sum, Count,
+    ///     cmp::{Min, Max}, num::Sum, iter::Count,
     /// };
     ///
     /// # struct Solution;

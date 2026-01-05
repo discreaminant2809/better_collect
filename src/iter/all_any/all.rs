@@ -21,7 +21,7 @@ use super::raw_all_any::RawAllAny;
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, All};
+/// use better_collect::{prelude::*, iter::All};
 ///
 /// let mut collector = All::new(|x| x > 0);
 ///
@@ -33,7 +33,7 @@ use super::raw_all_any::RawAllAny;
 /// ```
 ///
 /// ```
-/// use better_collect::{prelude::*, All};
+/// use better_collect::{prelude::*, iter::All};
 ///
 /// let mut collector = All::new(|x| x > 0);
 ///
@@ -61,7 +61,7 @@ pub struct All<T, F> {
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, All, num::Sum};
+/// use better_collect::{prelude::*, iter::All, num::Sum};
 ///
 /// let (all_even, sum) = [2, 4, 6]
 ///     .into_iter()
@@ -75,7 +75,7 @@ pub struct All<T, F> {
 /// ```
 ///
 /// ```
-/// use better_collect::{prelude::*, All, num::Sum};
+/// use better_collect::{prelude::*, iter::All, num::Sum};
 ///
 /// let (all_even, sum) = [2, 5, 6]
 ///     .into_iter()

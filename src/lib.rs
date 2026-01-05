@@ -122,7 +122,7 @@
 //! let expected = (received, byte_read, last_seen);
 //!
 //! // This crate's way:
-//! use better_collect::{prelude::*, Last, num::Sum};
+//! use better_collect::{prelude::*, iter::Last, num::Sum};
 //!
 //! let ((received, byte_read), last_seen) = socket_stream()
 //!     .better_collect(
@@ -318,29 +318,3 @@ const fn assert_ref_collector<C: collector::RefCollector>(collector: C) -> C {
 const fn assert_iterator<I: Iterator>(iterator: I) -> I {
     iterator
 }
-
-// #[cfg(test)]
-// mod tests {
-//     #[allow(unused_imports)]
-//     use crate::{BetterCollect, Collector, RefCollector};
-
-//     #[cfg(all(feature = "alloc", not(feature = "std")))]
-//     use alloc::{string::String, vec};
-
-//     #[cfg(feature = "alloc")]
-//     #[test]
-//     fn then() {
-//         let arr = [1, 2, 3];
-//         let (arr1, arr2) = arr.into_iter().better_collect(vec![].then(vec![]));
-//         assert_eq!(arr1, arr);
-//         assert_eq!(arr2, arr);
-
-//         let arr = ["1", "2", "3"];
-//         let (arr1, arr2) = ["1", "2", "3"]
-//             .into_iter()
-//             .map(String::from)
-//             .better_collect(vec![].cloned().then(vec![]));
-//         assert_eq!(arr1, arr);
-//         assert_eq!(arr2, arr);
-//     }
-// }

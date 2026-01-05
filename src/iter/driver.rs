@@ -19,7 +19,7 @@ where
     I: Iterator,
     C: Collector,
 {
-    pub(crate) fn new(iter: I, collector: &'a mut C) -> Self {
+    pub(in crate::iter) fn new(iter: I, collector: &'a mut C) -> Self {
         Self {
             iter,
             collector: collector.fuse(),

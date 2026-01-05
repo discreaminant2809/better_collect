@@ -2,6 +2,7 @@
 
 mod all_any;
 mod count;
+#[cfg(feature = "unstable")]
 mod driver;
 mod find;
 mod fold;
@@ -12,6 +13,7 @@ mod try_fold;
 
 pub use all_any::*;
 pub use count::*;
+#[cfg(feature = "unstable")]
 pub use driver::*;
 pub use find::*;
 pub use fold::*;

@@ -21,7 +21,7 @@ use crate::collector::Collector;
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, Sum};
+/// use better_collect::{prelude::*, ops::Sum};
 ///
 /// let mut collector = Sum::<i32, _>::new();
 ///

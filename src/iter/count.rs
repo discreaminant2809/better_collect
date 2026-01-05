@@ -19,7 +19,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, Count};
+/// use better_collect::{prelude::*, iter::Count};
 ///
 /// let mut collector = Count::new();
 ///

@@ -21,7 +21,7 @@ use crate::{assert_collector, collector::Collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, Product};
+/// use better_collect::{prelude::*, ops::Product};
 ///
 /// let mut collector = Product::<i32, _>::new();
 ///

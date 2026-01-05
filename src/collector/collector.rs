@@ -193,7 +193,7 @@ pub trait Collector {
     /// Most collectors can accumulate indefinitely.
     ///
     /// ```
-    /// use better_collect::{prelude::*, Last};
+    /// use better_collect::{prelude::*, iter::Last};
     ///
     /// let mut last = Last::new();
     /// for num in 0..100 {
@@ -1033,7 +1033,7 @@ pub trait Collector {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, Sink};
+    /// use better_collect::{prelude::*, collector::Sink};
     /// use std::ops::ControlFlow;
     ///
     /// let matrix = vec![

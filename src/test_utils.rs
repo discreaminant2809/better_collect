@@ -26,6 +26,7 @@ where
     )
 }
 
+#[allow(unused)]
 pub fn proptest_ref_collector<I, C>(
     mut iter_factory: impl FnMut() -> I,
     mut collector_factory: impl FnMut() -> C,

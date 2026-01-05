@@ -20,7 +20,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, TryFold};
+/// use better_collect::{prelude::*, iter::TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let mut collector = TryFold::new(0_i8, |sum, num| {
@@ -43,7 +43,7 @@ use crate::{
 /// Short-circuiting:
 ///
 /// ```
-/// use better_collect::{prelude::*, TryFold};
+/// use better_collect::{prelude::*, iter::TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let mut collector = TryFold::new(0_i8, |sum, num| {
@@ -81,7 +81,7 @@ pub struct TryFold<A, T, F> {
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, TryFold};
+/// use better_collect::{prelude::*, iter::TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let (total_len, concatenated) = ["abc", "de", "fgh"]
@@ -102,7 +102,7 @@ pub struct TryFold<A, T, F> {
 /// Short-circuiting:
 ///
 /// ```
-/// use better_collect::{prelude::*, TryFold};
+/// use better_collect::{prelude::*, iter::TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let (concatenated_till_empty, concatenated) = ["abc", "de", "", "fgh"]
