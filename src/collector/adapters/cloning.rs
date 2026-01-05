@@ -8,10 +8,6 @@ use std::ops::ControlFlow;
 #[derive(Debug, Clone)]
 pub struct Cloning<C>(C);
 
-/// See [`Cloning`].
-#[deprecated(since = "0.3.0", note = "See `Cloning`")]
-pub type Cloned<C> = Cloning<C>;
-
 impl<C> Cloning<C> {
     pub(in crate::collector) fn new(collector: C) -> Self {
         Self(collector)

@@ -428,7 +428,6 @@ pub trait Collector {
     /// Use [`cloning()`](Collector::cloning).
     #[inline]
     #[deprecated(since = "0.3.0", note = "Use `cloning()`")]
-    #[allow(deprecated)]
     fn cloned(self) -> Cloning<Self>
     where
         Self: Sized,
@@ -514,7 +513,6 @@ pub trait Collector {
     /// Use [`copying()`](Collector::copying).
     #[inline]
     #[deprecated(since = "0.3.0", note = "Use `copying()`")]
-    #[allow(deprecated)]
     fn copied(self) -> Copying<Self>
     where
         Self: Sized,

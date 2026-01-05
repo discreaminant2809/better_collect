@@ -12,10 +12,6 @@ pub struct Combine<C1, C2> {
     collector2: Fuse<C2>,
 }
 
-/// See [`Combine`].
-#[deprecated(since = "0.3.0", note = "See `Combine`")]
-pub type Then<C1, C2> = Combine<C1, C2>;
-
 impl<C1, C2> Combine<C1, C2>
 where
     C1: Collector,
