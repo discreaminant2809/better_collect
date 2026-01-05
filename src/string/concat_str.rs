@@ -18,7 +18,7 @@ use crate::collector::{Collector, RefCollector};
 ///
 /// let s_no_whitespace = s
 ///     .split_whitespace()
-///     .better_collect(ConcatStr::new());
+///     .feed_into(ConcatStr::new());
 ///
 /// assert_eq!(s_no_whitespace, "abcdefghij");
 /// ```

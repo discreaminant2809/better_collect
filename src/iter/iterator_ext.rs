@@ -12,9 +12,23 @@ use crate::collector::{Collector, IntoCollector};
 ///
 /// This trait is automatically implemented for all [`Iterator`] types.
 pub trait IteratorExt: Iterator {
-    /// Extracts items from this iterator into the provided collector till
+    /// Use [`feed_into()`](IteratorExt::feed_into).
+    #[deprecated(since = "0.4.0", note = "Use `feed_into()`")]
+    #[inline]
+    fn better_collect<C>(&mut self, collector: C) -> C::Output
+    where
+        C: IntoCollector<Item = Self::Item>,
+    {
+        collector.into_collector().collect_then_finish(self)
+    }
+
+    /// Feeds items from this iterator into the provided collector till
     /// the collector stops accumulating or the iterator is exhausted.
     /// and returns the collector’s output.
+    ///
+    /// Even though this method takes `self`, the collector will try their
+    /// best to consume only as many items as it needs. To keep the iterator afterwards,
+    /// use [`by_ref()`](Iterator::by_ref) before this method.
     ///
     /// To use this method, import the [`IteratorExt`] trait.
     ///
@@ -25,14 +39,15 @@ pub trait IteratorExt: Iterator {
     ///
     /// let (nums, max) = [4, 2, 6, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].into_collector().combine(Max::new()));
+    ///     .feed_into(vec![].into_collector().combine(Max::new()));
     ///
     /// assert_eq!(nums, [4, 2, 6, 3]);
     /// assert_eq!(max, Some(6));
     /// ```
     #[inline]
-    fn better_collect<C>(&mut self, collector: C) -> C::Output
+    fn feed_into<C>(self, collector: C) -> C::Output
     where
+        Self: Sized,
         C: IntoCollector<Item = Self::Item>,
     {
         collector.into_collector().collect_then_finish(self)
@@ -64,7 +79,7 @@ pub trait IteratorExt: Iterator {
     ///
     /// let (s_no_ws, len_no_ws) = "the noble and the singer"
     ///     .split_whitespace()
-    ///     .better_collect_with_puller(
+    ///     .feed_into_with_puller(
     ///         ConcatStr::new(),
     ///         |driver| driver.count(),
     ///     );
@@ -73,7 +88,7 @@ pub trait IteratorExt: Iterator {
     /// assert_eq!(len_no_ws, 5);
     /// ```
     #[cfg(feature = "unstable")]
-    fn better_collect_with_puller<C, R>(
+    fn feed_into_with_puller<C, R>(
         self,
         collector: C,
         puller: impl FnOnce(Driver<'_, Self, C::IntoCollector>) -> R,

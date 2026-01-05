@@ -84,7 +84,7 @@
 //! let nums = [1, 3, 2];
 //! let (sum, max) = nums
 //!     .into_iter()
-//!     .better_collect(Sum::<i32>::new().combine(Max::new()));
+//!     .feed_into(Sum::<i32>::new().combine(Max::new()));
 //!
 //! assert_eq!(sum, 6);
 //! assert_eq!(max.unwrap(), 3);
@@ -125,7 +125,7 @@
 //! use better_collect::{prelude::*, iter::Last, num::Sum};
 //!
 //! let ((received, byte_read), last_seen) = socket_stream()
-//!     .better_collect(
+//!     .feed_into(
 //!         vec![]
 //!             .into_collector()
 //!             .cloning()
@@ -174,7 +174,7 @@
 //! // `Collector`
 //! let collector_way = socket_stream()
 //!     // No clone. The data flows smoothly.
-//!     .better_collect(ConcatString::new().combine(HashSet::new()));
+//!     .feed_into(ConcatString::new().combine(HashSet::new()));
 //!
 //! assert_eq!(unzip_way, collector_way);
 //! ```

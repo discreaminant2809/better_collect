@@ -43,7 +43,7 @@ pub struct Fold<A, T, F> {
 ///
 /// let (sum, _) = [1, 2, 3]
 ///     .into_iter()
-///     .better_collect(
+///     .feed_into(
 ///         Fold::new_ref(0, |sum, num| *sum += *num)
 ///             .combine(vec![])
 ///     );

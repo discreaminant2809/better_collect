@@ -48,7 +48,7 @@ pub use ref_aggregate_op::*;
 ///
 /// let groups = [(1, 1), (1, 4), (2, 1), (1, 2), (2, 3)]
 ///     .into_iter()
-///     .better_collect(
+///     .feed_into(
 ///         HashMap::new()
 ///             .into_aggregate(aggregate_struct!(Stats {
 ///                 sum: aggregate::Sum::new().cloning(),
@@ -120,7 +120,7 @@ fn _example() {
     }
     let groups = [(1, 1), (1, 4), (2, 1), (1, 2), (2, 3)]
         .into_iter()
-        .better_collect(HashMap::new().into_aggregate(aggregate_struct!(Stats {
+        .feed_into(HashMap::new().into_aggregate(aggregate_struct!(Stats {
             sum: aggregate::Sum::new().cloning(),
             max: aggregate::Max::new(),
             ..Default::default()

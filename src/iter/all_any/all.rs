@@ -65,7 +65,7 @@ pub struct All<T, F> {
 ///
 /// let (all_even, sum) = [2, 4, 6]
 ///     .into_iter()
-///     .better_collect(
+///     .feed_into(
 ///         All::new_ref(|&mut x| x % 2 == 0)
 ///             .combine(Sum::<i32>::new())
 ///     );
@@ -79,7 +79,7 @@ pub struct All<T, F> {
 ///
 /// let (all_even, sum) = [2, 5, 6]
 ///     .into_iter()
-///     .better_collect(
+///     .feed_into(
 ///         All::new_ref(|&mut x| x % 2 == 0)
 ///             .combine(Sum::<i32>::new())
 ///     );

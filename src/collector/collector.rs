@@ -119,7 +119,7 @@ use std::ops::ControlFlow;
 /// let tokenizer = sentence
 ///     .split_whitespace()
 ///     .map(String::from)
-///     .better_collect(Tokenizer::default());
+///     .feed_into(Tokenizer::default());
 ///
 /// // "the" should only appear once.
 /// assert_eq!(tokenizer.words, ["the", "noble", "and", "singer"]);
@@ -463,7 +463,7 @@ pub trait Collector {
     ///     // so we must call `cloning()` to make it `combine`-able.
     ///     // Otherwise, the first `Vec` would consume each item,
     ///     // leaving nothing for the second.
-    ///     .better_collect(vec![].into_collector().cloning().combine(vec![]));
+    ///     .feed_into(vec![].into_collector().cloning().combine(vec![]));
     ///
     /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
     /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
@@ -487,7 +487,7 @@ pub trait Collector {
     ///     .into_iter()
     ///     // Just `combine` normally.
     ///     // `Vec<i32>::IntoCollector` implements `RefCollector` since `i32` is `Copy`.
-    ///     .better_collect(vec![].into_collector().combine(vec![]));
+    ///     .feed_into(vec![].into_collector().combine(vec![]));
     ///
     /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -540,7 +540,7 @@ pub trait Collector {
     ///
     /// let collector_copying_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].into_collector().copying().combine(vec![]));
+    ///     .feed_into(vec![].into_collector().copying().combine(vec![]));
     ///
     /// assert_eq!(collector_copying_res, (vec![1, 2, 3], vec![1, 2, 3]));
     ///
@@ -556,7 +556,7 @@ pub trait Collector {
     /// // since `Vec<i32>::IntoCollector` implements `RefCollector`.
     /// let collector_normal_res = [1, 2, 3]
     ///     .into_iter()
-    ///     .better_collect(vec![].into_collector().combine(vec![]));
+    ///     .feed_into(vec![].into_collector().combine(vec![]));
     ///
     /// assert_eq!(collector_copying_res, collector_normal_res);
     /// ```
@@ -591,7 +591,7 @@ pub trait Collector {
     ///
     /// // Collect the first 5 squared numbers.
     /// let collector_squares = (1..=5)
-    ///     .better_collect(vec![].into_collector().map(|num| num * num));
+    ///     .feed_into(vec![].into_collector().map(|num| num * num));
     ///
     /// assert_eq!(collector_squares, [1, 4, 9, 16, 25]);
     /// ```
@@ -603,7 +603,7 @@ pub trait Collector {
     ///
     /// let (_strings, lens) = ["a", "bcd", "ef"]
     ///     .into_iter()
-    ///     .better_collect(
+    ///     .feed_into(
     ///         ConcatStr::new()
     ///             // Limitation: type annotation may be needed.
     ///             .combine(vec![].into_collector().map(|s: &str| s.len()))
@@ -642,7 +642,7 @@ pub trait Collector {
     ///
     /// let (lens, _strings) = ["a".to_owned(), "bcd".to_owned(), "ef".to_owned()]
     ///     .into_iter()
-    ///     .better_collect(
+    ///     .feed_into(
     ///         vec![]
     ///             .into_collector()
     ///             // Since we can only "view" the string via &mut,
@@ -699,7 +699,7 @@ pub trait Collector {
     /// use better_collect::prelude::*;
     ///
     /// let (evens, negs) = (-5..=5)
-    ///     .better_collect(
+    ///     .feed_into(
     ///         vec![]
     ///             .into_collector()
     ///             .filter(|&x| x % 2 == 0)
@@ -953,7 +953,7 @@ pub trait Collector {
     ///
     /// let ((ids, names), emails) = users
     ///     .into_iter()
-    ///     .better_collect(
+    ///     .feed_into(
     ///         vec![]
     ///             .into_collector()
     ///             .unzip(vec![])
@@ -1044,7 +1044,7 @@ pub trait Collector {
     ///
     /// let (flattened, _) = matrix
     ///     .into_iter()
-    ///     .better_collect(
+    ///     .feed_into(
     ///         vec![]
     ///             .into_collector()
     ///             .unbatching_ref(|v, row: &mut Vec<_>| {

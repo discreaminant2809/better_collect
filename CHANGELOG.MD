@@ -10,6 +10,10 @@
   - `All(Ref)`, `Any(Ref)`, `Count`, `Find`, `Last`, `Reduce` and `(Try)Fold(Ref)`
     are moved to `iter` module.
   - `Sum` and `Product` are moved to `ops` module.
+- Renamed `better_collect` in `IteratorExt` (previously `BetterCollect`)
+  to `feed_into` and it now takes `self` instead of `&mut self`.
+- Unstable: Renamed `better_collect_with_puller` in `IteratorExt` (previously `BetterCollect`)
+  to `feed_into_with_puller` and it now takes `self` instead of `&mut self`.
 
 ### Fixed
 

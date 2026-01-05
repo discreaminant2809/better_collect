@@ -65,7 +65,7 @@ pub struct Any<T, F> {
 ///
 /// let (any_even, sum) = [1, 3, 5]
 ///     .into_iter()
-///     .better_collect(
+///     .feed_into(
 ///         Any::new_ref(|&mut x| x % 2 == 0)
 ///             .combine(Sum::<i32>::new())
 ///     );
@@ -79,7 +79,7 @@ pub struct Any<T, F> {
 ///
 /// let (any_even, sum) = [1, 2, 5]
 ///     .into_iter()
-///     .better_collect(
+///     .feed_into(
 ///         Any::new_ref(|&mut x| x % 2 == 0)
 ///             .combine(Sum::<i32>::new())
 ///     );

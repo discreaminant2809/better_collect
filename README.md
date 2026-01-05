@@ -86,7 +86,7 @@ use better_collect::{prelude::*, num::Sum, cmp::Max};
 let nums = [1, 3, 2];
 let (sum, max) = nums
     .into_iter()
-    .better_collect(Sum::<i32>::new().combine(Max::new()));
+    .feed_into(Sum::<i32>::new().combine(Max::new()));
 
 assert_eq!(sum, 6);
 assert_eq!(max.unwrap(), 3);
@@ -124,10 +124,10 @@ for data in socket_stream() {
 let expected = (received, byte_read, last_seen);
 
 // This crate's way:
-use better_collect::{prelude::*, Last, num::Sum};
+use better_collect::{prelude::*, iter::Last, num::Sum};
 
 let ((received, byte_read), last_seen) = socket_stream()
-    .better_collect(
+    .feed_into(
         vec![]
             .into_collector()
             .cloning()
@@ -176,7 +176,7 @@ let unzip_way = (concatenated_data, chunks);
 // `Collector`
 let collector_way = socket_stream()
     // No clone. The data flows smoothly.
-    .better_collect(ConcatString::new().combine(HashSet::new()));
+    .feed_into(ConcatString::new().combine(HashSet::new()));
 
 assert_eq!(unzip_way, collector_way);
 ```
@@ -255,10 +255,10 @@ More types, traits and functions can be found in this crate's documentation.
 
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html
 [`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html
-[`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IteratorExt.html
+[`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html
 [`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IntoCollector.html
 [`collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#tymethod.collect
-[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IteratorExt.html#method.better_collect
+[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.better_collect
 [`chain()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#method.chain
 [`combine()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html

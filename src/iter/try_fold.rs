@@ -87,7 +87,7 @@ pub struct TryFold<A, T, F> {
 /// let (total_len, concatenated) = ["abc", "de", "fgh"]
 ///     .into_iter()
 ///     .map(String::from)
-///     .better_collect(
+///     .feed_into(
 ///         TryFold::new_ref(0, |total_len, s: &mut String| {
 ///             *total_len += s.len();
 ///             ControlFlow::Continue(())
@@ -108,7 +108,7 @@ pub struct TryFold<A, T, F> {
 /// let (concatenated_till_empty, concatenated) = ["abc", "de", "", "fgh"]
 ///     .into_iter()
 ///     .map(String::from)
-///     .better_collect(
+///     .feed_into(
 ///         TryFold::new_ref("".to_owned(), |concatenated_till_empty, s: &mut String| {
 ///             if s.is_empty() {
 ///                 ControlFlow::Break(())

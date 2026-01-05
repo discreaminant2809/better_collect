@@ -17,7 +17,7 @@ use crate::collector::{Collector, RefCollector};
 /// let url = ["https://", "website.com", "/login"]
 ///     .into_iter()
 ///     .map(String::from)
-///     .better_collect(ConcatString::new());
+///     .feed_into(ConcatString::new());
 ///
 /// assert_eq!(url, "https://website.com/login");
 /// ```

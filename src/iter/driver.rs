@@ -4,10 +4,10 @@ use crate::collector::{Collector, Fuse as CollectorFuse, RefCollector};
 
 /// An [`Iterator`] that "drives" the underlying iterator to feed the underlying collector.
 ///
-/// This `struct` is a part of [`Iterator::better_collect_with_puller()`].
+/// This `struct` is a part of [`Iterator::feed_into_with_puller()`].
 /// See its documentation for more.
 ///
-/// [`Iterator::better_collect_with_puller()`]: crate::iter::IteratorExt::better_collect_with_puller
+/// [`Iterator::feed_into_with_puller()`]: crate::iter::IteratorExt::feed_into_with_puller
 pub struct Driver<'a, I, C> {
     // We need to fuse it since we call `for_each(drop)` later.
     iter: I,

@@ -157,7 +157,7 @@ pub trait RefCollector: Collector {
     ///     pub fn average(salary: Vec<i32>) -> f64 {
     ///         let (((min, max), count), sum) = salary
     ///             .into_iter()
-    ///             .better_collect(
+    ///             .feed_into(
     ///                 Min::new()
     ///                     .copying()
     ///                     .combine(Max::new().copying())
@@ -218,7 +218,7 @@ pub trait RefCollector: Collector {
     ///
     /// let (concat_firsts, _lens) = vecs
     ///     .into_iter()
-    ///     .better_collect(
+    ///     .feed_into(
     ///         ConcatString::new()
     ///             // We only need a reference to a string to concatenate.
     ///             // `funnel` lets us avoid cloning by transforming &mut Vec<_> → &mut String.
