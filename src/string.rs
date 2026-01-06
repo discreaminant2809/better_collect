@@ -14,7 +14,7 @@ mod concat_string;
 pub use concat_str::*;
 pub use concat_string::*;
 
-use std::ops::ControlFlow;
+use std::{borrow::Borrow, ops::ControlFlow};
 
 #[cfg(not(feature = "std"))]
 use alloc::string::String;
@@ -22,6 +22,7 @@ use alloc::string::String;
 use crate::{
     assert_ref_collector,
     collector::{Collector, RefCollector},
+    slice::{Concat, ConcatItem, ConcatItemSealed, ConcatSealed},
 };
 
 /// A [`RefCollector`] that pushes `char`s into a [`String`].
@@ -137,5 +138,35 @@ impl RefCollector for CollectorMut<'_> {
     #[inline]
     fn collect_ref(&mut self, &mut ch: &mut char) -> ControlFlow<()> {
         self.collect(ch)
+    }
+}
+
+/// # Examples
+///
+/// ```
+/// use better_collect::prelude::*;
+///
+/// let s = "abc de fghi j";
+///
+/// let s_no_whitespace = s
+///     .split_whitespace()
+///     .feed_into(String::new().into_concat());
+///
+/// assert_eq!(s_no_whitespace, "abcdefghij");
+/// ```
+impl Concat for String {}
+
+/// See [`std::slice::Concat`] for why this trait bound is used.
+impl<S> ConcatItem<String> for S where S: Borrow<str> {}
+
+impl ConcatSealed for String {}
+
+impl<S> ConcatItemSealed<String> for S
+where
+    S: Borrow<str>,
+{
+    #[inline]
+    fn push_to(&mut self, owned_slice: &mut String) {
+        owned_slice.push_str((*self).borrow());
     }
 }

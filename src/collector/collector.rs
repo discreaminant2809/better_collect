@@ -602,7 +602,8 @@ pub trait Collector {
     /// let (_strings, lens) = ["a", "bcd", "ef"]
     ///     .into_iter()
     ///     .feed_into(
-    ///         ConcatStr::new()
+    ///         "".to_owned()
+    ///             .into_concat()
     ///             // Limitation: type annotation may be needed.
     ///             .combine(vec![].into_collector().map(|s: &str| s.len()))
     ///     );
@@ -647,7 +648,7 @@ pub trait Collector {
     ///             // we use this adaptor to avoid cloning.
     ///             // (Limitation: type annotation may be required.)
     ///             .map_ref(|s: &mut String| s.len())
-    ///             .combine(ConcatString::new())
+    ///             .combine("".to_owned().into_concat())
     ///     );
     ///
     /// assert_eq!(lens, [1, 3, 2]);
@@ -780,7 +781,9 @@ pub trait Collector {
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let mut collector = ConcatStr::new().take_while(|&s| s != "stop");
+    /// let mut collector = "".to_owned()
+    ///     .into_concat()
+    ///     .take_while(|&s| s != "stop");
     ///
     /// assert!(collector.collect("abc").is_continue());
     /// assert!(collector.collect("def").is_continue());

@@ -174,7 +174,11 @@
 //! // `Collector`
 //! let collector_way = socket_stream()
 //!     // No clone. The data flows smoothly.
-//!     .feed_into(ConcatString::new().combine(HashSet::new()));
+//!     .feed_into(
+//!         "".to_owned()
+//!             .into_concat()
+//!             .combine(HashSet::new())
+//!     );
 //!
 //! assert_eq!(unzip_way, collector_way);
 //! ```
@@ -293,6 +297,7 @@ pub mod mem;
 pub mod num;
 pub mod ops;
 pub mod prelude;
+pub mod slice;
 #[cfg(feature = "alloc")]
 pub mod string;
 #[cfg(feature = "std")]

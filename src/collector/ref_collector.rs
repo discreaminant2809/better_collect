@@ -219,7 +219,8 @@ pub trait RefCollector: Collector {
     /// let (concat_firsts, _lens) = vecs
     ///     .into_iter()
     ///     .feed_into(
-    ///         ConcatString::new()
+    ///         "".to_owned()
+    ///             .into_concat()
     ///             // We only need a reference to a string to concatenate.
     ///             // `funnel` lets us avoid cloning by transforming &mut Vec<_> → &mut String.
     ///             // Otherwise, we have to clone with `map_ref`.

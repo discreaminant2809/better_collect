@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use std::{fmt::Debug, ops::ControlFlow};
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
@@ -5,31 +7,15 @@ use alloc::string::String;
 
 use crate::collector::{Collector, RefCollector};
 
-/// A [`RefCollector`] that concatenates [`String`]s into a single [`String`].
+/// Use [`Concat`]'s methods.
 ///
-/// Its [`Output`](Collector::Output) type is [`String`].
-///
-/// # Examples
-///
-/// ```
-/// use better_collect::prelude::*;
-///
-/// let url = ["https://", "website.com", "/login"]
-///     .into_iter()
-///     .map(String::from)
-///     .feed_into(ConcatString::new());
-///
-/// assert_eq!(url, "https://website.com/login");
-/// ```
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+/// [`Concat`]: crate::slice::Concat
+#[deprecated(since = "0.4.0", note = "Use `Concat`'s methods")]
 #[derive(Debug, Default, Clone)]
 pub struct ConcatString {
     buf: String,
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatString {
     /// Creates a new instance of this collector with an empty string.
     #[inline]
@@ -44,8 +30,6 @@ impl ConcatString {
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl Collector for ConcatString {
     type Item = String;
 
@@ -75,8 +59,6 @@ impl Collector for ConcatString {
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl RefCollector for ConcatString {
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
@@ -85,8 +67,6 @@ impl RefCollector for ConcatString {
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl From<String> for ConcatString {
     #[inline]
     fn from(buf: String) -> Self {

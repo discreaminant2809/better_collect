@@ -80,7 +80,7 @@ pub trait IteratorExt: Iterator {
     /// let (s_no_ws, len_no_ws) = "the noble and the singer"
     ///     .split_whitespace()
     ///     .feed_into_with_puller(
-    ///         ConcatStr::new(),
+    ///         "".to_owned().into_concat(),
     ///         |driver| driver.count(),
     ///     );
     ///

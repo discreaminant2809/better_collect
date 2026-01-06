@@ -4,9 +4,12 @@
 //!
 //! [`Collector`]: crate::collector::Collector
 
-use crate::collector::{Collector, RefCollector};
+use crate::{
+    collector::{Collector, RefCollector},
+    slice::{Concat, ConcatItem, ConcatItemSealed, ConcatSealed},
+};
 
-use std::ops::ControlFlow;
+use std::{borrow::Borrow, ops::ControlFlow};
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
@@ -136,5 +139,41 @@ impl<T: Copy> RefCollector for CollectorMut<'_, T> {
 impl<T> Default for IntoCollector<T> {
     fn default() -> Self {
         Self(Default::default())
+    }
+}
+
+/// # Examples
+///
+/// ```
+/// use better_collect::prelude::*;
+///
+/// let matrix = [vec![1, 2], vec![3, 4, 5], vec![6]];
+///
+/// let array = matrix
+///     .into_iter()
+///     .feed_into(Vec::new().into_concat());
+///
+/// assert_eq!(array, [1, 2, 3, 4, 5, 6]);
+/// ```
+impl<T> Concat for Vec<T> {}
+
+/// See [`std::slice::Concat`] for why this trait bound is used.
+impl<S, T> ConcatItem<Vec<T>> for S
+where
+    S: Borrow<[T]>,
+    T: Clone,
+{
+}
+
+impl<T> ConcatSealed for Vec<T> {}
+
+impl<S, T> ConcatItemSealed<Vec<T>> for S
+where
+    S: Borrow<[T]>,
+    T: Clone,
+{
+    #[inline]
+    fn push_to(&mut self, owned_slice: &mut Vec<T>) {
+        owned_slice.extend_from_slice((*self).borrow());
     }
 }

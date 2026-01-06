@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
@@ -5,33 +7,16 @@ use alloc::string::String;
 
 use crate::collector::{Collector, RefCollector};
 
-/// A [`RefCollector`] that concatenates [`str`] slices into a single [`String`].
+/// Use [`Concat`]'s methods.
 ///
-/// Its [`Output`](Collector::Output) type is [`String`].
-///
-/// # Examples
-///
-/// ```
-/// use better_collect::prelude::*;
-///
-/// let s = "abc de fghi j";
-///
-/// let s_no_whitespace = s
-///     .split_whitespace()
-///     .feed_into(ConcatStr::new());
-///
-/// assert_eq!(s_no_whitespace, "abcdefghij");
-/// ```
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+/// [`Concat`]: crate::slice::Concat
+#[deprecated(since = "0.4.0", note = "Use `Concat`'s methods")]
 #[derive(Clone, Default)]
 pub struct ConcatStr<'a> {
     buf: String,
     _marker: PhantomData<fn(&'a str)>,
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl ConcatStr<'_> {
     /// Creates a new instance of this collector with an empty string.
     #[inline]
@@ -49,8 +34,6 @@ impl ConcatStr<'_> {
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<'a> Collector for ConcatStr<'a> {
     type Item = &'a str;
 
@@ -80,8 +63,6 @@ impl<'a> Collector for ConcatStr<'a> {
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl RefCollector for ConcatStr<'_> {
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
@@ -90,16 +71,12 @@ impl RefCollector for ConcatStr<'_> {
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl Debug for ConcatStr<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ConcatStr").field("buf", &self.buf).finish()
     }
 }
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl From<String> for ConcatStr<'_> {
     #[inline]
     fn from(buf: String) -> Self {

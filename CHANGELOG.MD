@@ -2,6 +2,10 @@
 
 ## 0.4.0
 
+### Added
+
+- Generalized concatenation collectors.
+
 ### Changed
 
 - Major module restructure:
@@ -19,6 +23,10 @@
 
 - `Skip::collect()` and `Skip::collect_ref()` not returning `ControlFlow` correctly.
 - Missing `Debug`, `Clone` and `Default` implementations.
+
+### Removed
+
+- `ConcatStr(ing)`.
 
 ## 0.3.2
 
