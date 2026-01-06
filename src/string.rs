@@ -31,6 +31,7 @@ use crate::{
 ///
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
+#[derive(Debug, Clone, Default)]
 pub struct IntoCollector(String);
 
 /// A [`RefCollector`] that pushes `char`s into a [`&mut String`](String).
@@ -40,6 +41,7 @@ pub struct IntoCollector(String);
 ///
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
+#[derive(Debug)]
 pub struct CollectorMut<'a>(&'a mut String);
 
 impl crate::collector::IntoCollector for String {

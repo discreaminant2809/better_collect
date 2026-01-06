@@ -18,6 +18,7 @@
 ### Fixed
 
 - `Skip::collect()` and `Skip::collect_ref()` not returning `ControlFlow` correctly.
+- Missing `Debug`, `Clone` and `Default` implementations.
 
 ## 0.3.2
 

@@ -16,6 +16,7 @@ use std::collections::HashSet;
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug, Clone)]
 pub struct IntoCollector<T, S>(pub(super) HashSet<T, S>);
 
 /// A [`Collector`] that inserts collected items into a [`&mut HashSet`](HashSet).
@@ -28,4 +29,5 @@ pub struct IntoCollector<T, S>(pub(super) HashSet<T, S>);
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug)]
 pub struct CollectorMut<'a, T, S>(pub(super) &'a mut HashSet<T, S>);

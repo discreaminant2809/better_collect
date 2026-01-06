@@ -19,6 +19,7 @@ use std::collections::BTreeSet;
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug, Clone)]
 pub struct IntoCollector<T>(pub(super) BTreeSet<T>);
 
 /// A [`Collector`] that inserts collected items into a [`&mut BTreeSet`](BTreeSet).
@@ -31,4 +32,5 @@ pub struct IntoCollector<T>(pub(super) BTreeSet<T>);
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug)]
 pub struct CollectorMut<'a, T>(pub(super) &'a mut BTreeSet<T>);

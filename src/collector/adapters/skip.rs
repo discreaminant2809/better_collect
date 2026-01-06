@@ -6,6 +6,7 @@ use crate::collector::{Collector, RefCollector};
 /// accumulating them.
 ///
 /// This `struct` is created by [`Collector::skip()`]. See its documentation for more.
+#[derive(Debug, Clone)]
 pub struct Skip<C> {
     collector: C,
     remaining: usize,

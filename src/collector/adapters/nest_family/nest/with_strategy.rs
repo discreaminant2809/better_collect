@@ -1,10 +1,13 @@
-use std::ops::ControlFlow;
+use std::{
+    fmt::{Debug, DebugStruct},
+    ops::ControlFlow,
+};
 
 use crate::collector::{Collector, Fuse, RefCollector};
 
 use super::super::strategy::Strategy;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct WithStrategy<CO, S>
 where
     S: Strategy,
@@ -25,7 +28,7 @@ where
     CO: Collector,
     S: Strategy,
 {
-    pub(crate) fn new(outer: CO, strategy: S) -> Self {
+    pub(super) fn new(outer: CO, strategy: S) -> Self {
         Self {
             outer: outer.fuse(),
             strategy,
@@ -221,5 +224,17 @@ where
         } else {
             ControlFlow::Continue(())
         }
+    }
+}
+
+impl<CO, S> WithStrategy<CO, S>
+where
+    CO: Debug,
+    S: Strategy<Collector: Debug>,
+{
+    pub(super) fn debug_struct(&self, debug_struct: &mut DebugStruct<'_, '_>) {
+        debug_struct.field("outer", &self.outer);
+        self.strategy.debug(debug_struct);
+        debug_struct.field("inner", &self.inner);
     }
 }

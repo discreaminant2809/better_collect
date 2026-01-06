@@ -2,7 +2,7 @@
 //!
 //! [`Collector`]: crate::collector::Collector
 
-use std::ops::ControlFlow;
+use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{IntoCollector, RefCollector};
 
@@ -13,6 +13,7 @@ use crate::collector::{IntoCollector, RefCollector};
 /// and `().collector()`.
 ///
 /// [`Collector`]: crate::collector::Collector
+#[derive(Clone, Default)]
 pub struct Collector(());
 
 macro_rules! into_collector_impl {
@@ -69,5 +70,11 @@ impl RefCollector for Collector {
     #[inline]
     fn collect_ref(&mut self, _item: &mut Self::Item) -> ControlFlow<()> {
         ControlFlow::Break(())
+    }
+}
+
+impl Debug for Collector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Collector").finish()
     }
 }

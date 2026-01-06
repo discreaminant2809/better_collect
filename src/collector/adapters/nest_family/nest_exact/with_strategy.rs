@@ -1,9 +1,14 @@
-use std::{iter, mem, ops::ControlFlow};
+use std::{
+    fmt::{Debug, DebugStruct},
+    iter, mem,
+    ops::ControlFlow,
+};
 
 use crate::collector::{Collector, RefCollector};
 
 use super::super::strategy::Strategy;
 
+#[derive(Clone)]
 pub struct WithStrategy<CO, S>
 where
     S: Strategy,
@@ -17,7 +22,7 @@ impl<CO, S> WithStrategy<CO, S>
 where
     S: Strategy,
 {
-    pub(crate) fn new(outer: CO, mut strategy: S) -> Self {
+    pub(super) fn new(outer: CO, mut strategy: S) -> Self {
         Self {
             outer,
             inner: strategy.next_collector(),
@@ -183,5 +188,17 @@ where
         }
 
         ControlFlow::Continue(())
+    }
+}
+
+impl<CO, S> WithStrategy<CO, S>
+where
+    CO: Debug,
+    S: Strategy<Collector: Debug>,
+{
+    pub(super) fn debug_struct(&self, debug_struct: &mut DebugStruct<'_, '_>) {
+        debug_struct.field("outer", &self.outer);
+        self.strategy.debug(debug_struct);
+        debug_struct.field("inner", &self.inner);
     }
 }

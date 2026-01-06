@@ -8,6 +8,7 @@ use crate::collector::{Collector, Fuse as CollectorFuse, RefCollector};
 /// See its documentation for more.
 ///
 /// [`Iterator::feed_into_with_puller()`]: crate::iter::IteratorExt::feed_into_with_puller
+#[derive(Debug)]
 pub struct Driver<'a, I, C> {
     // We need to fuse it since we call `for_each(drop)` later.
     iter: I,

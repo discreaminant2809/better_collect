@@ -20,7 +20,7 @@ use alloc::vec::Vec;
 ///
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct IntoCollector<T>(Vec<T>);
 
 /// A [`Collector`] that pushes collected items into a [`&mut Vec`](Vec).
@@ -32,6 +32,7 @@ pub struct IntoCollector<T>(Vec<T>);
 ///
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
+#[derive(Debug)]
 pub struct CollectorMut<'a, T>(&'a mut Vec<T>);
 
 impl<T> crate::collector::IntoCollector for Vec<T> {
@@ -129,5 +130,11 @@ impl<T: Copy> RefCollector for CollectorMut<'_, T> {
     fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
         self.0.push(*item);
         ControlFlow::Continue(())
+    }
+}
+
+impl<T> Default for IntoCollector<T> {
+    fn default() -> Self {
+        Self(Default::default())
     }
 }

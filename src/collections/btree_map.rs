@@ -27,6 +27,7 @@ use crate::aggregate::{Group, GroupMap, OccupiedGroup, VacantGroup};
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug, Clone)]
 pub struct IntoCollector<K, V>(pub(super) BTreeMap<K, V>);
 
 /// A [`Collector`] that inserts collected items into a [`&mut BTreeMap`](BTreeMap).
@@ -39,6 +40,7 @@ pub struct IntoCollector<K, V>(pub(super) BTreeMap<K, V>);
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug)]
 pub struct CollectorMut<'a, K, V>(pub(super) &'a mut BTreeMap<K, V>);
 
 #[cfg(feature = "unstable")]

@@ -56,9 +56,7 @@ use std::{
 /// ```
 ///
 /// [`Collector`]: crate::collector::Collector
-pub struct IntoCollector<T> {
-    sender: Sender<T>,
-}
+pub struct IntoCollector<T>(Sender<T>);
 
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::channel()`].
 /// Its [`Output`](crate::collector::Collector::Output) is [`&Sender`](Sender).
@@ -156,9 +154,7 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 /// ```
 ///
 /// [`Collector`]: crate::collector::Collector
-pub struct IntoSyncCollector<T> {
-    sender: SyncSender<T>,
-}
+pub struct IntoSyncCollector<T>(SyncSender<T>);
 
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::sync_channel()`].
 /// Its [`Output`](crate::collector::Collector::Output) is [`&SyncSender`](SyncSender).
@@ -218,7 +214,7 @@ impl<T> crate::collector::IntoCollector for Sender<T> {
 
     #[inline]
     fn into_collector(self) -> Self::IntoCollector {
-        IntoCollector { sender: self }
+        IntoCollector(self)
     }
 }
 
@@ -229,7 +225,7 @@ impl<T> crate::collector::Collector for IntoCollector<T> {
 
     #[inline]
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        match self.sender.send(item) {
+        match self.0.send(item) {
             Ok(_) => ControlFlow::Continue(()),
             Err(_) => ControlFlow::Break(()),
         }
@@ -237,7 +233,7 @@ impl<T> crate::collector::Collector for IntoCollector<T> {
 
     #[inline]
     fn finish(self) -> Self::Output {
-        self.sender
+        self.0
     }
 
     // The default implementations for other methods are sufficient.
@@ -286,7 +282,7 @@ impl<T> crate::collector::IntoCollector for SyncSender<T> {
 
     #[inline]
     fn into_collector(self) -> Self::IntoCollector {
-        IntoSyncCollector { sender: self }
+        IntoSyncCollector(self)
     }
 }
 
@@ -297,7 +293,7 @@ impl<T> crate::collector::Collector for IntoSyncCollector<T> {
 
     #[inline]
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        match self.sender.send(item) {
+        match self.0.send(item) {
             Ok(_) => ControlFlow::Continue(()),
             Err(_) => ControlFlow::Break(()),
         }
@@ -305,7 +301,7 @@ impl<T> crate::collector::Collector for IntoSyncCollector<T> {
 
     #[inline]
     fn finish(self) -> Self::Output {
-        self.sender
+        self.0
     }
 
     // The default implementations for other methods are sufficient.
@@ -344,3 +340,20 @@ impl<'a, T> crate::collector::Collector for SyncCollector<'a, T> {
 
     // The default implementations for other methods are sufficient.
 }
+
+macro_rules! debug_impl {
+    ($ty_name:ident<$($lts:lifetime,)* $($generics:ident),*>) => {
+        impl<T> std::fmt::Debug for $ty_name<$($lts,)* $($generics),*> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_tuple(stringify!($ty_name))
+                    .field(&self.0)
+                    .finish()
+            }
+        }
+    };
+}
+
+debug_impl!(Collector<'_, T>);
+debug_impl!(SyncCollector<'_, T>);
+debug_impl!(IntoCollector<T>);
+debug_impl!(IntoSyncCollector<T>);

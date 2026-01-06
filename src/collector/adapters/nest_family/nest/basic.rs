@@ -1,4 +1,4 @@
-use std::ops::ControlFlow;
+use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, RefCollector};
 
@@ -9,6 +9,7 @@ use super::{super::strategy::CloneStrategy, with_strategy::WithStrategy};
 /// This `struct` is created by [`Collector::nest()`]. See its documentation for more.
 // Needed because the "Available on crate feature" does not show up on doc.rs
 #[cfg_attr(docsrs, doc(cfg(feature = "unstable")))]
+#[derive(Clone)]
 pub struct Nest<CO, CI>(WithStrategy<CO, CloneStrategy<CI>>)
 where
     CI: Collector + Clone;
@@ -66,6 +67,18 @@ where
     #[inline]
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
         self.0.collect_ref(item)
+    }
+}
+
+impl<CO, CI> Debug for Nest<CO, CI>
+where
+    CO: Debug,
+    CI: Collector + Clone + Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut debug_struct = f.debug_struct("Nest");
+        self.0.debug_struct(&mut debug_struct);
+        debug_struct.finish()
     }
 }
 

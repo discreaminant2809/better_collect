@@ -39,6 +39,7 @@ use std::collections::BinaryHeap;
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug, Clone)]
 pub struct IntoCollector<T>(pub(super) BinaryHeap<T>);
 
 /// A [`Collector`] that pushes collected items into a [`&mut BinaryHeap`](BinaryHeap).
@@ -51,4 +52,5 @@ pub struct IntoCollector<T>(pub(super) BinaryHeap<T>);
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug)]
 pub struct CollectorMut<'a, T>(pub(super) &'a mut BinaryHeap<T>);

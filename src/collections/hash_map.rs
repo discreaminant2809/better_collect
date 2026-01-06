@@ -24,6 +24,7 @@ use crate::aggregate::{Group, GroupMap, OccupiedGroup, VacantGroup};
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug, Clone)]
 pub struct IntoCollector<K, V, S>(pub(super) HashMap<K, V, S>);
 
 /// A [`Collector`] that inserts collected items into a [`&mut HashMap`](HashMap).
@@ -36,6 +37,7 @@ pub struct IntoCollector<K, V, S>(pub(super) HashMap<K, V, S>);
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug)]
 pub struct CollectorMut<'a, K, V, S>(pub(super) &'a mut HashMap<K, V, S>);
 
 #[cfg(feature = "unstable")]

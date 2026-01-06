@@ -19,6 +19,7 @@ use std::collections::LinkedList;
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug, Clone)]
 pub struct IntoCollector<T>(pub(super) LinkedList<T>);
 
 /// A [`Collector`] that pushes collected items into the back of a [`&mut LinkedList`](LinkedList).
@@ -31,4 +32,5 @@ pub struct IntoCollector<T>(pub(super) LinkedList<T>);
 /// [`Collector`]: crate::collector::Collector
 /// [`Output`]: crate::collector::Collector::Output
 /// [`RefCollector`]: crate::collector::RefCollector
+#[derive(Debug)]
 pub struct CollectorMut<'a, T>(pub(super) &'a mut LinkedList<T>);

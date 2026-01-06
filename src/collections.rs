@@ -173,6 +173,23 @@ macro_rules! collector_impl {
                 self.collect(item)
             }
         }
+
+        #[cfg(feature = $feature)]
+        // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
+        #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
+        impl<$($generic),*> Default for $mod::IntoCollector<$($generic),*>
+        where
+            $($gen_bound: $bound,)*
+            // Needed because of HashMap and HashSet (they also require S: Default).
+            $coll_name<$($generic),*>: Default,
+        {
+            fn default() -> Self {
+                // This is to make sure that we can't construct a default value
+                // without it being usable right away as a Collector
+                // (e.g. BTreeSet<T> missing T: Ord).
+                $coll_name::default().into_collector()
+            }
+        }
     };
 }
 
