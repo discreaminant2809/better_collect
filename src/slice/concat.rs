@@ -4,19 +4,19 @@ mod into_concat;
 pub use concat_mut::*;
 pub use into_concat::*;
 
-/// Converts a container into [`Collector`]s that concatenate slices.
+/// Converts a container into [`Collector`]s that concatenate items.
 ///
-/// This trait is currently sealed. It only serves to add methods
+/// This trait is currently sealed. It exists only to add methods
 /// for types that can hold the concatenation result.
 ///
 /// See its implementors for examples, and see [`ConcatItem`]
-/// for possible [`Item`] types.
+/// for supported [`Item`] types.
 ///
 /// [`Collector`]: crate::collector::Collector
 /// [`Item`]: crate::collector::Collector::Item
 #[allow(private_bounds)]
 pub trait Concat: Sized + ConcatSealed {
-    /// Creates a [`RefCollector`] that concatenate slices.
+    /// Creates a [`RefCollector`] that concatenates items.
     /// The [`Output`] type is the wrapped type.
     ///
     /// [`RefCollector`]: crate::collector::RefCollector
@@ -29,8 +29,8 @@ pub trait Concat: Sized + ConcatSealed {
         IntoConcat::new(self)
     }
 
-    /// Creates a [`RefCollector`] that concatenate slices into a mutable reference.
-    /// The [`Output`] type is the mutable reference of the wrapped type.
+    /// Creates a [`RefCollector`] that concatenates items into a mutable reference.
+    /// The [`Output`] type is a mutable reference of the wrapped type.
     ///
     /// [`RefCollector`]: crate::collector::RefCollector
     /// [`Output`]: crate::collector::Collector::Output
@@ -43,11 +43,10 @@ pub trait Concat: Sized + ConcatSealed {
     }
 }
 
-/// Marks a type that can be used as the slice type for the [`Concat`]'s methods,
-/// and hence be [`Item`] type for the [`Concat`]'s [`Collector`]s.
+/// Marks a type that can be used as the [`Item`] type for the [`Concat`]'s [`Collector`]s.
 ///
-/// This trait is currently sealed. It only serves to determine
-/// which types can be used to concat into which types.
+/// This trait is currently sealed. It exists only to determine
+/// which types can be concatenated into which types.
 ///
 /// [`Collector`]: crate::collector::Collector
 /// [`Item`]: crate::collector::Collector::Item

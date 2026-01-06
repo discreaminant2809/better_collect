@@ -4,7 +4,7 @@ use crate::collector::{Collector, RefCollector};
 
 use super::ConcatItem;
 
-/// A [`RefCollector`] that concatenate slices.
+/// A [`RefCollector`] that concatenates items.
 ///
 /// This `struct` is created by [`Concat::concat_mut()`]. See its documentation for more.
 ///
