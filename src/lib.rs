@@ -1,5 +1,6 @@
 //! [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
 //! [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
+//! [![GitHub Repo](https://img.shields.io/badge/github-better__collect-blue?logo=github)](https://github.com/discreaminant2809/better_collect.git)
 //!
 //! Provides a composable, declarative way to consume an iterator.
 //!
