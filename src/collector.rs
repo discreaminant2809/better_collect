@@ -1,4 +1,4 @@
-//!
+//! Module contains traits and `struct`s for collectors.
 
 mod adapters;
 #[allow(clippy::module_inception)]
