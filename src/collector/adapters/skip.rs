@@ -142,9 +142,9 @@ mod proptests {
 
     // We need to use `take()` to simulate the break case when enough items are skipped.
     // Precondition:
-    // - `Vec::IntoCollector` is implemented correctly.
-    // - `take()` is implemented correctly.
-    // - `Sink` is implemented correctly.
+    // - `Vec::IntoCollector`
+    // - `Collector::take()`
+    // - `Sink`
     proptest! {
         #[test]
         fn all_collect_methods(

@@ -79,3 +79,31 @@ impl<T> Default for Sink<T> {
         Self::new()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::test_utils::proptest_ref_collector;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn all_collect_methods(
+            count in ..5_usize,
+        ) {
+            all_collect_methods_impl(count)?;
+        }
+    }
+
+    fn all_collect_methods_impl(count: usize) -> TestCaseResult {
+        proptest_ref_collector(
+            || std::iter::repeat_n(0, count),
+            Sink::new,
+            |_| false,
+            |_| {},
+        )
+    }
+}

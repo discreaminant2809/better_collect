@@ -98,21 +98,32 @@ mod proptests {
     use crate::prelude::*;
     use crate::test_utils::proptest_ref_collector;
 
+    // Precondition:
+    // - `Vec::IntoCollector`
+    // - `Collector::take()`
     proptest! {
         #[test]
         fn all_collect_methods(
-            nums in propvec(any::<i32>(), ..5),
+            nums in propvec(any::<i32>(), ..=3),
+            take_count in ..=5_usize,
         ) {
-            all_collect_methods_impl(nums)?;
+            all_collect_methods_impl(nums, take_count)?;
         }
     }
 
-    fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
+    fn all_collect_methods_impl(nums: Vec<i32>, take_count: usize) -> TestCaseResult {
         proptest_ref_collector(
             || nums.iter().copied(),
-            || vec![].into_collector().take_while(take_while_pred),
-            |iter| !iter.clone().all(|num| take_while_pred(&num)),
-            |iter| iter.take_while(take_while_pred).collect(),
+            || {
+                vec![]
+                    .into_collector()
+                    .take(take_count)
+                    .take_while(take_while_pred)
+            },
+            |iter| {
+                iter.clone().count() >= take_count || !iter.clone().all(|num| take_while_pred(&num))
+            },
+            |iter| iter.take_while(take_while_pred).take(take_count).collect(),
         )
     }
 
