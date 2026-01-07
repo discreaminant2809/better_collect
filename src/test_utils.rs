@@ -1,3 +1,7 @@
+mod collector_tester;
+
+pub use collector_tester::*;
+
 use std::fmt::Debug;
 
 use proptest::{prelude::*, test_runner::TestCaseResult};
@@ -137,7 +141,7 @@ where
     })
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct IterRemainders {
     collect: usize,
     collect_many: usize,

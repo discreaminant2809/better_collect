@@ -177,3 +177,118 @@ where
         owned_slice.extend_from_slice((*self).borrow());
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::prelude::*;
+    use crate::test_utils::{
+        CollectorTestParts, CollectorTester, CollectorTester2Ext, RefCollectorTester,
+        proptest_ref_collector,
+    };
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_into(
+            starting_nums in propvec(any::<i32>(), ..5),
+            nums in propvec(any::<i32>(), ..5),
+        ) {
+            all_collect_methods_into_impl(starting_nums, nums)?;
+        }
+    }
+
+    fn all_collect_methods_into_impl(starting_nums: Vec<i32>, nums: Vec<i32>) -> TestCaseResult {
+        proptest_ref_collector(
+            || nums.iter().cloned(),
+            || starting_nums.clone().into_collector(),
+            |_| false,
+            |iter| {
+                let mut starting_nums = starting_nums.clone();
+
+                // Quite redundant, but we also wanna check for the equivalence to `Iterator::collect()`.
+                if starting_nums.is_empty() {
+                    starting_nums = iter.collect();
+                } else {
+                    starting_nums.extend(iter);
+                }
+
+                starting_nums
+            },
+        )
+    }
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_mut(
+            starting_nums in propvec(any::<i32>(), ..5),
+            nums in propvec(any::<i32>(), ..5),
+        ) {
+            all_collect_methods_mut_impl(starting_nums, nums)?;
+        }
+    }
+
+    fn all_collect_methods_mut_impl(starting_nums: Vec<i32>, nums: Vec<i32>) -> TestCaseResult {
+        CollectorMutTester::new(starting_nums, nums).test_ref_collector()
+    }
+
+    struct CollectorMutTester {
+        starting_nums: Vec<i32>,
+        collector_base: Vec<i32>,
+        nums: Vec<i32>,
+        expected_output: Vec<i32>,
+    }
+
+    impl CollectorMutTester {
+        fn new(starting_nums: Vec<i32>, nums: Vec<i32>) -> Self {
+            let mut expected_output = starting_nums.clone();
+            expected_output.extend_from_slice(&nums);
+
+            CollectorMutTester {
+                starting_nums,
+                collector_base: vec![],
+                nums,
+                expected_output,
+            }
+        }
+    }
+
+    impl CollectorTester for CollectorMutTester {
+        type Item = i32;
+
+        type Output<'a> = &'a mut Vec<i32>;
+
+        fn collector_test_parts(
+            &mut self,
+        ) -> CollectorTestParts<
+            impl Iterator<Item = Self::Item>,
+            impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+        > {
+            self.ref_collector_test_parts()
+        }
+    }
+
+    impl RefCollectorTester for CollectorMutTester {
+        fn ref_collector_test_parts(
+            &mut self,
+        ) -> CollectorTestParts<
+            impl Iterator<Item = Self::Item>,
+            impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
+        > {
+            let iter = self.nums.iter().cloned();
+
+            self.collector_base.clear();
+            self.collector_base.clone_from(&self.starting_nums);
+            let collector = self.collector_base.collector_mut();
+
+            CollectorTestParts {
+                iter,
+                collector,
+                should_break: false,
+                expected_output: &mut self.expected_output,
+            }
+        }
+    }
+}
