@@ -94,44 +94,83 @@ pub trait CollectorTesterExt: CollectorTester {
 
 impl<T> CollectorTesterExt for T where T: CollectorTester {}
 
-// pub struct BasicCollectorTester<ItFac, ClFac, SbPred, OutFac> {
-//     pub iter_factory: ItFac,
-//     pub collector_factory: ClFac,
-//     pub should_break_pred: SbPred,
-//     pub output_factory: OutFac,
-// }
+/// Basic implementation for [`CollectorTester`] for most use case.
+/// Opt-out if you test the `collector(_mut)` variant, or the collector and output
+/// that may borrow from the tester, or the output is judged differently.
+pub struct BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, I, C>
+where
+    I: Iterator,
+    C: Collector<Item = I::Item, Output: PartialEq + Debug>,
+    ItFac: FnMut() -> I,
+    ClFac: FnMut() -> C,
+    SbPred: FnMut(I) -> bool,
+    OutFac: FnMut(I) -> C::Output,
+{
+    pub iter_factory: ItFac,
+    pub collector_factory: ClFac,
+    pub should_break_pred: SbPred,
+    pub output_factory: OutFac,
+}
 
-// impl<ItFac, ClFac, SbPred, OutFac, I, C> CollectorTester
-//     for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac>
-// where
-//     I: Iterator,
-//     C: Collector<Item = I::Item, Output: PartialEq + Debug>,
-//     ItFac: FnMut() -> I,
-//     ClFac: FnMut() -> C,
-//     SbPred: FnMut(I) -> bool,
-//     OutFac: FnMut(I) -> C::Output,
-// {
-//     type Item = I::Item;
+impl<ItFac, ClFac, SbPred, OutFac, I, C> CollectorTester
+    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, I, C>
+where
+    I: Iterator,
+    C: Collector<Item = I::Item, Output: PartialEq + Debug>,
+    ItFac: FnMut() -> I,
+    ClFac: FnMut() -> C,
+    SbPred: FnMut(I) -> bool,
+    OutFac: FnMut(I) -> C::Output,
+{
+    type Item = I::Item;
 
-//     type Output<'a>
-//         = C::Output
-//     where
-//         Self: 'a;
+    type Output<'a> = C::Output;
 
-//     fn collector_test_parts(
-//         &mut self,
-//     ) -> CollectorTestParts<
-//         impl Iterator<Item = Self::Item>,
-//         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
-//     > {
-//         CollectorTestParts {
-//             iter: (self.iter_factory)(),
-//             collector: (self.collector_factory)(),
-//             should_break: (self.should_break_pred)((self.iter_factory)()),
-//             expected_output: (self.output_factory)((self.iter_factory)()),
-//         }
-//     }
-// }
+    fn collector_test_parts(
+        &mut self,
+    ) -> CollectorTestParts<
+        impl Iterator<Item = Self::Item>,
+        impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+        impl FnMut(Self::Output<'_>) -> bool,
+    > {
+        let expected_output = (self.output_factory)((self.iter_factory)());
+
+        CollectorTestParts {
+            iter: (self.iter_factory)(),
+            collector: (self.collector_factory)(),
+            should_break: (self.should_break_pred)((self.iter_factory)()),
+            output_pred: move |output| output == expected_output,
+        }
+    }
+}
+
+impl<ItFac, ClFac, SbPred, OutFac, I, C> RefCollectorTester
+    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, I, C>
+where
+    I: Iterator,
+    C: RefCollector<Item = I::Item, Output: PartialEq + Debug>,
+    ItFac: FnMut() -> I,
+    ClFac: FnMut() -> C,
+    SbPred: FnMut(I) -> bool,
+    OutFac: FnMut(I) -> C::Output,
+{
+    fn ref_collector_test_parts(
+        &mut self,
+    ) -> CollectorTestParts<
+        impl Iterator<Item = Self::Item>,
+        impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
+        impl FnMut(Self::Output<'_>) -> bool,
+    > {
+        let expected_output = (self.output_factory)((self.iter_factory)());
+
+        CollectorTestParts {
+            iter: (self.iter_factory)(),
+            collector: (self.collector_factory)(),
+            should_break: (self.should_break_pred)((self.iter_factory)()),
+            output_pred: move |output| output == expected_output,
+        }
+    }
+}
 
 fn test_collector_part(
     tester: &mut (impl CollectorTester + ?Sized),

@@ -186,8 +186,8 @@ mod proptests {
 
     use crate::prelude::*;
     use crate::test_utils::{
-        CollectorTestParts, CollectorTester, CollectorTesterExt, RefCollectorTester,
-        proptest_ref_collector,
+        BasicCollectorTester, CollectorTestParts, CollectorTester, CollectorTesterExt,
+        RefCollectorTester,
     };
 
     proptest! {
@@ -201,11 +201,11 @@ mod proptests {
     }
 
     fn all_collect_methods_into_impl(starting_nums: Vec<i32>, nums: Vec<i32>) -> TestCaseResult {
-        proptest_ref_collector(
-            || nums.iter().cloned(),
-            || starting_nums.clone().into_collector(),
-            |_| false,
-            |iter| {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().cloned(),
+            collector_factory: || starting_nums.clone().into_collector(),
+            should_break_pred: |_| false,
+            output_factory: |iter| {
                 let mut starting_nums = starting_nums.clone();
 
                 // Quite redundant, but we also wanna check for the equivalence to `Iterator::collect()`.
@@ -217,7 +217,8 @@ mod proptests {
 
                 starting_nums
             },
-        )
+        }
+        .test_ref_collector()
     }
 
     proptest! {
