@@ -186,7 +186,7 @@ mod proptests {
 
     use crate::prelude::*;
     use crate::test_utils::{
-        CollectorTestParts, CollectorTester, CollectorTester2Ext, RefCollectorTester,
+        CollectorTestParts, CollectorTester, CollectorTesterExt, RefCollectorTester,
         proptest_ref_collector,
     };
 
@@ -265,6 +265,7 @@ mod proptests {
         ) -> CollectorTestParts<
             impl Iterator<Item = Self::Item>,
             impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+            impl FnMut(Self::Output<'_>) -> bool,
         > {
             self.ref_collector_test_parts()
         }
@@ -276,18 +277,19 @@ mod proptests {
         ) -> CollectorTestParts<
             impl Iterator<Item = Self::Item>,
             impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
+            impl FnMut(Self::Output<'_>) -> bool,
         > {
-            let iter = self.nums.iter().cloned();
-
-            self.collector_base.clear();
+            // Don't forget to reset the collector.
             self.collector_base.clone_from(&self.starting_nums);
-            let collector = self.collector_base.collector_mut();
+
+            // It has to be here because of "lifetime may not live long enough."
+            let output_pred = |output: Self::Output<'_>| *output == self.expected_output;
 
             CollectorTestParts {
-                iter,
-                collector,
+                iter: self.nums.iter().cloned(),
+                collector: self.collector_base.collector_mut(),
                 should_break: false,
-                expected_output: &mut self.expected_output,
+                output_pred,
             }
         }
     }

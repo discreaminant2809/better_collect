@@ -15,15 +15,15 @@ use crate::collector::{Collector, RefCollector};
 pub trait CollectorTester {
     type Item;
 
-    type Output<'a>: PartialEq + Debug
-    where
-        Self: 'a;
+    type Output<'a>;
 
+    #[allow(clippy::type_complexity)] // Can't satisfy it so I suppress it.
     fn collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item>,
         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+        impl FnMut(Self::Output<'_>) -> bool,
     >;
 }
 
@@ -34,22 +34,29 @@ pub trait CollectorTester {
 ///
 /// The current limitation forces us to have two traits instead of one.
 pub trait RefCollectorTester: CollectorTester {
+    #[allow(clippy::type_complexity)]
     fn ref_collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item>,
         impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
+        impl FnMut(Self::Output<'_>) -> bool,
     >;
 }
 
-pub struct CollectorTestParts<I: Iterator, C: Collector> {
+pub struct CollectorTestParts<I, C, P>
+where
+    I: Iterator,
+    C: Collector<Item = I::Item>,
+    P: FnMut(C::Output) -> bool,
+{
     pub iter: I,
     pub collector: C,
     pub should_break: bool,
-    pub expected_output: C::Output,
+    pub output_pred: P,
 }
 
-pub trait CollectorTester2Ext: CollectorTester {
+pub trait CollectorTesterExt: CollectorTester {
     #[allow(unused)] // FIXME: delete it when we need it in the future
     fn test_collector(&mut self) -> TestCaseResult {
         test_collector_part(self)?.assert_all_eq()
@@ -75,10 +82,9 @@ pub trait CollectorTester2Ext: CollectorTester {
             test_parts.should_break,
             "`collect()` didn't break correctly"
         );
-        prop_assert_eq!(
-            &test_parts.collector.finish(),
-            &test_parts.expected_output,
-            "`collect()`'s result mismatched"
+        prop_assert!(
+            (test_parts.output_pred)(test_parts.collector.finish()),
+            "`collect_ref()`'s result mismatched"
         );
         iter_remainders.collect_ref = Some(test_parts.iter.count());
 
@@ -86,7 +92,46 @@ pub trait CollectorTester2Ext: CollectorTester {
     }
 }
 
-impl<T> CollectorTester2Ext for T where T: CollectorTester {}
+impl<T> CollectorTesterExt for T where T: CollectorTester {}
+
+// pub struct BasicCollectorTester<ItFac, ClFac, SbPred, OutFac> {
+//     pub iter_factory: ItFac,
+//     pub collector_factory: ClFac,
+//     pub should_break_pred: SbPred,
+//     pub output_factory: OutFac,
+// }
+
+// impl<ItFac, ClFac, SbPred, OutFac, I, C> CollectorTester
+//     for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac>
+// where
+//     I: Iterator,
+//     C: Collector<Item = I::Item, Output: PartialEq + Debug>,
+//     ItFac: FnMut() -> I,
+//     ClFac: FnMut() -> C,
+//     SbPred: FnMut(I) -> bool,
+//     OutFac: FnMut(I) -> C::Output,
+// {
+//     type Item = I::Item;
+
+//     type Output<'a>
+//         = C::Output
+//     where
+//         Self: 'a;
+
+//     fn collector_test_parts(
+//         &mut self,
+//     ) -> CollectorTestParts<
+//         impl Iterator<Item = Self::Item>,
+//         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+//     > {
+//         CollectorTestParts {
+//             iter: (self.iter_factory)(),
+//             collector: (self.collector_factory)(),
+//             should_break: (self.should_break_pred)((self.iter_factory)()),
+//             expected_output: (self.output_factory)((self.iter_factory)()),
+//         }
+//     }
+// }
 
 fn test_collector_part(
     tester: &mut (impl CollectorTester + ?Sized),
@@ -110,9 +155,8 @@ fn test_collector_part(
             test_parts.should_break,
             "`collect()` didn't break correctly"
         );
-        prop_assert_eq!(
-            &test_parts.collector.finish(),
-            &test_parts.expected_output,
+        prop_assert!(
+            (test_parts.output_pred)(test_parts.collector.finish()),
             "`collect()`'s result mismatched"
         );
         iter_remainders.collect = test_parts.iter.count();
@@ -132,9 +176,8 @@ fn test_collector_part(
             test_parts.should_break,
             "`collect_many()` didn't break correctly"
         );
-        prop_assert_eq!(
-            &test_parts.collector.finish(),
-            &test_parts.expected_output,
+        prop_assert!(
+            (test_parts.output_pred)(test_parts.collector.finish()),
             "`collect_many()`'s result mismatched"
         );
         iter_remainders.collect_many = test_parts.iter.count();
@@ -143,11 +186,12 @@ fn test_collector_part(
     // `collect_then_finish()`
     {
         let mut test_parts = tester.collector_test_parts();
-        prop_assert_eq!(
-            &test_parts
-                .collector
-                .collect_then_finish(&mut test_parts.iter),
-            &test_parts.expected_output,
+        prop_assert!(
+            (test_parts.output_pred)(
+                test_parts
+                    .collector
+                    .collect_then_finish(&mut test_parts.iter)
+            ),
             "`collect_then_finish()`'s result mismatched"
         );
         iter_remainders.collect_then_finish = test_parts.iter.count();
