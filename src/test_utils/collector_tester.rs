@@ -133,34 +133,31 @@ impl<T> CollectorTesterExt for T where T: CollectorTester {}
 /// Basic implementation for [`CollectorTester`] for most use case.
 /// Opt-out if you test the `collector(_mut)` variant, or the collector and output
 /// that may borrow from the tester, or the output is judged differently.
-pub struct BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, ItPred, I, C>
+pub struct BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 // `where` bound is needed otherwise we get "type annotation needed" for the input iterator.
 where
     I: Iterator,
-    C: Collector<Item = I::Item, Output: PartialEq>,
+    C: Collector<Item = I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
-    OutFac: FnMut(I) -> C::Output,
-    ItPred: FnMut(&mut dyn Iterator<Item = I::Item>) -> bool,
+    Pred: FnMut(I, C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
     pub iter_factory: ItFac,
     pub collector_factory: ClFac,
     pub should_break_pred: SbPred,
-    pub output_factory: OutFac,
-    pub iter_pred: ItPred,
+    pub pred: Pred,
 }
 
-impl<ItFac, ClFac, SbPred, OutFac, ItPred, I, C> CollectorTester
-    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, ItPred, I, C>
+impl<ItFac, ClFac, SbPred, Pred, I, C> CollectorTester
+    for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 where
     I: Iterator,
-    C: Collector<Item = I::Item, Output: PartialEq>,
+    C: Collector<Item = I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
-    OutFac: FnMut(I) -> C::Output,
-    ItPred: FnMut(&mut dyn Iterator<Item = I::Item>) -> bool,
+    Pred: FnMut(I, C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
     type Item = I::Item;
 
@@ -173,35 +170,24 @@ where
         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
-        let expected_output = (self.output_factory)((self.iter_factory)());
-
         CollectorTestParts {
             iter: (self.iter_factory)(),
             collector: (self.collector_factory)(),
             should_break: (self.should_break_pred)((self.iter_factory)()),
-            pred: move |output, iter| {
-                if output != expected_output {
-                    Err(PredError::IncorrectOutput)
-                } else if !(self.iter_pred)(iter) {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
+            pred: |output, it| (self.pred)((self.iter_factory)(), output, it),
         }
     }
 }
 
-impl<ItFac, ClFac, SbPred, OutFac, ItPred, I, C> RefCollectorTester
-    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, ItPred, I, C>
+impl<ItFac, ClFac, SbPred, Pred, I, C> RefCollectorTester
+    for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 where
     I: Iterator,
-    C: RefCollector<Item = I::Item, Output: PartialEq>,
+    C: RefCollector<Item = I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
-    OutFac: FnMut(I) -> C::Output,
-    ItPred: FnMut(&mut dyn Iterator<Item = I::Item>) -> bool,
+    Pred: FnMut(I, C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
     fn ref_collector_test_parts(
         &mut self,
@@ -210,21 +196,11 @@ where
         impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
-        let expected_output = (self.output_factory)((self.iter_factory)());
-
         CollectorTestParts {
             iter: (self.iter_factory)(),
             collector: (self.collector_factory)(),
             should_break: (self.should_break_pred)((self.iter_factory)()),
-            pred: move |output, iter| {
-                if output != expected_output {
-                    Err(PredError::IncorrectOutput)
-                } else if !(self.iter_pred)(iter) {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
+            pred: |output, remaining| (self.pred)((self.iter_factory)(), output, remaining),
         }
     }
 }

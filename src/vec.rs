@@ -205,7 +205,7 @@ mod proptests {
             iter_factory: || nums.iter().cloned(),
             collector_factory: || starting_nums.clone().into_collector(),
             should_break_pred: |_| false,
-            output_factory: |iter| {
+            pred: |iter, output, remaining| {
                 let mut starting_nums = starting_nums.clone();
 
                 // Quite redundant, but we also wanna check for the equivalence to `Iterator::collect()`.
@@ -215,9 +215,14 @@ mod proptests {
                     starting_nums.extend(iter);
                 }
 
-                starting_nums
+                if output != starting_nums {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.count() != 0 {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
             },
-            iter_pred: |iter| iter.count() == 0,
         }
         .test_ref_collector()
     }

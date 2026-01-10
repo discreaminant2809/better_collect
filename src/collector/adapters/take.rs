@@ -137,7 +137,7 @@ mod proptests {
     use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
-    use crate::test_utils::proptest_ref_collector;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
     proptest! {
         #[test]
@@ -159,16 +159,25 @@ mod proptests {
         nums2: Vec<i32>,
         take_count: usize,
     ) -> TestCaseResult {
-        proptest_ref_collector(
-            || {
+        BasicCollectorTester {
+            iter_factory: || {
                 nums1
                     .iter()
                     .copied()
                     .chain(nums2.iter().copied().filter(|&num| num > 0))
             },
-            || vec![].into_collector().take(take_count),
-            |iter| iter.count() >= take_count,
-            |iter| iter.take(take_count).collect(),
-        )
+            collector_factory: || vec![].into_collector().take(take_count),
+            should_break_pred: |iter| iter.count() >= take_count,
+            pred: |mut iter, output, remaining| {
+                if output != iter.by_ref().take(take_count).collect::<Vec<_>>() {
+                    Err(PredError::IncorrectOutput)
+                } else if !remaining.eq(iter) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }
