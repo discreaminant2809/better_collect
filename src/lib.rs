@@ -307,7 +307,7 @@ pub mod unit;
 #[cfg(feature = "alloc")]
 pub mod vec;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod test_utils;
 
 #[inline(always)]

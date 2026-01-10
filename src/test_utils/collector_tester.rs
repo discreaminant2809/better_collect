@@ -23,7 +23,7 @@ pub trait CollectorTester {
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item>,
         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>) -> bool,
+        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     >;
 }
 
@@ -40,34 +40,73 @@ pub trait RefCollectorTester: CollectorTester {
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item>,
         impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>) -> bool,
+        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     >;
 }
 
+/// Test parts for collector testing.
 pub struct CollectorTestParts<I, C, P>
 where
     I: Iterator,
     C: Collector<Item = I::Item>,
-    P: FnMut(C::Output) -> bool,
+    P: FnMut(C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
+    /// Iterator provided to feed the collector.
     pub iter: I,
+    /// Collector to be tested.
     pub collector: C,
+    /// Determines whether the collector should have stopped accumulating
+    /// after operation.
     pub should_break: bool,
-    pub output_pred: P,
+    /// Predicate on the following being satisfied:
+    /// - Output of the collector.
+    /// - Remaining of the iterator after the operation.
+    pub pred: P,
 }
 
+/// An error returned when the collection operations of the collector are not satisfied.
+#[derive(Debug)]
+pub enum PredError {
+    /// Incorrect [`Output`] produced by the collector
+    ///
+    /// [`Output`]: crate::collector::Collector::Output
+    IncorrectOutput,
+    /// The [`Iterator`] is not consumed as expected.
+    IncorrectIterConsumption,
+}
+
+impl PredError {
+    fn of_method(self, name: &'static str) -> OfMethod {
+        OfMethod {
+            name,
+            pred_error: self,
+        }
+    }
+}
+
+/// Helper to convert [`PredError`] into [`TestCaseError`].
+struct OfMethod {
+    name: &'static str,
+    pred_error: PredError,
+}
+
+impl From<OfMethod> for TestCaseError {
+    fn from(OfMethod { name, pred_error }: OfMethod) -> Self {
+        Self::Fail(format!("`{name}()` is implemented incorrectly: {pred_error:?}").into())
+    }
+}
+
+/// Used because we don't want the user to override any methods here.
 pub trait CollectorTesterExt: CollectorTester {
     #[allow(unused)] // FIXME: delete it when we need it in the future
     fn test_collector(&mut self) -> TestCaseResult {
-        test_collector_part(self)?.assert_all_eq()
+        test_collector_part(self)
     }
 
     fn test_ref_collector(&mut self) -> TestCaseResult
     where
         Self: RefCollectorTester,
     {
-        let mut iter_remainders = test_collector_part(self)?;
-
         // `collect_ref()`
         let mut test_parts = self.ref_collector_test_parts();
         // Simulate the fact that break_hint is used before looping,
@@ -80,15 +119,12 @@ pub trait CollectorTesterExt: CollectorTester {
         prop_assert_eq!(
             has_stopped,
             test_parts.should_break,
-            "`collect()` didn't break correctly"
+            "`collect_ref()` didn't break correctly"
         );
-        prop_assert!(
-            (test_parts.output_pred)(test_parts.collector.finish()),
-            "`collect_ref()`'s result mismatched"
-        );
-        iter_remainders.collect_ref = Some(test_parts.iter.count());
+        (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
+            .map_err(|e| e.of_method("collect_ref"))?;
 
-        iter_remainders.assert_all_eq()
+        Ok(())
     }
 }
 
@@ -97,30 +133,34 @@ impl<T> CollectorTesterExt for T where T: CollectorTester {}
 /// Basic implementation for [`CollectorTester`] for most use case.
 /// Opt-out if you test the `collector(_mut)` variant, or the collector and output
 /// that may borrow from the tester, or the output is judged differently.
-pub struct BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, I, C>
+pub struct BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, ItPred, I, C>
+// `where` bound is needed otherwise we get "type annotation needed" for the input iterator.
 where
     I: Iterator,
-    C: Collector<Item = I::Item, Output: PartialEq + Debug>,
+    C: Collector<Item = I::Item, Output: PartialEq>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
     OutFac: FnMut(I) -> C::Output,
+    ItPred: FnMut(&mut dyn Iterator<Item = I::Item>) -> bool,
 {
     pub iter_factory: ItFac,
     pub collector_factory: ClFac,
     pub should_break_pred: SbPred,
     pub output_factory: OutFac,
+    pub iter_pred: ItPred,
 }
 
-impl<ItFac, ClFac, SbPred, OutFac, I, C> CollectorTester
-    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, I, C>
+impl<ItFac, ClFac, SbPred, OutFac, ItPred, I, C> CollectorTester
+    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, ItPred, I, C>
 where
     I: Iterator,
-    C: Collector<Item = I::Item, Output: PartialEq + Debug>,
+    C: Collector<Item = I::Item, Output: PartialEq>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
     OutFac: FnMut(I) -> C::Output,
+    ItPred: FnMut(&mut dyn Iterator<Item = I::Item>) -> bool,
 {
     type Item = I::Item;
 
@@ -131,7 +171,7 @@ where
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item>,
         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>) -> bool,
+        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
         let expected_output = (self.output_factory)((self.iter_factory)());
 
@@ -139,27 +179,36 @@ where
             iter: (self.iter_factory)(),
             collector: (self.collector_factory)(),
             should_break: (self.should_break_pred)((self.iter_factory)()),
-            output_pred: move |output| output == expected_output,
+            pred: move |output, iter| {
+                if output != expected_output {
+                    Err(PredError::IncorrectOutput)
+                } else if !(self.iter_pred)(iter) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
         }
     }
 }
 
-impl<ItFac, ClFac, SbPred, OutFac, I, C> RefCollectorTester
-    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, I, C>
+impl<ItFac, ClFac, SbPred, OutFac, ItPred, I, C> RefCollectorTester
+    for BasicCollectorTester<ItFac, ClFac, SbPred, OutFac, ItPred, I, C>
 where
     I: Iterator,
-    C: RefCollector<Item = I::Item, Output: PartialEq + Debug>,
+    C: RefCollector<Item = I::Item, Output: PartialEq>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
     OutFac: FnMut(I) -> C::Output,
+    ItPred: FnMut(&mut dyn Iterator<Item = I::Item>) -> bool,
 {
     fn ref_collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item>,
         impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>) -> bool,
+        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
         let expected_output = (self.output_factory)((self.iter_factory)());
 
@@ -167,16 +216,20 @@ where
             iter: (self.iter_factory)(),
             collector: (self.collector_factory)(),
             should_break: (self.should_break_pred)((self.iter_factory)()),
-            output_pred: move |output| output == expected_output,
+            pred: move |output, iter| {
+                if output != expected_output {
+                    Err(PredError::IncorrectOutput)
+                } else if !(self.iter_pred)(iter) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
         }
     }
 }
 
-fn test_collector_part(
-    tester: &mut (impl CollectorTester + ?Sized),
-) -> Result<IterRemainders, TestCaseError> {
-    let mut iter_remainders = IterRemainders::default();
-
+fn test_collector_part(tester: &mut (impl CollectorTester + ?Sized)) -> TestCaseResult {
     // `collect()`
     // Introduce scope so that `test_parts` is dropped,
     // or else we get the "mutable more than once" error.
@@ -194,11 +247,9 @@ fn test_collector_part(
             test_parts.should_break,
             "`collect()` didn't break correctly"
         );
-        prop_assert!(
-            (test_parts.output_pred)(test_parts.collector.finish()),
-            "`collect()`'s result mismatched"
-        );
-        iter_remainders.collect = test_parts.iter.count();
+
+        (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
+            .map_err(|e| e.of_method("collect"))?;
     }
 
     // `collect_many()`
@@ -215,50 +266,21 @@ fn test_collector_part(
             test_parts.should_break,
             "`collect_many()` didn't break correctly"
         );
-        prop_assert!(
-            (test_parts.output_pred)(test_parts.collector.finish()),
-            "`collect_many()`'s result mismatched"
-        );
-        iter_remainders.collect_many = test_parts.iter.count();
+        (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
+            .map_err(|e| e.of_method("collect_many"))?;
     }
 
     // `collect_then_finish()`
     {
         let mut test_parts = tester.collector_test_parts();
-        prop_assert!(
-            (test_parts.output_pred)(
-                test_parts
-                    .collector
-                    .collect_then_finish(&mut test_parts.iter)
-            ),
-            "`collect_then_finish()`'s result mismatched"
-        );
-        iter_remainders.collect_then_finish = test_parts.iter.count();
+        (test_parts.pred)(
+            test_parts
+                .collector
+                .collect_then_finish(&mut test_parts.iter),
+            &mut test_parts.iter,
+        )
+        .map_err(|e| e.of_method("collect_then_finish"))?;
     }
 
-    Ok(iter_remainders)
-}
-
-#[derive(Debug, Default)]
-struct IterRemainders {
-    collect: usize,
-    collect_many: usize,
-    collect_then_finish: usize,
-    collect_ref: Option<usize>,
-}
-
-impl IterRemainders {
-    fn assert_all_eq(&self) -> TestCaseResult {
-        let remainders = [self.collect, self.collect_many, self.collect_then_finish]
-            .into_iter()
-            .chain(self.collect_ref);
-
-        prop_assert!(
-            remainders.is_sorted_by(|a, b| a == b),
-            "collect methods consume iterator inconsistently. {:?}",
-            self,
-        );
-
-        Ok(())
-    }
+    Ok(())
 }

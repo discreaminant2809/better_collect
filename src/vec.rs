@@ -186,7 +186,7 @@ mod proptests {
 
     use crate::prelude::*;
     use crate::test_utils::{
-        BasicCollectorTester, CollectorTestParts, CollectorTester, CollectorTesterExt,
+        BasicCollectorTester, CollectorTestParts, CollectorTester, CollectorTesterExt, PredError,
         RefCollectorTester,
     };
 
@@ -217,6 +217,7 @@ mod proptests {
 
                 starting_nums
             },
+            iter_pred: |iter| iter.count() == 0,
         }
         .test_ref_collector()
     }
@@ -266,7 +267,7 @@ mod proptests {
         ) -> CollectorTestParts<
             impl Iterator<Item = Self::Item>,
             impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
-            impl FnMut(Self::Output<'_>) -> bool,
+            impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = i32>) -> Result<(), PredError>,
         > {
             self.ref_collector_test_parts()
         }
@@ -278,19 +279,27 @@ mod proptests {
         ) -> CollectorTestParts<
             impl Iterator<Item = Self::Item>,
             impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
-            impl FnMut(Self::Output<'_>) -> bool,
+            impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
         > {
             // Don't forget to reset the collector.
             self.collector_base.clone_from(&self.starting_nums);
 
             // It has to be here because of "lifetime may not live long enough."
-            let output_pred = |output: Self::Output<'_>| *output == self.expected_output;
+            let output_pred = |output: Self::Output<'_>, iter: &mut dyn Iterator<Item = _>| {
+                if *output != self.expected_output {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.count() > 0 {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            };
 
             CollectorTestParts {
                 iter: self.nums.iter().cloned(),
                 collector: self.collector_base.collector_mut(),
                 should_break: false,
-                output_pred,
+                pred: output_pred,
             }
         }
     }
