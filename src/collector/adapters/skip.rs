@@ -53,10 +53,16 @@ where
 
     #[inline]
     fn break_hint(&self) -> bool {
-        self.remaining == 0 && self.collector.break_hint()
+        self.collector.break_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+        // Unlike `Collector::take()`, a guard is needed because we drop
+        // items (via `drop_n_items`) before forwarding to the underlying collector.
+        if self.break_hint() {
+            return ControlFlow::Break(());
+        }
+
         // We should ensure that once the iterator ends, we never `next` it again.
         // We don't want to resume it.
 
@@ -91,6 +97,10 @@ where
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+        if self.break_hint() {
+            return self.collector.finish();
+        }
+
         let mut items = items.into_iter();
 
         // `Iterator::skip()` is more strict in TrustedLen implementation,
@@ -137,7 +147,7 @@ mod proptests {
     use proptest::prelude::*;
     use proptest::test_runner::TestCaseResult;
 
-    use crate::test_utils::proptest_ref_collector;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
     use crate::{collector::Sink, prelude::*};
 
     // We need to use `take()` to simulate the break case when enough items are skipped.
@@ -167,20 +177,36 @@ mod proptests {
         take_count: usize,
         skip_count: usize,
     ) -> TestCaseResult {
-        proptest_ref_collector(
-            || {
+        BasicCollectorTester {
+            iter_factory: || {
                 nums1
                     .iter()
                     .copied()
                     .chain(nums2.iter().copied().filter(|&num| num > 0))
             },
-            || vec![].into_collector().take(take_count).skip(skip_count),
-            |iter| {
-                let mut iter = iter.clone();
-                iter.by_ref().take(skip_count).count() == skip_count
-                    && Sink::new().take(take_count).collect_many(iter).is_break()
+            collector_factory: || vec![].into_collector().take(take_count).skip(skip_count),
+            should_break_pred: |iter| {
+                Sink::new()
+                    .take(take_count)
+                    .collect_many(iter.skip(skip_count))
+                    .is_break()
             },
-            |iter| iter.skip(skip_count).take(take_count).collect(),
-        )
+            pred: |mut iter, output, remaining| {
+                if output
+                    != iter
+                        .by_ref()
+                        .skip(skip_count)
+                        .take(take_count)
+                        .collect::<Vec<_>>()
+                {
+                    Err(PredError::IncorrectOutput)
+                } else if !iter.eq(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }

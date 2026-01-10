@@ -810,10 +810,10 @@ pub trait Collector {
     /// subsequent items are accumulated normally.
     ///
     /// Note that in the current implementation,
-    /// even if the underlying collector has stopped accumulating from the start,
-    /// its [`collect()`] and similar methods will **not** return [`Break(())`], and
-    /// [`break_hint()`] will **not** return `true` if it has not skipped enough items,
-    /// and will still collect until the number of skipped items is `n`.
+    /// if the underlying collector has stopped accumulating during skipping,
+    /// its [`collect()`] and similar methods will return [`Break(())`] and
+    /// [`break_hint()`] will return `true`,
+    /// regardless of whether the adaptor has skipped enough items or not.
     ///
     /// This also implements [`RefCollector`] if the underlying collector does.
     ///

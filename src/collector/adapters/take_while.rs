@@ -96,7 +96,7 @@ mod proptests {
     use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
-    use crate::test_utils::proptest_ref_collector;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
     // Precondition:
     // - `Vec::IntoCollector`
@@ -112,19 +112,34 @@ mod proptests {
     }
 
     fn all_collect_methods_impl(nums: Vec<i32>, take_count: usize) -> TestCaseResult {
-        proptest_ref_collector(
-            || nums.iter().copied(),
-            || {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
                 vec![]
                     .into_collector()
                     .take(take_count)
                     .take_while(take_while_pred)
             },
-            |iter| {
+            should_break_pred: |iter| {
                 iter.clone().count() >= take_count || !iter.clone().all(|num| take_while_pred(&num))
             },
-            |iter| iter.take_while(take_while_pred).take(take_count).collect(),
-        )
+            pred: |mut iter, output, remaining| {
+                if output
+                    != iter
+                        .by_ref()
+                        .take_while(take_while_pred)
+                        .take(take_count)
+                        .collect::<Vec<_>>()
+                {
+                    Err(PredError::IncorrectOutput)
+                } else if !iter.eq(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 
     fn take_while_pred(&num: &i32) -> bool {

@@ -107,6 +107,8 @@ pub trait CollectorTesterExt: CollectorTester {
     where
         Self: RefCollectorTester,
     {
+        test_collector_part(self)?;
+
         // `collect_ref()`
         let mut test_parts = self.ref_collector_test_parts();
         // Simulate the fact that break_hint is used before looping,

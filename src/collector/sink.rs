@@ -85,7 +85,7 @@ mod proptests {
     use proptest::prelude::*;
     use proptest::test_runner::TestCaseResult;
 
-    use crate::test_utils::proptest_ref_collector;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
     use super::*;
 
@@ -99,11 +99,18 @@ mod proptests {
     }
 
     fn all_collect_methods_impl(count: usize) -> TestCaseResult {
-        proptest_ref_collector(
-            || std::iter::repeat_n(0, count),
-            Sink::new,
-            |_| false,
-            |_| {},
-        )
+        BasicCollectorTester {
+            iter_factory: || std::iter::repeat_n(0, count),
+            collector_factory: Sink::new,
+            should_break_pred: |_| false,
+            pred: |_, _, remaining| {
+                if remaining.count() > 0 {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }

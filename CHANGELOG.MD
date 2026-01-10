@@ -18,6 +18,9 @@
   to `feed_into` and it now takes `self` instead of `&mut self`.
 - Unstable: Renamed `better_collect_with_puller` in `IteratorExt` (previously `BetterCollect`)
   to `feed_into_with_puller` and it now takes `self` instead of `&mut self`.
+- `Collector::skip()`: now stops accumulating
+  if the underlying collector has stopped accumulating during skipping,
+  regardless of whether the adaptor has skipped enough items or not.
 
 ### Fixed
 
