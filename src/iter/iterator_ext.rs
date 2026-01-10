@@ -7,8 +7,7 @@ use crate::assert_iterator;
 use crate::collector::RefCollector;
 use crate::collector::{Collector, IntoCollector};
 
-/// Extends [`Iterator`] with the [`better_collect`](IteratorExt::better_collect) method
-/// for working seamlessly with [`Collector`]s.
+/// Extends [`Iterator`] with various methods to work with [`Collector`]s.
 ///
 /// This trait is automatically implemented for all [`Iterator`] types.
 pub trait IteratorExt: Iterator {
