@@ -1099,7 +1099,7 @@ pub trait Collector {
     /// ```
     ///
     /// [`RefCollector`]: crate::collector::RefCollector
-    fn map_output<T, F>(self, f: F) -> MapOutput<Self, T, F>
+    fn map_output<F, T>(self, f: F) -> MapOutput<Self, F>
     where
         Self: Sized,
         F: FnOnce(Self::Output) -> T,

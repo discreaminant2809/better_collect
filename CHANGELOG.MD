@@ -30,6 +30,7 @@
 ### Removed
 
 - `ConcatStr(ing)`.
+- `T` generic in `MapOutput`.
 
 ## 0.3.2
 

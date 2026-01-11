@@ -5,26 +5,19 @@ use crate::collector::{Collector, RefCollector};
 /// Creates a [`Collector`] that transforms the final accumulated result.
 ///
 /// This `struct` is created by [`Collector::map_output()`]. See its documentation for more.
-pub struct MapOutput<C, T, F>
-where
-    C: Collector,
-    F: FnOnce(C::Output) -> T,
-{
+#[derive(Clone)]
+pub struct MapOutput<C, F> {
     collector: C,
     f: F,
 }
 
-impl<C, T, F> MapOutput<C, T, F>
-where
-    C: Collector,
-    F: FnOnce(C::Output) -> T,
-{
+impl<C, F> MapOutput<C, F> {
     pub(in crate::collector) fn new(collector: C, f: F) -> Self {
         Self { collector, f }
     }
 }
 
-impl<C, T, F> Collector for MapOutput<C, T, F>
+impl<C, T, F> Collector for MapOutput<C, F>
 where
     C: Collector,
     F: FnOnce(C::Output) -> T,
@@ -59,7 +52,7 @@ where
     }
 }
 
-impl<C, T, F> RefCollector for MapOutput<C, T, F>
+impl<C, T, F> RefCollector for MapOutput<C, F>
 where
     C: RefCollector,
     F: FnOnce(C::Output) -> T,
@@ -70,28 +63,9 @@ where
     }
 }
 
-impl<C, T, F> Clone for MapOutput<C, T, F>
+impl<C, F> Debug for MapOutput<C, F>
 where
-    C: Collector + Clone,
-    F: FnOnce(C::Output) -> T + Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            collector: self.collector.clone(),
-            f: self.f.clone(),
-        }
-    }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.collector.clone_from(&source.collector);
-        self.f.clone_from(&source.f);
-    }
-}
-
-impl<C, T, F> Debug for MapOutput<C, T, F>
-where
-    C: Collector + Debug,
-    F: FnOnce(C::Output) -> T,
+    C: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MapOutput")
