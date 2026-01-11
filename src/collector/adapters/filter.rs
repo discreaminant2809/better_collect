@@ -77,3 +77,51 @@ impl<C: Debug, F> Debug for Filter<C, F> {
             .finish()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    proptest! {
+        /// Precondition:
+        /// - [`crate::collector::Collector::take()`]
+        /// - [`crate::vec::IntoCollector`]
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=8),
+            take_count in ..=8_usize,
+        ) {
+            all_collect_methods_impl(nums, take_count)?;
+        }
+    }
+
+    fn all_collect_methods_impl(nums: Vec<i32>, take_count: usize) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .take(take_count)
+                    .filter(|&num| num >= 0)
+            },
+            should_break_pred: |iter| iter.filter(|&num| num >= 0).count() >= take_count,
+            pred: |mut iter, output, remaining| {
+                let expected = iter.by_ref().filter(|&num| num >= 0).take(take_count);
+
+                if expected.ne(output) {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
+    }
+}
