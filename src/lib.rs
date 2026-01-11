@@ -232,7 +232,7 @@
 //! ## Other traits
 //!
 //! [`IteratorExt`] extends [`Iterator`] with the
-//! [`better_collect()`] method, which feeds all items from an iterator
+//! [`feed_into()`] method, which feeds all items from an iterator
 //! into a [`Collector`] and returns the collector’s result.
 //! To use this method, the [`IteratorExt`] trait must be imported.
 //!
@@ -261,7 +261,7 @@
 //! [`collect()`]: crate::collector::Collector::collect
 //! [`combine()`]: crate::collector::RefCollector::combine
 //! [`chain()`]: crate::collector::Collector::chain
-//! [`better_collect()`]: crate::iter::IteratorExt::better_collect
+//! [`feed_into()`]: crate::iter::IteratorExt::feed_into
 //! [`Collector`]: crate::collector::Collector
 //! [`RefCollector`]: crate::collector::RefCollector
 //! [`IntoCollector`]: crate::collector::IntoCollector

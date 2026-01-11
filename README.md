@@ -232,7 +232,7 @@ takes ownership.
 ### Other traits
 
 [`IteratorExt`] extends [`Iterator`] with the
-[`better_collect()`] method, which feeds all items from an iterator
+[`feed_into()`] method, which feeds all items from an iterator
 into a [`Collector`] and returns the collector’s result.
 To use this method, the [`IteratorExt`] trait must be imported.
 
@@ -263,7 +263,7 @@ More types, traits and functions can be found in this crate's documentation.
 [`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html
 [`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IntoCollector.html
 [`collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#tymethod.collect
-[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.better_collect
+[`feed_into()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.feed_into
 [`chain()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#method.chain
 [`combine()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html

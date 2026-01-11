@@ -7,7 +7,7 @@
 [`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html
 [`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IntoCollector.html
 [`collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#tymethod.collect
-[`better_collect()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.better_collect
+[`feed_into()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.feed_into
 [`chain()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#method.chain
 [`combine()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
