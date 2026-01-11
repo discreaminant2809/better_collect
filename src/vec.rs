@@ -270,7 +270,7 @@ mod proptests {
         fn collector_test_parts(
             &mut self,
         ) -> CollectorTestParts<
-            impl Iterator<Item = Self::Item>,
+            impl Iterator<Item = Self::Item> + Clone,
             impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
             impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = i32>) -> Result<(), PredError>,
         > {
@@ -282,7 +282,7 @@ mod proptests {
         fn ref_collector_test_parts(
             &mut self,
         ) -> CollectorTestParts<
-            impl Iterator<Item = Self::Item>,
+            impl Iterator<Item = Self::Item> + Clone,
             impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
             impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
         > {

@@ -95,32 +95,58 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
     use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
-    #[test]
-    fn must_finished_for_empty_collector_on_construct() {
-        struct MockCollector;
-
-        impl Collector for MockCollector {
-            type Item = ();
-
-            type Output = ();
-
-            fn collect(&mut self, _: Self::Item) -> core::ops::ControlFlow<()> {
-                unimplemented!()
-            }
-
-            fn finish(self) -> Self::Output {
-                unimplemented!()
-            }
-
-            fn break_hint(&self) -> bool {
-                true
-            }
+    proptest! {
+        /// We use
+        ///
+        /// Precondition:
+        /// - [`crate::collector::Collector::take_while()`]
+        /// - [`crate::vec::IntoCollector`]
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=5),
+            // We only simulate whether the collector has stopped on construction,
+            // or stops later (rely on `take_while()` to stop).
+            take_count in prop_oneof![
+                1 => Just(0),
+                9 => Just(999),
+            ],
+        ) {
+            all_collect_methods_impl(nums, take_count)?;
         }
+    }
 
-        assert!(MockCollector.fuse().finished());
+    fn all_collect_methods_impl(nums: Vec<i32>, take_count: usize) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .take(take_count)
+                    .take_while(|&num| num > 0)
+                    .fuse()
+            },
+            should_break_pred: |mut iter| take_count == 0 || !iter.all(|num| num > 0),
+            pred: |mut iter, output, remaining| {
+                let expected = iter.by_ref().take_while(|&num| num > 0).take(take_count);
+
+                if expected.ne(output) {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector_may_fused(true)
     }
 }

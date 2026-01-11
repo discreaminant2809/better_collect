@@ -21,7 +21,7 @@ pub trait CollectorTester {
     fn collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item>,
+        impl Iterator<Item = Self::Item> + Clone,
         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     >;
@@ -38,7 +38,7 @@ pub trait RefCollectorTester: CollectorTester {
     fn ref_collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item>,
+        impl Iterator<Item = Self::Item> + Clone,
         impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     >;
@@ -47,7 +47,7 @@ pub trait RefCollectorTester: CollectorTester {
 /// Test parts for collector testing.
 pub struct CollectorTestParts<I, C, P>
 where
-    I: Iterator,
+    I: Iterator + Clone,
     C: Collector<Item = I::Item>,
     P: FnMut(C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
@@ -100,14 +100,25 @@ impl From<OfMethod> for TestCaseError {
 pub trait CollectorTesterExt: CollectorTester {
     #[allow(unused)] // FIXME: delete it when we need it in the future
     fn test_collector(&mut self) -> TestCaseResult {
-        test_collector_part(self)
+        self.test_collector_may_fused(false)
+    }
+
+    fn test_collector_may_fused(&mut self, collector_fused: bool) -> TestCaseResult {
+        test_collector_part(self, collector_fused)
     }
 
     fn test_ref_collector(&mut self) -> TestCaseResult
     where
         Self: RefCollectorTester,
     {
-        test_collector_part(self)?;
+        self.test_ref_collector_may_fused(false)
+    }
+
+    fn test_ref_collector_may_fused(&mut self, collector_fused: bool) -> TestCaseResult
+    where
+        Self: RefCollectorTester,
+    {
+        test_collector_part(self, collector_fused)?;
 
         // `collect_ref()`
         let mut test_parts = self.ref_collector_test_parts();
@@ -123,6 +134,16 @@ pub trait CollectorTesterExt: CollectorTester {
             test_parts.should_break,
             "`collect_ref()` didn't break correctly"
         );
+
+        if has_stopped && collector_fused {
+            for mut item in test_parts.iter.clone() {
+                prop_assert!(
+                    test_parts.collector.collect_ref(&mut item).is_break(),
+                    "`collect_ref()` isn't actually fused"
+                );
+            }
+        }
+
         (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
             .map_err(|e| e.of_method("collect_ref"))?;
 
@@ -154,7 +175,7 @@ where
 impl<ItFac, ClFac, SbPred, Pred, I, C> CollectorTester
     for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 where
-    I: Iterator,
+    I: Iterator + Clone,
     C: Collector<Item = I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
@@ -168,7 +189,7 @@ where
     fn collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item>,
+        impl Iterator<Item = Self::Item> + Clone,
         impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
@@ -184,7 +205,7 @@ where
 impl<ItFac, ClFac, SbPred, Pred, I, C> RefCollectorTester
     for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 where
-    I: Iterator,
+    I: Iterator + Clone,
     C: RefCollector<Item = I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
@@ -194,7 +215,7 @@ where
     fn ref_collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item>,
+        impl Iterator<Item = Self::Item> + Clone,
         impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
@@ -207,7 +228,10 @@ where
     }
 }
 
-fn test_collector_part(tester: &mut (impl CollectorTester + ?Sized)) -> TestCaseResult {
+fn test_collector_part(
+    tester: &mut (impl CollectorTester + ?Sized),
+    collector_fused: bool,
+) -> TestCaseResult {
     // `collect()`
     // Introduce scope so that `test_parts` is dropped,
     // or else we get the "mutable more than once" error.
@@ -225,6 +249,19 @@ fn test_collector_part(tester: &mut (impl CollectorTester + ?Sized)) -> TestCase
             test_parts.should_break,
             "`collect()` didn't break correctly"
         );
+
+        if has_stopped && collector_fused {
+            for item in test_parts.iter.clone() {
+                prop_assert!(
+                    test_parts.collector.collect(item).is_break(),
+                    "`collect()` isn't actually fused"
+                );
+            }
+        }
+        // We may have not considered that the collector is implemeted incorrectly
+        // and even if the above test passes, the output of the collector
+        // may have been "tainted" by extra items fed.
+        // We will catch it also in the below test
 
         (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
             .map_err(|e| e.of_method("collect"))?;
@@ -244,6 +281,17 @@ fn test_collector_part(tester: &mut (impl CollectorTester + ?Sized)) -> TestCase
             test_parts.should_break,
             "`collect_many()` didn't break correctly"
         );
+
+        if has_stopped && collector_fused {
+            prop_assert!(
+                test_parts
+                    .collector
+                    .collect_many(test_parts.iter.clone())
+                    .is_break(),
+                "`collect_many()` isn't actually fused"
+            );
+        }
+
         (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
             .map_err(|e| e.of_method("collect_many"))?;
     }
