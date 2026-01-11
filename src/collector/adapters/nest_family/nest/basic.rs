@@ -86,97 +86,51 @@ where
 mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
     proptest! {
+        /// Precondition:
+        /// - [`crate::collector::Collector::take()`]
+        /// - [`crate::vec::IntoCollector`]
         #[test]
         fn all_collect_methods(
-            nums in propvec(any::<i32>(), ..100),
-            row in ..25_usize,
-            column in 1..25_usize,
+            nums in propvec(any::<i32>(), ..=10),
+            row in ..=3_usize,
+            column in 1..=3_usize,
         ) {
-            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
-            let mut results = fns
-                .into_iter()
-                .map(|f| f(&nums, row, column))
-                .enumerate();
-
-            let (_, expected) = results.next().unwrap();
-            for (i, res) in results{
-                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
-            }
+            all_collect_methods_impl(nums, row, column)?;
         }
     }
 
-    fn iter_way(nums: &[i32], row: usize, column: usize) -> Vec<Vec<i32>> {
-        nums.chunks(column).take(row).map(Vec::from).collect()
-    }
-
-    fn collect_way(nums: &[i32], row: usize, column: usize) -> Vec<Vec<i32>> {
-        let should_break = should_break(nums, row, column);
-
-        let mut collector = get_collector(row, column);
-
-        // Simulate the fact that break_hint is used before looping,
-        // which is the intended use case.
-        let has_stopped = collector.break_hint()
-            || get_iter(nums)
-                .try_for_each(|item| collector.collect(item))
-                .is_break();
-
-        assert_eq!(has_stopped, should_break);
-
-        collector.finish()
-    }
-
-    fn collect_ref_way(nums: &[i32], row: usize, column: usize) -> Vec<Vec<i32>> {
-        let should_break = should_break(nums, row, column);
-
-        let mut collector = get_collector(row, column);
-
-        // Simulate the fact that break_hint is used before looping,
-        // which is the intended use case.
-        let has_stopped = collector.break_hint()
-            || get_iter(nums)
-                .try_for_each(|mut item| collector.collect_ref(&mut item))
-                .is_break();
-
-        assert_eq!(has_stopped, should_break);
-
-        collector.finish()
-    }
-
-    fn collect_many_way(nums: &[i32], row: usize, column: usize) -> Vec<Vec<i32>> {
-        let should_break = should_break(nums, row, column);
-
-        let mut collector = get_collector(row, column);
-        assert_eq!(
-            collector.collect_many(get_iter(nums)).is_break(),
-            should_break
-        );
-        collector.finish()
-    }
-
-    fn collect_then_finish_way(nums: &[i32], row: usize, column: usize) -> Vec<Vec<i32>> {
-        get_collector(row, column).collect_then_finish(get_iter(nums))
-    }
-
-    fn get_iter(nums: &[i32]) -> impl Iterator<Item = i32> {
-        nums.iter().copied()
-    }
-
-    fn get_collector(
-        row: usize,
-        column: usize,
-    ) -> impl RefCollector<Item = i32, Output = Vec<Vec<i32>>> {
-        vec![]
-            .into_collector()
-            .take(row)
-            .nest(vec![].into_collector().take(column))
-    }
-
-    fn should_break(nums: &[i32], row: usize, column: usize) -> bool {
-        nums.len() >= row * column
+    fn all_collect_methods_impl(nums: Vec<i32>, row: usize, column: usize) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .take(row)
+                    .nest(vec![].into_collector().take(column))
+            },
+            should_break_pred: |iter| iter.count() >= row * column,
+            pred: |_, output, remaining| {
+                if output
+                    != nums
+                        .chunks(column)
+                        .take(row)
+                        .map(Vec::from)
+                        .collect::<Vec<_>>()
+                {
+                    Err(PredError::IncorrectOutput)
+                } else if nums.iter().copied().skip(row * column).ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }

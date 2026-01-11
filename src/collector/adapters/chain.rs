@@ -33,13 +33,14 @@ where
     type Output = (C1::Output, C2::Output);
 
     fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        if !self.collector1.finished() {
-            let _ = self.collector1.collect(item);
-            // DO NOT just return whatever the first collector returns.
-            // We still have the second collector, so we can't hint `Break`!
-            ControlFlow::Continue(())
-        } else {
+        if self.collector1.finished() {
             self.collector2.collect(item)
+        } else if self.collector1.collect(item).is_continue() {
+            ControlFlow::Continue(())
+        } else if self.collector2.break_hint() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
         }
     }
 
@@ -89,13 +90,68 @@ where
     C2: RefCollector<Item = C1::Item>,
 {
     fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        if !self.collector1.finished() {
-            let _ = self.collector1.collect_ref(item);
-            // DO NOT just return whatever the first collector returns.
-            // We still have the second collector, so we can't hint `Break`!
-            ControlFlow::Continue(())
-        } else {
+        if self.collector1.finished() {
             self.collector2.collect_ref(item)
+        } else if self.collector1.collect_ref(item).is_continue() {
+            ControlFlow::Continue(())
+        } else if self.collector2.break_hint() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
         }
+    }
+}
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    proptest! {
+        /// Precondition:
+        /// - [`crate::collector::Collector::take()`]
+        /// - [`crate::vec::IntoCollector`]
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=7),
+            first_count in 0..=3_usize,
+            second_count in 0..=3_usize,
+        ) {
+            all_collect_methods_impl(nums, first_count, second_count)?;
+        }
+    }
+
+    fn all_collect_methods_impl(
+        nums: Vec<i32>,
+        first_count: usize,
+        second_count: usize,
+    ) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .take(first_count)
+                    .chain(vec![].into_collector().take(second_count))
+            },
+            should_break_pred: |iter| iter.count() >= first_count + second_count,
+            pred: |mut iter, output, remaining| {
+                let first = iter.by_ref().take(first_count).collect::<Vec<_>>();
+                let second = iter.by_ref().take(second_count).collect::<Vec<_>>();
+
+                if output != (first, second) {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }
