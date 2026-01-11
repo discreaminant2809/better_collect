@@ -276,46 +276,57 @@ enum Which<T> {
     Second,
 }
 
-#[cfg(test)]
-mod tests {
-    use core::ops::ControlFlow;
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
-    use crate::{collector::Sink, prelude::*};
+    use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
-    #[test]
-    fn second_collector_stops_earlier() {
-        #[derive(Default)]
-        struct PanicAfterBreak(bool);
-
-        impl Collector for PanicAfterBreak {
-            type Item = ();
-
-            type Output = ();
-
-            fn collect(&mut self, _: Self::Item) -> ControlFlow<()> {
-                if core::mem::replace(&mut self.0, true) {
-                    panic!("collect after break");
-                } else {
-                    ControlFlow::Break(())
-                }
-            }
-
-            fn finish(self) -> Self::Output {}
+    proptest! {
+        /// Precondition:
+        /// - [`crate::collector::Collector::take()`]
+        /// - [`crate::vec::IntoCollector`]
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=4),
+            first_count in ..=4_usize,
+            second_count in ..=4_usize,
+        ) {
+            all_collect_methods_impl(nums, first_count, second_count)?;
         }
+    }
 
-        let mut collector = Sink::new()
-            // This stops earlier.
-            .combine(PanicAfterBreak::default().skip(10))
-            .take(100);
+    fn all_collect_methods_impl(
+        nums: Vec<i32>,
+        first_count: usize,
+        second_count: usize,
+    ) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .take(first_count)
+                    .combine(vec![].into_collector().take(second_count))
+            },
+            should_break_pred: |iter| iter.count() >= first_count.max(second_count),
+            pred: |iter, output, remaining| {
+                let first = iter.clone().take(first_count).collect::<Vec<_>>();
+                let second = iter.clone().take(second_count).collect::<Vec<_>>();
+                let max_len = first_count.max(second_count);
 
-        while collector.collect(()).is_continue() {}
-
-        assert!(
-            Sink::new()
-                // This stops earlier.
-                .combine(PanicAfterBreak::default().skip(10))
-                .collect_many(core::iter::repeat_n((), 100))
-                .is_continue()
-        );
+                if output != (first, second) {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.skip(max_len).ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }
