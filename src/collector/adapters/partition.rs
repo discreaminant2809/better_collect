@@ -199,3 +199,78 @@ impl<CT: Debug, CF: Debug, F> Debug for Partition<CT, CF, F> {
             .finish()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    proptest! {
+        /// Precondition:
+        /// - [`crate::collector::Collector::take()`]
+        /// - [`crate::vec::IntoCollector`]
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=5),
+            pos_count in ..=5_usize,
+            non_pos_count in ..=5_usize,
+        ) {
+            all_collect_methods_impl(nums, pos_count, non_pos_count)?;
+        }
+    }
+
+    fn all_collect_methods_impl(
+        nums: Vec<i32>,
+        pos_count: usize,
+        non_pos_count: usize,
+    ) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || {
+                vec![].into_collector().take(pos_count).partition(
+                    |&mut num| num > 0,
+                    vec![].into_collector().take(non_pos_count),
+                )
+            },
+            should_break_pred: |iter| {
+                iter.clone().filter(|&num| num > 0).count() >= pos_count
+                    && iter.filter(|&num| num <= 0).count() >= non_pos_count
+            },
+            pred: |mut iter, output, remaining| {
+                let (mut pos_nums, mut non_pos_nums) = (output.0.into_iter(), output.1.into_iter());
+                let (mut pos_count, mut non_pos_count) = (pos_count, non_pos_count);
+
+                while (pos_count > 0 || non_pos_count > 0)
+                    && let Some(num) = iter.next()
+                {
+                    if pos_count > 0 && num > 0 {
+                        pos_count -= 1;
+                        if pos_nums.next() != Some(num) {
+                            return Err(PredError::IncorrectOutput);
+                        }
+                    }
+
+                    if non_pos_count > 0 && num <= 0 {
+                        non_pos_count -= 1;
+                        if non_pos_nums.next() != Some(num) {
+                            return Err(PredError::IncorrectOutput);
+                        }
+                    }
+                }
+
+                if pos_nums.len() > 0 || non_pos_nums.len() > 0 {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
+    }
+}
