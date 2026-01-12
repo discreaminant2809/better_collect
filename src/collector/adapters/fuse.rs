@@ -147,6 +147,6 @@ mod proptests {
                 }
             },
         }
-        .test_collector_may_fused(true)
+        .test_ref_collector_may_fused(true)
     }
 }
