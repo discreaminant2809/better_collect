@@ -82,3 +82,41 @@ impl<T> Default for Last<T> {
         Self::new()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=9),
+        ) {
+            all_collect_methods_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: Last::new,
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if iter.last() != output {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.ne([]) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+}
