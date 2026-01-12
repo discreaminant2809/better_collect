@@ -116,3 +116,40 @@ impl<T> Default for Count<T> {
         Self::new()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn all_collect_methods(
+            count in ..=9_usize,
+        ) {
+            all_collect_methods_impl(count)?;
+        }
+    }
+
+    fn all_collect_methods_impl(count: usize) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || std::iter::repeat_n((), count),
+            collector_factory: Count::new,
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if iter.count() != output {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.next().is_some() {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
+    }
+}
