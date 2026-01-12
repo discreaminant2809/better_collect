@@ -94,3 +94,42 @@ impl<T: Debug, F> Debug for Reduce<T, F> {
             .finish()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    use super::*;
+
+    proptest! {
+        /// Here, we will use the Kadane's Algorithm to test reduce.
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=9),
+        ) {
+            all_collect_methods_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || Reduce::new(|a, b| a ^ b),
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if iter.reduce(|a, b| a ^ b) != output {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.ne([]) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+}
