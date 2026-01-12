@@ -135,3 +135,41 @@ impl<T: Debug, F> Debug for Find<T, F> {
         f.debug_struct("Find").field("found", &item).finish()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=5),
+        ) {
+            all_collect_methods_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || Find::new(|&num| num > 0),
+            should_break_pred: |mut iter| iter.any(|num| num > 0),
+            pred: |mut iter, output, remaining| {
+                if iter.find(|&num| num > 0) != output {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+}
