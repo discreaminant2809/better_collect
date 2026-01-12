@@ -26,6 +26,7 @@
 
 - `Skip::collect()` and `Skip::collect_ref()` not returning `ControlFlow` correctly.
 - Missing `Debug`, `Clone` and `Default` implementations.
+- Incorrect returning `ControlFlow` in many collector implementations.
 - `collect_then_finish()` of `All(Ref)` and `Any(Ref)` not returning the correct results.
 
 ### Removed
