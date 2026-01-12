@@ -98,7 +98,6 @@ impl From<OfMethod> for TestCaseError {
 
 /// Used because we don't want the user to override any methods here.
 pub trait CollectorTesterExt: CollectorTester {
-    #[allow(unused)] // FIXME: delete it when we need it in the future
     fn test_collector(&mut self) -> TestCaseResult {
         self.test_collector_may_fused(false)
     }
