@@ -260,3 +260,68 @@ impl<T, F> Debug for AnyRef<T, F> {
         self.inner.debug_impl(f.debug_struct("AnyRef"))
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    use super::*;
+
+    proptest! {
+        /// [`Any`](super::Any)
+        #[test]
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=5),
+        ) {
+            all_collect_methods_impl(nums)?;
+        }
+
+        /// [`AnyRef`](super::AnyRef)
+        #[test]
+        fn all_collect_methods_ref(
+            nums in propvec(any::<i32>(), ..=5),
+        ) {
+            all_collect_methods_ref_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || Any::new(|num| num > 0),
+            should_break_pred: |mut iter| iter.any(|num| num > 0),
+            pred: |mut iter, output, remaining| {
+                if iter.any(|num| num > 0) != output {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+
+    fn all_collect_methods_ref_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || Any::new_ref(|&mut num| num > 0),
+            should_break_pred: |mut iter| iter.any(|num| num > 0),
+            pred: |mut iter, output, remaining| {
+                if iter.any(|num| num > 0) != output {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
+    }
+}

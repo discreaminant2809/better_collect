@@ -41,15 +41,11 @@ impl<F, const ALL: bool> RawAllAny<F, ALL> {
     }
 
     pub fn collect_then_finish_impl(self, f: impl FnOnce(F) -> bool) -> bool {
-        if let Some(pred) = self.pred {
-            // f/ALL 0 (ANY) 1 (ALL)
-            // 0     0       1
-            // 1     1       0
-            // => XOR
-            ALL ^ f(pred)
-        } else {
-            !ALL
-        }
+        // f/ALL 0 (ANY) 1 (ALL)
+        // 0     0       0
+        // 1     1       1
+        // => f (only depends on f)
+        self.pred.map_or(!ALL, f)
     }
 
     #[inline]
