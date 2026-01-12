@@ -137,66 +137,56 @@ enum Which<T> {
 mod proptests {
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
 
-    use crate::{iter::Any, prelude::*};
+    use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
     proptest! {
+        /// Since `unzip()` is essentially just `combine()` (but used for destructuring),
+        /// we can just copy the test from there to here.
+        ///
+        /// Precondition:
+        /// - [`crate::collector::Collector::take()`]
+        /// - [`crate::vec::IntoCollector`]
         #[test]
-        fn collect_many(
-            vec1 in propvec(any::<i32>(), 0..100),
-            vec2 in propvec(any::<i32>(), 0..100),
+        fn all_collect_methods(
+            nums in propvec(any::<i32>(), ..=4),
+            first_count in ..=4_usize,
+            second_count in ..=4_usize,
         ) {
-            let fns = [iter_way, collect_way, collect_ref_way, collect_many_way, collect_then_finish_way];
-            let mut results = fns
-                .into_iter()
-                .map(|f| f(&vec1, &vec2))
-                .enumerate();
-
-            let (_, expected) = results.next().unwrap();
-            for (i, res) in results{
-                prop_assert_eq!(&expected, &res, "{}-th method failed", i);
-            }
+            all_collect_methods_impl(nums, first_count, second_count)?;
         }
     }
 
-    fn iter_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
-        get_iter(vec1, vec2).fold((false, false), |(any1, any2), (num1, num2)| {
-            (any1 || any_pred(num1), any2 || any_pred(num2))
-        })
-    }
+    fn all_collect_methods_impl(
+        nums: Vec<i32>,
+        first_count: usize,
+        second_count: usize,
+    ) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().map(|&num| (num, num)),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .take(first_count)
+                    .unzip(vec![].into_collector().take(second_count))
+            },
+            should_break_pred: |iter| iter.count() >= first_count.max(second_count),
+            pred: |iter, output, remaining| {
+                let first = nums.iter().copied().take(first_count).collect::<Vec<_>>();
+                let second = nums.iter().copied().take(second_count).collect::<Vec<_>>();
+                let max_len = first_count.max(second_count);
 
-    fn collect_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
-        let mut collector = new_collector();
-        let _ = get_iter(vec1, vec2).try_for_each(|item| collector.collect(item));
-        collector.finish()
-    }
-
-    fn collect_ref_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
-        let mut collector = new_collector();
-        let _ = get_iter(vec1, vec2).try_for_each(|mut item| collector.collect_ref(&mut item));
-        collector.finish()
-    }
-
-    fn collect_many_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
-        let mut collector = new_collector();
-        let _ = collector.collect_many(get_iter(vec1, vec2));
-        collector.finish()
-    }
-
-    fn collect_then_finish_way(vec1: &[i32], vec2: &[i32]) -> (bool, bool) {
-        new_collector().collect_then_finish(get_iter(vec1, vec2))
-    }
-
-    fn new_collector() -> impl RefCollector<Item = (i32, i32), Output = (bool, bool)> {
-        let collector = Any::new_ref(|&mut num| any_pred(num));
-        collector.clone().unzip(collector)
-    }
-
-    fn get_iter(vec1: &[i32], vec2: &[i32]) -> impl Iterator<Item = (i32, i32)> {
-        vec1.iter().copied().zip(vec2.iter().copied())
-    }
-
-    fn any_pred(num: i32) -> bool {
-        num > 0
+                if output != (first, second) {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.skip(max_len).ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_ref_collector()
     }
 }
