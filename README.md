@@ -1,4 +1,4 @@
-# better_collect
+# better_collect 0.4.0
 
 [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
 [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
@@ -162,13 +162,11 @@ fn socket_stream() -> impl Iterator<Item = String> {
 // Task: Collect UNIQUE chunks of data and concatenate them.
 
 // `Iterator::unzip`
-let (chunks, concatenated_data): (HashSet<_>, String) = socket_stream()
+let unzip_way: (String, HashSet<_>) = socket_stream()
     // Sad. We have to clone.
     // We can't take a reference, since the referenced data is returned too.
     .map(|chunk| (chunk.clone(), chunk))
     .unzip();
-
-let unzip_way = (concatenated_data, chunks);
 
 // Another approach is do two passes (collect to `Vec`, then iterate),
 // which is still another allocation,

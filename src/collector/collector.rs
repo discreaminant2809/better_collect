@@ -153,16 +153,16 @@ pub trait Collector {
     ///
     /// Implementors should inform the caller about it as early as possible.
     /// This can usually be upheld, but not always.
-    /// Some collectors-like [`take(0)`](Collector::take) and [`take_while()`]-only
-    /// know when they are done after collecting an item, which might be too late
+    /// Some collectors, such as [`take(0)`](Collector::take) and [`take_while()`],
+    /// only know when they are done after collecting an item, which might be too late
     /// if the item cannot be “afforded” and is lost forever.
     /// In this case, call [`break_hint()`](Collector::break_hint) before collecting
     /// (see its documentation to use it correctly).
     /// For "infinite" collectors (like most collections), this is not an issue
     /// since they can simply return  [`Continue(())`] every time.
     ///
-    /// If the collector is uncertain - like "maybe I won’t accumulate… uh, fine, I will" -
-    /// it is recommended to return [`Continue(())`].
+    /// If the collector is uncertain, like "maybe I won’t accumulate… uh, fine, I will,"
+    /// it is recommended to just return [`Continue(())`].
     /// For example, [`filter()`](Collector::filter) might skip some items it collects,
     /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate.
     /// The filter just denies "undesirable" items, not signal termination
@@ -244,7 +244,7 @@ pub trait Collector {
     /// needing such behavior.
     ///
     /// If the collector is uncertain, like "maybe I won’t accumulate… uh, fine, I will,"
-    /// it is recommended to return `false`.
+    /// it is recommended to just return `false`.
     /// For example, [`filter()`](Collector::filter) might skip some items it collects,
     /// but still returns `false` as long as the underlying collector can still accumulate.
     /// The filter just denies "undesirable" items, not signal termination
