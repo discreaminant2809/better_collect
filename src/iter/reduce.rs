@@ -106,7 +106,6 @@ mod proptests {
     use super::*;
 
     proptest! {
-        /// Here, we will use the Kadane's Algorithm to test reduce.
         #[test]
         fn all_collect_methods(
             nums in propvec(any::<i32>(), ..=9),
