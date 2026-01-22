@@ -1,6 +1,6 @@
-use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
+use std::ops::ControlFlow;
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 /// A [`RefCollector`] that collects items... but no one knows where they go.
 ///
@@ -12,71 +12,30 @@ use crate::collector::{Collector, RefCollector};
 /// # Examples
 ///
 /// It collected the example. Nothing to show.
-pub struct Sink<T> {
-    _marker: PhantomData<T>,
-}
+#[derive(Clone, Debug, Default)]
+pub struct Sink;
 
-impl<T> Sink<T> {
-    /// Creates a new instance of this collector.
-    #[inline]
-    pub const fn new() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T> Collector for Sink<T> {
-    type Item = T;
-
+impl CollectorBase for Sink {
     type Output = ();
 
-    #[inline]
-    fn collect(&mut self, _item: Self::Item) -> ControlFlow<()> {
-        ControlFlow::Continue(())
-    }
-
-    #[inline]
     fn finish(self) -> Self::Output {}
+}
+
+impl<T> Collector<T> for Sink {
+    #[inline]
+    fn collect(&mut self, _item: T) -> ControlFlow<()> {
+        ControlFlow::Continue(())
+    }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         items.into_iter().for_each(drop);
         ControlFlow::Continue(())
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         items.into_iter().for_each(drop);
-    }
-}
-
-impl<T> RefCollector for Sink<T> {
-    #[inline]
-    fn collect_ref(&mut self, _item: &mut Self::Item) -> ControlFlow<()> {
-        ControlFlow::Continue(())
-    }
-}
-
-impl<T> Clone for Sink<T> {
-    #[inline]
-    fn clone(&self) -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T> Debug for Sink<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Sink").finish()
-    }
-}
-
-impl<T> Default for Sink<T> {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }
 

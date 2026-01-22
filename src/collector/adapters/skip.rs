@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 /// A [`Collector`] that skips the first `n` collected items before it begins
 /// accumulating them.
@@ -21,30 +21,11 @@ impl<C> Skip<C> {
     }
 }
 
-impl<C> Collector for Skip<C>
+impl<C> CollectorBase for Skip<C>
 where
-    C: Collector,
+    C: CollectorBase,
 {
-    type Item = C::Item;
-
     type Output = C::Output;
-
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        if self.remaining > 0 {
-            self.remaining -= 1;
-
-            // There is a very edge case that we've skipped enough item,
-            // but the underlying collector has stopped from the beginning.
-            // The correct behavior in this case is to stop.
-            if self.remaining == 0 && self.collector.break_hint() {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        } else {
-            self.collector.collect(item)
-        }
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
@@ -52,16 +33,36 @@ where
     }
 
     #[inline]
-    fn break_hint(&self) -> bool {
+    fn break_hint(&self) -> ControlFlow<()> {
         self.collector.break_hint()
     }
+}
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+impl<C, T> Collector<T> for Skip<C>
+where
+    C: Collector<T>,
+{
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        if self.remaining == 0 {
+            return self.collector.collect(item);
+        }
+
+        self.remaining -= 1;
+
+        // There is a very edge case that we've skipped enough item,
+        // but the underlying collector has stopped from the beginning.
+        // The correct behavior in this case is to stop.
+        if self.remaining == 0 {
+            self.collector.break_hint()
+        } else {
+            ControlFlow::Continue(())
+        }
+    }
+
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // Unlike `Collector::take()`, a guard is needed because we drop
         // items (via `drop_n_items`) before forwarding to the underlying collector.
-        if self.break_hint() {
-            return ControlFlow::Break(());
-        }
+        self.break_hint()?;
 
         // We should ensure that once the iterator ends, we never `next` it again.
         // We don't want to resume it.
@@ -96,8 +97,8 @@ where
         }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        if self.break_hint() {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+        if self.break_hint().is_break() {
             return self.collector.finish();
         }
 
@@ -109,24 +110,6 @@ where
             self.collector.collect_then_finish(items)
         } else {
             self.collector.finish()
-        }
-    }
-}
-
-impl<C> RefCollector for Skip<C>
-where
-    C: RefCollector,
-{
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        if self.remaining > 0 {
-            self.remaining -= 1;
-            if self.remaining == 0 && self.collector.break_hint() {
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        } else {
-            self.collector.collect_ref(item)
         }
     }
 }

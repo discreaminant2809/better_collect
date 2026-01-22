@@ -4,14 +4,16 @@
 
 ### Added
 
+- `CollectorBase`.
 - Generalized concatenation collectors.
 
 ### Changed
 
+- `Collector` now uses generic `T` rather than assosciated type `Item` for the item type.
 - Major module restructure:
   - Collector-related traits and their adapters are now moved to `collector` module.
   - `BetterCollect` trait is moved to `iter` module and renamed to `IteratorExt`.
-  - `All(Ref)`, `Any(Ref)`, `Count`, `Find`, `Last`, `Reduce` and `(Try)Fold(Ref)`
+  - `All`, `Any`, `Count`, `Find`, `Last`, `Reduce` and `(Try)Fold`
     are moved to `iter` module.
   - `Sum` and `Product` are moved to `ops` module.
 - Renamed `better_collect` in `IteratorExt` (previously `BetterCollect`)
@@ -24,15 +26,17 @@
 
 ### Fixed
 
-- `Skip::collect()` and `Skip::collect_ref()` not returning `ControlFlow` correctly.
+- `Skip::collect()` not returning `ControlFlow` correctly.
 - Missing `Debug`, `Clone` and `Default` implementations.
 - Incorrect returning `ControlFlow` in many collector implementations.
-- `collect_then_finish()` of `All(Ref)` and `Any(Ref)` not returning the correct results.
+- `collect_then_finish()` of `All` and `Any` not returning the correct results.
 
 ### Removed
 
+- `RefCollector` and its implementations.
 - `ConcatStr(ing)`.
 - `T` generic in `MapOutput`.
+- Unstable: `Collector::nest(_exact)()` and the aggregate API (for now). They will be re-added later.
 
 ## 0.3.2
 

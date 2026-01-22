@@ -9,6 +9,8 @@ use std::{
     sync::mpsc::{Sender, SyncSender},
 };
 
+use crate::collector::CollectorBase;
+
 /// A [`Collector`] that sends items through a [`std::sync::mpsc::channel()`].
 /// Its [`Output`](crate::collector::Collector::Output) is [`Sender`].
 ///
@@ -206,8 +208,6 @@ pub struct IntoSyncCollector<T>(SyncSender<T>);
 pub struct SyncCollector<'a, T>(&'a SyncSender<T>);
 
 impl<T> crate::collector::IntoCollector for Sender<T> {
-    type Item = T;
-
     type Output = Self;
 
     type IntoCollector = IntoCollector<T>;
@@ -218,30 +218,28 @@ impl<T> crate::collector::IntoCollector for Sender<T> {
     }
 }
 
-impl<T> crate::collector::Collector for IntoCollector<T> {
-    type Item = T;
-
+impl<T> CollectorBase for IntoCollector<T> {
     type Output = Sender<T>;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.0
+    }
+}
+
+impl<T> crate::collector::Collector<T> for IntoCollector<T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         match self.0.send(item) {
             Ok(_) => ControlFlow::Continue(()),
             Err(_) => ControlFlow::Break(()),
         }
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.0
-    }
-
     // The default implementations for other methods are sufficient.
 }
 
 impl<'a, T> crate::collector::IntoCollector for &'a Sender<T> {
-    type Item = T;
-
     type Output = Self;
 
     type IntoCollector = Collector<'a, T>;
@@ -252,30 +250,28 @@ impl<'a, T> crate::collector::IntoCollector for &'a Sender<T> {
     }
 }
 
-impl<'a, T> crate::collector::Collector for Collector<'a, T> {
-    type Item = T;
-
+impl<'a, T> CollectorBase for Collector<'a, T> {
     type Output = &'a Sender<T>;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.0
+    }
+}
+
+impl<'a, T> crate::collector::Collector<T> for Collector<'a, T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         match self.0.send(item) {
             Ok(_) => ControlFlow::Continue(()),
             Err(_) => ControlFlow::Break(()),
         }
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.0
-    }
-
     // The default implementations for other methods are sufficient.
 }
 
 impl<T> crate::collector::IntoCollector for SyncSender<T> {
-    type Item = T;
-
     type Output = Self;
 
     type IntoCollector = IntoSyncCollector<T>;
@@ -286,30 +282,28 @@ impl<T> crate::collector::IntoCollector for SyncSender<T> {
     }
 }
 
-impl<T> crate::collector::Collector for IntoSyncCollector<T> {
-    type Item = T;
-
+impl<T> CollectorBase for IntoSyncCollector<T> {
     type Output = SyncSender<T>;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.0
+    }
+}
+
+impl<T> crate::collector::Collector<T> for IntoSyncCollector<T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         match self.0.send(item) {
             Ok(_) => ControlFlow::Continue(()),
             Err(_) => ControlFlow::Break(()),
         }
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.0
-    }
-
     // The default implementations for other methods are sufficient.
 }
 
 impl<'a, T> crate::collector::IntoCollector for &'a SyncSender<T> {
-    type Item = T;
-
     type Output = Self;
 
     type IntoCollector = SyncCollector<'a, T>;
@@ -320,22 +314,22 @@ impl<'a, T> crate::collector::IntoCollector for &'a SyncSender<T> {
     }
 }
 
-impl<'a, T> crate::collector::Collector for SyncCollector<'a, T> {
-    type Item = T;
-
+impl<'a, T> CollectorBase for SyncCollector<'a, T> {
     type Output = &'a SyncSender<T>;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        match self.0.send(item) {
-            Ok(_) => ControlFlow::Continue(()),
-            Err(_) => ControlFlow::Break(()),
-        }
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.0
+    }
+}
+
+impl<'a, T> crate::collector::Collector<T> for SyncCollector<'a, T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        match self.0.send(item) {
+            Ok(_) => ControlFlow::Continue(()),
+            Err(_) => ControlFlow::Break(()),
+        }
     }
 
     // The default implementations for other methods are sufficient.

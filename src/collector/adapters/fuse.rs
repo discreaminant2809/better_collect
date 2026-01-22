@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 /// A [`Collector`] that can "safely" collect items even after
 /// the underlying collector has stopped accumulating,
@@ -12,86 +12,76 @@ use crate::collector::{Collector, RefCollector};
 #[derive(Debug, Clone)]
 pub struct Fuse<C> {
     collector: C,
-    finished: bool,
+    break_hint: ControlFlow<()>,
 }
 
 impl<C> Fuse<C>
 where
-    C: Collector,
+    C: CollectorBase,
 {
     #[inline]
     pub(in crate::collector) fn new(collector: C) -> Self {
         Self {
-            finished: collector.break_hint(),
+            break_hint: collector.break_hint(),
             collector,
         }
     }
 }
 
 impl<C> Fuse<C> {
-    /// Returns whether the collector is "fisnished" and will not accept more items.
-    #[inline]
-    pub fn finished(&self) -> bool {
-        self.finished
-    }
+    // /// Returns whether the collector is "fisnished" and will not accept more items.
+    // #[inline]
+    // pub fn finished(&self) -> bool {
+    //     self.break_hint
+    // }
 
     #[inline]
     fn collect_impl(&mut self, f: impl FnOnce(&mut C) -> ControlFlow<()>) -> ControlFlow<()> {
-        if self.finished {
-            ControlFlow::Break(())
-        } else if f(&mut self.collector).is_break() {
-            self.finished = true;
-            ControlFlow::Break(())
-        } else {
-            ControlFlow::Continue(())
-        }
+        self.break_hint?;
+
+        self.break_hint = f(&mut self.collector);
+        self.break_hint
     }
 }
 
-impl<C> Collector for Fuse<C>
+impl<C> CollectorBase for Fuse<C>
 where
-    C: Collector,
+    C: CollectorBase,
 {
-    type Item = C::Item;
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.finish()
+    }
+
+    #[inline]
+    fn break_hint(&self) -> ControlFlow<()> {
+        self.break_hint
+    }
+}
+
+impl<C, T> Collector<T> for Fuse<C>
+where
+    C: Collector<T>,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect(item))
     }
 
     #[inline]
-    fn finish(self) -> Self::Output {
-        self.collector.finish()
-    }
-
-    #[inline]
-    fn break_hint(&self) -> bool {
-        self.finished
-    }
-
-    #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collect_impl(|collector| collector.collect_many(items))
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        if self.finished {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+        if self.break_hint.is_break() {
             self.finish()
         } else {
             self.collector.collect_then_finish(items)
         }
-    }
-}
-
-impl<C> RefCollector for Fuse<C>
-where
-    C: RefCollector,
-{
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        self.collect_impl(|collector| collector.collect_ref(item))
     }
 }
 

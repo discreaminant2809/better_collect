@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`Collector`] that searches for the first item satisfying a predicate.
 ///
@@ -58,32 +58,14 @@ where
     /// Creates an intance of this collector with a given predicate.
     #[inline]
     pub const fn new(pred: F) -> Self {
-        assert_collector(Self {
+        assert_collector::<_, T>(Self {
             state: State::Searching(pred),
         })
     }
 }
 
-impl<T, F> Collector for Find<T, F>
-where
-    F: FnMut(&T) -> bool,
-{
-    type Item = T;
-
+impl<T, F> CollectorBase for Find<T, F> {
     type Output = Option<T>;
-
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        if let State::Searching(ref mut pred) = self.state {
-            if pred(&item) {
-                self.state = State::Found(item);
-                ControlFlow::Break(())
-            } else {
-                ControlFlow::Continue(())
-            }
-        } else {
-            ControlFlow::Break(())
-        }
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
@@ -99,11 +81,33 @@ where
     // But we will have a support of `FUSED` const variable later,
     // making this neccessary.
     #[inline]
-    fn break_hint(&self) -> bool {
-        matches!(self.state, State::Found(_))
+    fn break_hint(&self) -> ControlFlow<()> {
+        if matches!(self.state, State::Found(_)) {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
+        }
+    }
+}
+
+impl<T, F> Collector<T> for Find<T, F>
+where
+    F: FnMut(&T) -> bool,
+{
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        if let State::Searching(ref mut pred) = self.state {
+            if pred(&item) {
+                self.state = State::Found(item);
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        } else {
+            ControlFlow::Break(())
+        }
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         if let State::Searching(ref mut pred) = self.state {
             if let Some(item) = items.into_iter().find(pred) {
                 self.state = State::Found(item);
@@ -116,7 +120,7 @@ where
         }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         match self.state {
             State::Searching(pred) => items.into_iter().find(pred),
             State::Found(item) => Some(item),

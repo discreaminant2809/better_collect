@@ -1,4 +1,4 @@
-use super::{Collector, IntoCollector};
+use super::{CollectorBase, IntoCollector};
 
 /// A type that can be converted into a collector by shared reference.
 ///
@@ -14,7 +14,7 @@ use super::{Collector, IntoCollector};
 #[allow(private_bounds)]
 pub trait CollectorByRef: Sealed {
     /// Which collector being produced?
-    type Collector<'a>: Collector
+    type Collector<'a>: CollectorBase
     where
         Self: 'a;
 

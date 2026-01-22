@@ -8,20 +8,13 @@
 //!
 //! This module corresponds to [`std::string`].
 
-mod concat_str;
-mod concat_string;
-
-pub use concat_str::*;
-pub use concat_string::*;
-
 use std::{borrow::Borrow, ops::ControlFlow};
 
 #[cfg(not(feature = "std"))]
 use alloc::string::String;
 
 use crate::{
-    assert_ref_collector,
-    collector::{Collector, RefCollector},
+    collector::{Collector, CollectorBase},
     slice::{Concat, ConcatItem, ConcatItemSealed, ConcatSealed},
 };
 
@@ -46,44 +39,41 @@ pub struct IntoCollector(String);
 pub struct CollectorMut<'a>(&'a mut String);
 
 impl crate::collector::IntoCollector for String {
-    type Item = char;
-
     type Output = Self;
 
     type IntoCollector = IntoCollector;
 
     #[inline]
     fn into_collector(self) -> Self::IntoCollector {
-        assert_ref_collector(IntoCollector(self))
+        IntoCollector(self)
     }
 }
 
 impl<'a> crate::collector::IntoCollector for &'a mut String {
-    type Item = char;
-
     type Output = Self;
 
     type IntoCollector = CollectorMut<'a>;
 
     #[inline]
     fn into_collector(self) -> Self::IntoCollector {
-        assert_ref_collector(CollectorMut(self))
+        CollectorMut(self)
     }
 }
 
-impl Collector for IntoCollector {
-    type Item = char;
+impl CollectorBase for IntoCollector {
     type Output = String;
-
-    #[inline]
-    fn collect(&mut self, ch: char) -> ControlFlow<()> {
-        self.0.push(ch);
-        ControlFlow::Continue(())
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.0
+    }
+}
+
+impl Collector<char> for IntoCollector {
+    #[inline]
+    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+        self.0.push(ch);
+        ControlFlow::Continue(())
     }
 
     #[inline]
@@ -99,17 +89,7 @@ impl Collector for IntoCollector {
     }
 }
 
-impl RefCollector for IntoCollector {
-    #[inline]
-    fn collect_ref(&mut self, &mut ch: &mut char) -> ControlFlow<()> {
-        self.collect(ch)
-    }
-}
-
-impl<'a> Collector for CollectorMut<'a> {
-    type Item = char;
-    type Output = &'a mut String;
-
+impl<'a> Collector<&'a char> for IntoCollector {
     #[inline]
     fn collect(&mut self, ch: char) -> ControlFlow<()> {
         self.0.push(ch);
@@ -117,8 +97,55 @@ impl<'a> Collector for CollectorMut<'a> {
     }
 
     #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = &'a char>) -> ControlFlow<()> {
+        self.0.extend(items);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = &'a char>) -> Self::Output {
+        self.0.extend(items);
+        self.0
+    }
+}
+
+impl<'a> Collector<&'a mut char> for IntoCollector {
+    #[inline]
+    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+        self.0.push(ch);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = &'a mut char>) -> ControlFlow<()> {
+        self.0.extend(items);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_then_finish(
+        mut self,
+        items: impl IntoIterator<Item = &'a mut char>,
+    ) -> Self::Output {
+        self.0.extend(items);
+        self.0
+    }
+}
+
+impl<'a> CollectorBase for CollectorMut<'a> {
+    type Output = &'a mut String;
+
+    #[inline]
     fn finish(self) -> Self::Output {
         self.0
+    }
+}
+
+impl<'a> Collector<char> for CollectorMut<'a> {
+    #[inline]
+    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+        self.0.push(ch);
+        ControlFlow::Continue(())
     }
 
     #[inline]
@@ -134,10 +161,43 @@ impl<'a> Collector for CollectorMut<'a> {
     }
 }
 
-impl RefCollector for CollectorMut<'_> {
+impl<'a, 'c> Collector<&'c char> for CollectorMut<'a> {
     #[inline]
-    fn collect_ref(&mut self, &mut ch: &mut char) -> ControlFlow<()> {
-        self.collect(ch)
+    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+        self.0.push(ch);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = &'c char>) -> ControlFlow<()> {
+        self.0.extend(items);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_then_finish(self, items: impl IntoIterator<Item = &'c char>) -> Self::Output {
+        self.0.extend(items);
+        self.0
+    }
+}
+
+impl<'a, 'c> Collector<&'c mut char> for CollectorMut<'a> {
+    #[inline]
+    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+        self.0.push(ch);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = &'c mut char>) -> ControlFlow<()> {
+        self.0.extend(items);
+        ControlFlow::Continue(())
+    }
+
+    #[inline]
+    fn collect_then_finish(self, items: impl IntoIterator<Item = &'c mut char>) -> Self::Output {
+        self.0.extend(items);
+        self.0
     }
 }
 

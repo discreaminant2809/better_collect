@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{Collector, Fuse, RefCollector};
+use crate::collector::{Collector, CollectorBase, Fuse};
 
 /// A [`Collector`] that distributes items between two collectors based on a predicate.
 ///
@@ -16,8 +16,8 @@ pub struct Partition<CT, CF, F> {
 
 impl<CT, CF, F> Partition<CT, CF, F>
 where
-    CT: Collector,
-    CF: Collector,
+    CT: CollectorBase,
+    CF: CollectorBase,
 {
     pub(in crate::collector) fn new(
         collector_if_true: CT,
@@ -44,16 +44,45 @@ macro_rules! cf_and {
     };
 }
 
-impl<CT, CF, F> Collector for Partition<CT, CF, F>
+impl<CT, CF, F> CollectorBase for Partition<CT, CF, F>
 where
-    CT: Collector,
-    CF: Collector<Item = CT::Item>,
-    F: FnMut(&mut CT::Item) -> bool,
+    CT: CollectorBase,
+    CF: CollectorBase,
 {
-    type Item = CT::Item;
     type Output = (CT::Output, CF::Output);
 
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        (
+            self.collector_if_true.finish(),
+            self.collector_if_false.finish(),
+        )
+    }
+
+    #[inline]
+    fn break_hint(&self) -> ControlFlow<()> {
+        // We're sure that whether this collector has finished or not is
+        // entirely based on the 2nd collector.
+        // Also, by this method being called it is assumed that
+        // this collector has not finished, which mean the 2nd collector
+        // has not finished, which means it's always sound to call here.
+        //
+        // Since the 1st collector is fused, we won't cause any unsoundness
+        // by repeatedly calling it.
+        if self.collector1.break_hint().is_break() && self.collector2.break_hint().is_break() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
+        }
+    }
+}
+
+impl<CT, CF, T, F> Collector<T> for Partition<CT, CF, F>
+where
+    CT: Collector<T>,
+    CF: Collector<T>,
+    F: FnMut(&mut T) -> bool,
+{
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
         if (self.pred)(&mut item) {
             cf_and!(
                 self.collector_if_true.collect(item).is_break(),
@@ -67,23 +96,9 @@ where
         }
     }
 
-    fn finish(self) -> Self::Output {
-        (
-            self.collector_if_true.finish(),
-            self.collector_if_false.finish(),
-        )
-    }
-
-    #[inline]
-    fn break_hint(&self) -> bool {
-        self.collector_if_true.break_hint() && self.collector_if_false.break_hint()
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // Avoid consuming one item prematurely.
-        if self.break_hint() {
-            return ControlFlow::Break(());
-        }
+        self.break_hint()?;
 
         let mut items = items.into_iter();
 
@@ -129,9 +144,9 @@ where
         }
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
         // Avoid consuming one item prematurely.
-        if self.break_hint() {
+        if self.break_hint().is_break() {
             return self.finish();
         }
 
@@ -166,27 +181,6 @@ where
                 self.collector_if_false.finish(),
             ),
             ControlFlow::Continue(_) => self.finish(),
-        }
-    }
-}
-
-impl<CT, CF, F> RefCollector for Partition<CT, CF, F>
-where
-    CT: RefCollector,
-    CF: RefCollector<Item = CT::Item>,
-    F: FnMut(&mut CT::Item) -> bool,
-{
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        if (self.pred)(item) {
-            cf_and!(
-                self.collector_if_true.collect_ref(item).is_break(),
-                self.collector_if_false.finished()
-            )
-        } else {
-            cf_and!(
-                self.collector_if_false.collect_ref(item).is_break(),
-                self.collector_if_true.finished()
-            )
         }
     }
 }

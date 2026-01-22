@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::collector::{Collector, Fuse, RefCollector};
+use crate::collector::{Collector, CollectorBase, Fuse};
 
 /// A [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
 /// `A` goes to the first collector, and `B` goes to the second collector.
@@ -16,8 +16,8 @@ pub struct Unzip<C1, C2> {
 
 impl<C1, C2> Unzip<C1, C2>
 where
-    C1: Collector,
-    C2: Collector,
+    C1: CollectorBase,
+    C2: CollectorBase,
 {
     pub(in crate::collector) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
@@ -27,15 +27,41 @@ where
     }
 }
 
-impl<C1, C2> Collector for Unzip<C1, C2>
+impl<C1, C2> CollectorBase for Unzip<C1, C2>
 where
-    C1: Collector,
-    C2: Collector,
+    C1: CollectorBase,
+    C2: CollectorBase,
 {
-    type Item = (C1::Item, C2::Item);
     type Output = (C1::Output, C2::Output);
 
-    fn collect(&mut self, (item1, item2): Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        (self.collector1.finish(), self.collector2.finish())
+    }
+
+    #[inline]
+    fn break_hint(&self) -> ControlFlow<()> {
+        // We're sure that whether this collector has finished or not is
+        // entirely based on the 2nd collector.
+        // Also, by this method being called it is assumed that
+        // this collector has not finished, which mean the 2nd collector
+        // has not finished, which means it's always sound to call here.
+        //
+        // Since the 1st collector is fused, we won't cause any unsoundness
+        // by repeatedly calling it.
+        if self.collector1.break_hint().is_break() && self.collector2.break_hint().is_break() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
+        }
+    }
+}
+
+impl<C1, C2, T1, T2> Collector<(T1, T2)> for Unzip<C1, C2>
+where
+    C1: Collector<T1>,
+    C2: Collector<T2>,
+{
+    fn collect(&mut self, (item1, item2): (T1, T2)) -> ControlFlow<()> {
         let res1 = self.collector1.collect(item1);
         let res2 = self.collector2.collect(item2);
 
@@ -46,20 +72,9 @@ where
         }
     }
 
-    fn finish(self) -> Self::Output {
-        (self.collector1.finish(), self.collector2.finish())
-    }
-
-    #[inline]
-    fn break_hint(&self) -> bool {
-        self.collector1.break_hint() && self.collector2.break_hint()
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = (T1, T2)>) -> ControlFlow<()> {
         // Avoid consuming one item prematurely.
-        if self.break_hint() {
-            return ControlFlow::Break(());
-        }
+        self.break_hint()?;
 
         let mut items = items.into_iter();
 
@@ -80,9 +95,9 @@ where
         }
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = (T1, T2)>) -> Self::Output {
         // Avoid consuming one item prematurely.
-        if self.break_hint() {
+        if self.break_hint().is_break() {
             return self.finish();
         }
 
@@ -107,23 +122,6 @@ where
                     .collect_then_finish(items.map(|(item1, _)| item1)),
                 self.collector2.finish(),
             ),
-        }
-    }
-}
-
-impl<C1, C2> RefCollector for Unzip<C1, C2>
-where
-    C1: RefCollector,
-    C2: RefCollector,
-{
-    fn collect_ref(&mut self, (item1, item2): &mut Self::Item) -> ControlFlow<()> {
-        let res1 = self.collector1.collect_ref(item1);
-        let res2 = self.collector2.collect_ref(item2);
-
-        if res1.is_break() && res2.is_break() {
-            ControlFlow::Break(())
-        } else {
-            ControlFlow::Continue(())
         }
     }
 }

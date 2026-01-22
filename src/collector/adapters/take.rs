@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 /// A [`Collector`] that stops accumulating after collecting the first `n` items.
 ///
@@ -39,22 +39,33 @@ impl<C> Take<C> {
     }
 }
 
-impl<C: Collector> Collector for Take<C> {
-    type Item = C::Item;
+impl<C> CollectorBase for Take<C>
+where
+    C: CollectorBase,
+{
     type Output = C::Output;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        self.collect_impl(|collector| collector.collect(item))
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.collector.finish()
     }
 
-    fn break_hint(&self) -> bool {
-        self.remaining == 0 || self.collector.break_hint()
+    fn break_hint(&self) -> ControlFlow<()> {
+        if self.remaining == 0 {
+            ControlFlow::Break(())
+        } else {
+            self.collector.break_hint()
+        }
+    }
+}
+
+impl<C, T> Collector<T> for Take<C>
+where
+    C: Collector<T>,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        self.collect_impl(|collector| collector.collect(item))
     }
 
     // fn size_hint(&self) -> (usize, Option<usize>) {
@@ -74,7 +85,7 @@ impl<C: Collector> Collector for Take<C> {
     //     self.collector.reserve(additional_min, additional_max);
     // }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // FIXED: utilize specialization after it's stabilized.
 
         let mut items = items.into_iter();
@@ -116,17 +127,10 @@ impl<C: Collector> Collector for Take<C> {
         }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         // No need to track the state anymore - we'll be gone!
         self.collector
             .collect_then_finish(items.into_iter().take(self.remaining))
-    }
-}
-
-impl<C: RefCollector> RefCollector for Take<C> {
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        self.collect_impl(|collector| collector.collect_ref(item))
     }
 }
 

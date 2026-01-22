@@ -4,7 +4,7 @@ use std::{
     ops::ControlFlow,
 };
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`Collector`] that computes the minimum value among the items it collects
 /// according to a comparison function.
@@ -57,16 +57,21 @@ where
     }
 }
 
-impl<T, F> Collector for MinBy<T, F>
-where
-    F: FnMut(&T, &T) -> Ordering,
-{
-    type Item = T;
-
+impl<T, F> CollectorBase for MinBy<T, F> {
     type Output = Option<T>;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.min
+    }
+}
+
+impl<T, F> Collector<T> for MinBy<T, F>
+where
+    F: FnMut(&T, &T) -> Ordering,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.min = Some(match self.min.take() {
             Some(min) => min_by(min, item, &mut self.f),
             None => item,
@@ -75,17 +80,12 @@ where
         ControlFlow::Continue(())
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.min
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.min = self.min.take().into_iter().chain(items).min_by(&mut self.f);
         ControlFlow::Continue(())
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.min.into_iter().chain(items).min_by(self.f)
     }
 }

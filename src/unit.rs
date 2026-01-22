@@ -4,7 +4,7 @@
 
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{IntoCollector, RefCollector};
+use crate::collector::{CollectorBase, IntoCollector};
 
 /// A [`Collector`] that always stops accumulating.
 /// Its [`Output`](crate::collector::Collector::Output) is `()`.
@@ -19,8 +19,6 @@ pub struct Collector(());
 macro_rules! into_collector_impl {
     ($ty:ty) => {
         impl IntoCollector for $ty {
-            type Item = ();
-
             type Output = ();
 
             type IntoCollector = Collector;
@@ -36,21 +34,21 @@ macro_rules! into_collector_impl {
 into_collector_impl!(());
 into_collector_impl!(&());
 
-impl crate::collector::Collector for Collector {
-    type Item = ();
+impl CollectorBase for Collector {
     type Output = ();
 
-    #[inline]
-    fn collect(&mut self, _item: Self::Item) -> ControlFlow<()> {
-        ControlFlow::Break(())
-    }
-
-    #[inline]
     fn finish(self) -> Self::Output {}
 
     #[inline]
-    fn break_hint(&self) -> bool {
-        true
+    fn break_hint(&self) -> ControlFlow<()> {
+        ControlFlow::Break(())
+    }
+}
+
+impl<T> crate::collector::Collector<T> for Collector {
+    #[inline]
+    fn collect(&mut self, _item: T) -> ControlFlow<()> {
+        ControlFlow::Break(())
     }
 
     /// It won't consume any items in an iterator.
@@ -63,13 +61,6 @@ impl crate::collector::Collector for Collector {
     #[inline]
     fn collect_then_finish(self, _items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
         // Nothing worth doing here
-    }
-}
-
-impl RefCollector for Collector {
-    #[inline]
-    fn collect_ref(&mut self, _item: &mut Self::Item) -> ControlFlow<()> {
-        ControlFlow::Break(())
     }
 }
 

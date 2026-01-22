@@ -1,4 +1,4 @@
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
@@ -44,19 +44,24 @@ where
     /// Crates a new instance of this collector with a given accumulator.
     #[inline]
     pub const fn new(f: F) -> Self {
-        assert_collector(Self { accum: None, f })
+        assert_collector::<_, T>(Self { accum: None, f })
     }
 }
 
-impl<T, F> Collector for Reduce<T, F>
+impl<T, F> CollectorBase for Reduce<T, F> {
+    type Output = Option<T>;
+
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.accum
+    }
+}
+
+impl<T, F> Collector<T> for Reduce<T, F>
 where
     F: FnMut(T, T) -> T,
 {
-    type Item = T;
-
-    type Output = Option<T>;
-
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         if let Some(accum) = self.accum.take() {
             self.accum = Some((self.f)(accum, item));
         } else {
@@ -66,12 +71,7 @@ where
         ControlFlow::Continue(())
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.accum
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.accum = self
             .accum
             .take()
@@ -82,7 +82,7 @@ where
         ControlFlow::Continue(())
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.accum.into_iter().chain(items).reduce(self.f)
     }
 }

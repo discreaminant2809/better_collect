@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 /// A [`Collector`] that accumulates items as long as a predicate returns `true`.
 ///
@@ -17,22 +17,11 @@ impl<C, F> TakeWhile<C, F> {
     }
 }
 
-impl<C, F> Collector for TakeWhile<C, F>
+impl<C, F> CollectorBase for TakeWhile<C, F>
 where
-    C: Collector,
-    F: FnMut(&C::Item) -> bool,
+    C: CollectorBase,
 {
-    type Item = C::Item;
-
     type Output = C::Output;
-
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        if (self.pred)(&item) {
-            self.collector.collect(item)
-        } else {
-            ControlFlow::Break(())
-        }
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
@@ -40,14 +29,28 @@ where
     }
 
     #[inline]
-    fn break_hint(&self) -> bool {
+    fn break_hint(&self) -> ControlFlow<()> {
         // Despite short-circuiting due to the predicate, we can't
         // do anything besides delegating to the underlying collector.
         self.collector.break_hint()
     }
+}
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        // Be careful - the underlying collector may stop before the predicate return false.
+impl<C, T, F> Collector<T> for TakeWhile<C, F>
+where
+    C: Collector<T>,
+    F: FnMut(&T) -> bool,
+{
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        if (self.pred)(&item) {
+            self.collector.collect(item)
+        } else {
+            ControlFlow::Break(())
+        }
+    }
+
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+        // Be careful! The underlying collector may stop before the predicate return false.
         let mut all_true = true;
         let cf = self
             .collector
@@ -61,23 +64,9 @@ where
         if all_true { cf } else { ControlFlow::Break(()) }
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().take_while(self.pred))
-    }
-}
-
-impl<C, F> RefCollector for TakeWhile<C, F>
-where
-    C: RefCollector,
-    F: FnMut(&C::Item) -> bool,
-{
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        if (self.pred)(item) {
-            self.collector.collect_ref(item)
-        } else {
-            ControlFlow::Break(())
-        }
     }
 }
 

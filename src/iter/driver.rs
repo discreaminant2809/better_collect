@@ -1,6 +1,6 @@
 use std::{iter::FusedIterator, ops::ControlFlow};
 
-use crate::collector::{Collector, Fuse as CollectorFuse, RefCollector};
+use crate::collector::{Collector, Fuse as CollectorFuse};
 
 /// An [`Iterator`] that "drives" the underlying iterator to feed the underlying collector.
 ///
@@ -18,12 +18,12 @@ pub struct Driver<'a, I, C> {
 impl<'a, I, C> Driver<'a, I, C>
 where
     I: Iterator,
-    C: Collector,
+    C: for<'i> Collector<&'i mut I::Item>,
 {
     pub(in crate::iter) fn new(iter: I, collector: &'a mut C) -> Self {
         Self {
             iter,
-            collector: collector.fuse(),
+            collector: <&mut C>::fuse(collector),
         }
     }
 }
@@ -31,7 +31,7 @@ where
 impl<I, C> Driver<'_, I, C>
 where
     I: Iterator,
-    C: RefCollector<Item = I::Item>,
+    C: for<'i> Collector<&'i mut I::Item>,
 {
     // Helper for fold-related methods.
     fn fold_then_forward_once<B>(
@@ -92,7 +92,7 @@ where
 impl<I, C> Iterator for Driver<'_, I, C>
 where
     I: Iterator,
-    C: RefCollector<Item = I::Item>,
+    C: for<'i> Collector<&'i mut I::Item>,
 {
     type Item = I::Item;
 
@@ -244,7 +244,7 @@ where
 impl<I, C> ExactSizeIterator for Driver<'_, I, C>
 where
     I: ExactSizeIterator,
-    C: RefCollector<Item = I::Item>,
+    C: for<'i> Collector<&'i mut I::Item>,
 {
     #[inline]
     fn len(&self) -> usize {
@@ -255,7 +255,7 @@ where
 impl<I, C> FusedIterator for Driver<'_, I, C>
 where
     I: FusedIterator,
-    C: RefCollector<Item = I::Item>,
+    C: for<'i> Collector<&'i mut I::Item>,
 {
 }
 

@@ -285,8 +285,8 @@ extern crate alloc;
 #[cfg(not(feature = "std"))]
 extern crate core as std;
 
-#[cfg(feature = "unstable")]
-pub mod aggregate;
+// #[cfg(feature = "unstable")]
+// pub mod aggregate;
 pub mod cmp;
 #[cfg(feature = "alloc")]
 pub mod collections;
@@ -307,16 +307,6 @@ pub mod vec;
 
 #[cfg(all(test, feature = "std"))]
 mod test_utils;
-
-#[inline(always)]
-const fn assert_collector<C: collector::Collector>(collector: C) -> C {
-    collector
-}
-
-#[inline(always)]
-const fn assert_ref_collector<C: collector::RefCollector>(collector: C) -> C {
-    collector
-}
 
 #[cfg(feature = "unstable")]
 #[inline(always)]

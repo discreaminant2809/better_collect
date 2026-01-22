@@ -1,6 +1,6 @@
-use std::{fmt::Debug, marker::PhantomData, mem::forget, ops::ControlFlow};
+use std::{fmt::Debug, mem::forget, ops::ControlFlow};
 
-use crate::collector::Collector;
+use crate::collector::{Collector, CollectorBase};
 
 /// A [`Collector`] that "[forgets](forget)" every item it collects.
 ///
@@ -11,60 +11,29 @@ use crate::collector::Collector;
 ///
 /// std::iter::repeat(vec![0; 100])
 ///     // Good luck :)
-///     .feed_into(Forgetting::new())
+///     .feed_into(Forgetting)
 /// ```
-pub struct Forgetting<T> {
-    _marker: PhantomData<T>,
-}
+#[derive(Debug, Clone, Default)]
+pub struct Forgetting;
 
-impl<T> Forgetting<T> {
-    /// Creates a new instance of this collector.
-    #[inline]
-    pub const fn new() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T> Collector for Forgetting<T> {
-    type Item = T;
-
+impl CollectorBase for Forgetting {
     type Output = ();
 
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {}
+}
+
+impl<T> Collector<T> for Forgetting {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         forget(item);
         ControlFlow::Continue(())
     }
 
-    fn finish(self) -> Self::Output {}
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         items.into_iter().for_each(forget);
         ControlFlow::Continue(())
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         items.into_iter().for_each(forget);
-    }
-}
-
-impl<T> Clone for Forgetting<T> {
-    fn clone(&self) -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T> Debug for Forgetting<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Forgetting").finish()
-    }
-}
-
-impl<T> Default for Forgetting<T> {
-    fn default() -> Self {
-        Self::new()
     }
 }

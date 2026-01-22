@@ -1,7 +1,8 @@
 use std::ops::ControlFlow;
 
+use crate::collector::{Collector, CollectorBase};
+
 use super::Fuse;
-use crate::collector::{Collector, RefCollector};
 
 /// A [`Collector`] that lets both collectors collect the same item.
 ///
@@ -14,8 +15,8 @@ pub struct Combine<C1, C2> {
 
 impl<C1, C2> Combine<C1, C2>
 where
-    C1: Collector,
-    C2: Collector,
+    C1: CollectorBase,
+    C2: CollectorBase,
 {
     pub(in crate::collector) fn new(collector1: C1, collector2: C2) -> Self {
         Self {
@@ -25,24 +26,12 @@ where
     }
 }
 
-impl<C1, C2> Collector for Combine<C1, C2>
+impl<C1, C2> CollectorBase for Combine<C1, C2>
 where
-    C1: RefCollector,
-    C2: Collector<Item = C1::Item>,
+    C1: CollectorBase,
+    C2: CollectorBase,
 {
-    type Item = C1::Item;
     type Output = (C1::Output, C2::Output);
-
-    #[inline]
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
-        match (
-            self.collector1.collect_ref(&mut item),
-            self.collector2.collect(item),
-        ) {
-            (ControlFlow::Break(_), ControlFlow::Break(_)) => ControlFlow::Break(()),
-            _ => ControlFlow::Continue(()),
-        }
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
@@ -50,8 +39,37 @@ where
     }
 
     #[inline]
-    fn break_hint(&self) -> bool {
-        self.collector1.break_hint() && self.collector2.break_hint()
+    fn break_hint(&self) -> ControlFlow<()> {
+        // We're sure that whether this collector has finished or not is
+        // entirely based on the 2nd collector.
+        // Also, by this method being called it is assumed that
+        // this collector has not finished, which mean the 2nd collector
+        // has not finished, which means it's always sound to call here.
+        //
+        // Since the 1st collector is fused, we won't cause any unsoundness
+        // by repeatedly calling it.
+        if self.collector1.break_hint().is_break() && self.collector2.break_hint().is_break() {
+            ControlFlow::Break(())
+        } else {
+            ControlFlow::Continue(())
+        }
+    }
+}
+
+impl<T, C1, C2> Collector<T> for Combine<C1, C2>
+where
+    C1: for<'a> Collector<&'a mut T>,
+    C2: Collector<T>,
+{
+    #[inline]
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
+        match (
+            self.collector1.collect(&mut item),
+            self.collector2.collect(item),
+        ) {
+            (ControlFlow::Break(_), ControlFlow::Break(_)) => ControlFlow::Break(()),
+            _ => ControlFlow::Continue(()),
+        }
     }
 
     // fn reserve(&mut self, additional_min: usize, additional_max: Option<usize>) {
@@ -120,160 +138,7 @@ where
     //     }
     // }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        // Avoid consuming one item prematurely.
-        if self.break_hint() {
-            return ControlFlow::Break(());
-        }
-
-        let mut items = items.into_iter();
-
-        // DO NOT do this. `Iterator::next` is inefficient for repeated calls if the iterator
-        // is "segmented," like `chain`, `skip`, etc.
-        // while let Some(mut item) = items.next() {
-        //     if self.collector1.collect_ref(&mut item).is_break() {
-        //         return self.collector2.collect_many(items);
-        //     }
-        //     if self.collector2.collect(item).is_break() {
-        //         return self.collector1.collect_many(items);
-        //     }
-        // }
-
-        // Do this instead: forward to `try_for_each` since it's overriden to be more efficient.
-        match items.try_for_each(|mut item| {
-            if self.collector1.collect_ref(&mut item).is_break() {
-                // Save the item for the 2nd collector, or else the item will be lost,
-                // and the second collector is not be able to collect it.
-                ControlFlow::Break(Which::First(item))
-            } else if self.collector2.collect(item).is_break() {
-                // The 1st collector has collected this item, so we don't need to save.
-                ControlFlow::Break(Which::Second)
-            } else {
-                ControlFlow::Continue(())
-            }
-        }) {
-            ControlFlow::Continue(_) => ControlFlow::Continue(()),
-            ControlFlow::Break(Which::First(item)) => self
-                .collector2
-                .collect_many(Some(item).into_iter().chain(items)),
-            ControlFlow::Break(Which::Second) => self.collector1.collect_many(items),
-        }
-
-        // loop {
-        //     // We should, try at best, not consume any item just to end up that the collector accepts no more items.
-        //     if self.inactivity_hint().is_none() {
-        //         break ControlFlow::Break(());
-        //     }
-
-        //     // Use `tro_for_each` since it's often overriden to be more efficient (e.g. `chain`, `skip`, etc.)
-        //     match items.try_for_each(|mut item| {
-        //         match self.collector1.inactivity_hint() {
-        //             Some(0) => {
-        //                 if self.collector1.collect_ref(&mut item).is_break() {
-        //                     return ControlFlow::Break(WhichInactive::First {
-        //                         item,
-        //                         inactive_for: None,
-        //                     });
-        //                 }
-        //             }
-        //             inactive_for => {
-        //                 // We have to save the item before exiting.
-        //                 return ControlFlow::Break(WhichInactive::First { item, inactive_for });
-        //             }
-        //         }
-
-        //         match self.collector2.inactivity_hint() {
-        //             Some(0) => debug_assert!(self.collector2.collect(item).is_continue()),
-        //             inactive_for => {
-        //                 // But we don't need here, since the above has already conllected it.
-        //                 return ControlFlow::Break(WhichInactive::Second { inactive_for });
-        //             }
-        //         }
-
-        //         ControlFlow::Continue(())
-        //     }) {
-        //         ControlFlow::Continue(_) => break ControlFlow::Continue(()),
-
-        //         ControlFlow::Break(WhichInactive::First {
-        //             item,
-        //             inactive_for: Some(count),
-        //         }) => {
-        //             self.collector2
-        //                 .collect_many(Some(item).into_iter().chain(items.by_ref()).take(count))?;
-        //         }
-        //         ControlFlow::Break(WhichInactive::First { item, .. }) => {
-        //             break self
-        //                 .collector2
-        //                 .collect_many(Some(item).into_iter().chain(items));
-        //         }
-
-        //         ControlFlow::Break(WhichInactive::Second {
-        //             inactive_for: Some(count),
-        //         }) => {
-        //             self.collector1.collect_many(items.by_ref().take(count))?;
-        //         }
-        //         ControlFlow::Break(WhichInactive::Second { .. }) => {
-        //             break self.collector1.collect_many(items);
-        //         }
-        //     }
-        // }
-    }
-
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        // Avoid consuming one item prematurely.
-        if self.break_hint() {
-            return self.finish();
-        }
-
-        let mut items = items.into_iter();
-
-        match items.try_for_each(|mut item| {
-            if self.collector1.collect_ref(&mut item).is_break() {
-                // Save the item for the 2nd collector, or else the item will be lost,
-                // violating the semantics.
-                ControlFlow::Break(Which::First(item))
-            } else if self.collector2.collect(item).is_break() {
-                // The 1st collector has collected this item, so we don't need to save.
-                ControlFlow::Break(Which::Second)
-            } else {
-                ControlFlow::Continue(())
-            }
-        }) {
-            ControlFlow::Continue(_) => self.finish(),
-            ControlFlow::Break(Which::First(item)) => (
-                self.collector1.finish(),
-                self.collector2
-                    .collect_then_finish(Some(item).into_iter().chain(items)),
-            ),
-            ControlFlow::Break(Which::Second) => (
-                self.collector1.collect_then_finish(items),
-                self.collector2.finish(),
-            ),
-        }
-    }
-}
-
-impl<C1, C2> RefCollector for Combine<C1, C2>
-where
-    C1: RefCollector,
-    C2: RefCollector<Item = C1::Item>,
-{
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        match (
-            self.collector1.collect_ref(item),
-            self.collector2.collect_ref(item),
-        ) {
-            (ControlFlow::Break(_), ControlFlow::Break(_)) => ControlFlow::Break(()),
-            _ => ControlFlow::Continue(()),
-        }
-    }
-}
-
-// A helper enum for `collect_many` and `collect_then_finish` to know which has finished.
-enum Which<T> {
-    First(T),
-    Second,
+    // The default implementations of `collect_many` and `collect_then_finish` are sufficient.
 }
 
 #[cfg(all(test, feature = "std"))]

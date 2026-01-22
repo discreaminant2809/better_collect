@@ -18,7 +18,7 @@ pub mod vec_deque;
 
 use std::ops::ControlFlow;
 
-use crate::collector::{Collector, IntoCollector, RefCollector};
+use crate::collector::{Collector, CollectorBase, IntoCollector};
 
 #[cfg(feature = "std")]
 use std::{
@@ -47,7 +47,6 @@ macro_rules! collector_impl {
         where
             $($gen_bound: $bound,)*
         {
-            type Item = $item_ty;
             type Output = Self;
             type IntoCollector = $mod::IntoCollector<$($generic),*>;
 
@@ -64,7 +63,6 @@ macro_rules! collector_impl {
         where
             $($gen_bound: $bound,)*
         {
-            type Item = $item_ty;
             type Output = Self;
             type IntoCollector = $mod::CollectorMut<'a, $($generic),*>;
 
@@ -77,65 +75,24 @@ macro_rules! collector_impl {
         #[cfg(feature = $feature)]
         // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
         #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
-        impl<$($generic),*> Collector for $mod::IntoCollector<$($generic),*>
-        where
-            $($gen_bound: $bound,)*
-        {
-            type Item = $item_ty;
+        impl<$($generic),*> CollectorBase for $mod::IntoCollector<$($generic),*> {
             type Output = $coll_name<$($generic),*>;
-
-            #[inline]
-            fn collect(&mut self, $item_pat: Self::Item) -> ControlFlow<()> {
-                // It returns a `bool`, so we will return a `ControlFlow` based on it, right?
-                // No. `false` is just a signal that "it cannot collect the item at the moment,"
-                // not "it cannot collect items from now on."
-                self.0.$push_method_name($($item_args),*);
-                ControlFlow::Continue(())
-            }
 
             #[inline]
             fn finish(self) -> Self::Output {
                 self.0
-            }
-
-            #[inline]
-            fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-                self.0.extend(items);
-                ControlFlow::Continue(())
-            }
-
-            #[inline]
-            fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-                self.0.extend(items);
-                self.0
-            }
-        }
-
-        #[cfg(feature = $feature)]
-        #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
-        impl<$($generic),*> RefCollector for $mod::IntoCollector<$($generic),*>
-        where
-            $($gen_bound: $bound,)*
-            Self::Item: Copy,
-        {
-            #[inline]
-            fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
-                self.collect(item)
             }
         }
 
         #[cfg(feature = $feature)]
         // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
         #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
-        impl<'a, $($generic),*> Collector for $mod::CollectorMut<'a, $($generic),*>
+        impl<$($generic),*> Collector<$item_ty> for $mod::IntoCollector<$($generic),*>
         where
             $($gen_bound: $bound,)*
         {
-            type Item = $item_ty;
-            type Output = &'a mut $coll_name<$($generic),*>;
-
             #[inline]
-            fn collect(&mut self, $item_pat: Self::Item) -> ControlFlow<()> {
+            fn collect(&mut self, $item_pat: $item_ty) -> ControlFlow<()> {
                 // It returns a `bool`, so we will return a `ControlFlow` based on it, right?
                 // No. `false` is just a signal that "it cannot collect the item at the moment,"
                 // not "it cannot collect items from now on."
@@ -144,33 +101,56 @@ macro_rules! collector_impl {
             }
 
             #[inline]
-            fn finish(self) -> Self::Output {
-                self.0
-            }
-
-            #[inline]
-            fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+            fn collect_many(&mut self, items: impl IntoIterator<Item = $item_ty>) -> ControlFlow<()> {
                 self.0.extend(items);
                 ControlFlow::Continue(())
             }
 
             #[inline]
-            fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+            fn collect_then_finish(mut self, items: impl IntoIterator<Item = $item_ty>) -> Self::Output {
                 self.0.extend(items);
                 self.0
             }
         }
 
         #[cfg(feature = $feature)]
+        // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
         #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
-        impl<$($generic),*> RefCollector for $mod::CollectorMut<'_, $($generic),*>
+        impl<'a, $($generic),*> CollectorBase for $mod::CollectorMut<'a, $($generic),*> {
+            type Output = &'a mut $coll_name<$($generic),*>;
+
+            #[inline]
+            fn finish(self) -> Self::Output {
+                self.0
+            }
+        }
+
+        #[cfg(feature = $feature)]
+        // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
+        #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
+        impl<'a, $($generic),*> Collector<$item_ty> for $mod::CollectorMut<'a, $($generic),*>
         where
             $($gen_bound: $bound,)*
-            Self::Item: Copy,
         {
             #[inline]
-            fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
-                self.collect(item)
+            fn collect(&mut self, $item_pat: $item_ty) -> ControlFlow<()> {
+                // It returns a `bool`, so we will return a `ControlFlow` based on it, right?
+                // No. `false` is just a signal that "it cannot collect the item at the moment,"
+                // not "it cannot collect items from now on."
+                self.0.$push_method_name($($item_args),*);
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(&mut self, items: impl IntoIterator<Item = $item_ty>) -> ControlFlow<()> {
+                self.0.extend(items);
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(self, items: impl IntoIterator<Item = $item_ty>) -> Self::Output {
+                self.0.extend(items);
+                self.0
             }
         }
 

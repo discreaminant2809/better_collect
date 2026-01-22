@@ -5,7 +5,7 @@
 //! [`Collector`]: crate::collector::Collector
 
 use crate::{
-    collector::{Collector, RefCollector},
+    collector::{Collector, CollectorBase},
     slice::{Concat, ConcatItem, ConcatItemSealed, ConcatSealed},
 };
 
@@ -39,8 +39,6 @@ pub struct IntoCollector<T>(Vec<T>);
 pub struct CollectorMut<'a, T>(&'a mut Vec<T>);
 
 impl<T> crate::collector::IntoCollector for Vec<T> {
-    type Item = T;
-
     type Output = Self;
 
     type IntoCollector = IntoCollector<T>;
@@ -52,8 +50,6 @@ impl<T> crate::collector::IntoCollector for Vec<T> {
 }
 
 impl<'a, T> crate::collector::IntoCollector for &'a mut Vec<T> {
-    type Item = T;
-
     type Output = Self;
 
     type IntoCollector = CollectorMut<'a, T>;
@@ -64,19 +60,20 @@ impl<'a, T> crate::collector::IntoCollector for &'a mut Vec<T> {
     }
 }
 
-impl<T> Collector for IntoCollector<T> {
-    type Item = T;
+impl<T> CollectorBase for IntoCollector<T> {
     type Output = Vec<T>;
-
-    #[inline]
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
-        self.0.push(item);
-        ControlFlow::Continue(())
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.0
+    }
+}
+
+impl<T> Collector<T> for IntoCollector<T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        self.0.push(item);
+        ControlFlow::Continue(())
     }
 
     #[inline]
@@ -92,27 +89,20 @@ impl<T> Collector for IntoCollector<T> {
     }
 }
 
-impl<T: Copy> RefCollector for IntoCollector<T> {
-    #[inline]
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
-        self.0.push(*item);
-        ControlFlow::Continue(())
-    }
-}
-
-impl<'a, T> Collector for CollectorMut<'a, T> {
-    type Item = T;
+impl<'a, T> CollectorBase for CollectorMut<'a, T> {
     type Output = &'a mut Vec<T>;
-
-    #[inline]
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
-        self.0.push(item);
-        ControlFlow::Continue(())
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.0
+    }
+}
+
+impl<'a, T> Collector<T> for CollectorMut<'a, T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        self.0.push(item);
+        ControlFlow::Continue(())
     }
 
     #[inline]
@@ -125,14 +115,6 @@ impl<'a, T> Collector for CollectorMut<'a, T> {
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.0.extend(items);
         self.0
-    }
-}
-
-impl<T: Copy> RefCollector for CollectorMut<'_, T> {
-    #[inline]
-    fn collect_ref(&mut self, item: &mut T) -> ControlFlow<()> {
-        self.0.push(*item);
-        ControlFlow::Continue(())
     }
 }
 

@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 /// Creates a [`Collector`] that transforms the final accumulated result.
 ///
@@ -17,19 +17,12 @@ impl<C, F> MapOutput<C, F> {
     }
 }
 
-impl<C, T, F> Collector for MapOutput<C, F>
+impl<C, T, F> CollectorBase for MapOutput<C, F>
 where
-    C: Collector,
+    C: CollectorBase,
     F: FnOnce(C::Output) -> T,
 {
-    type Item = C::Item;
-
     type Output = T;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        self.collector.collect(item)
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
@@ -37,29 +30,29 @@ where
     }
 
     #[inline]
-    fn break_hint(&self) -> bool {
+    fn break_hint(&self) -> ControlFlow<()> {
         self.collector.break_hint()
+    }
+}
+
+impl<C, T, F, R> Collector<T> for MapOutput<C, F>
+where
+    C: Collector<T>,
+    F: FnOnce(C::Output) -> R,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        self.collector.collect(item)
     }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector.collect_many(items)
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         (self.f)(self.collector.collect_then_finish(items))
-    }
-}
-
-impl<C, T, F> RefCollector for MapOutput<C, F>
-where
-    C: RefCollector,
-    F: FnOnce(C::Output) -> T,
-{
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        self.collector.collect_ref(item)
     }
 }
 

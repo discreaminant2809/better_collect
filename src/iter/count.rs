@@ -1,9 +1,6 @@
-use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
+use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::{
-    assert_ref_collector,
-    collector::{Collector, RefCollector},
-};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`RefCollector`] that counts the number of items it collects.
 ///
@@ -30,19 +27,16 @@ use crate::{
 ///
 /// assert_eq!(collector.finish(), 4);
 /// ```
-pub struct Count<T> {
+#[derive(Debug, Clone, Default)]
+pub struct Count {
     count: usize,
-    _marker: PhantomData<fn(T)>,
 }
 
-impl<T> Count<T> {
+impl Count {
     /// Creates a new instance of this collector with an initial count of 0.
     #[inline]
     pub const fn new() -> Self {
-        assert_ref_collector(Count {
-            count: 0,
-            _marker: PhantomData,
-        })
+        assert_collector(Count { count: 0 })
     }
 
     /// Returns the current count.
@@ -59,61 +53,31 @@ impl<T> Count<T> {
     }
 }
 
-impl<T> Collector for Count<T> {
-    type Item = T;
+impl CollectorBase for Count {
     type Output = usize;
-
-    #[inline]
-    fn collect(&mut self, _: Self::Item) -> ControlFlow<()> {
-        self.increment();
-        ControlFlow::Continue(())
-    }
 
     #[inline]
     fn finish(self) -> usize {
         self.count
     }
+}
+
+impl<T> Collector<T> for Count {
+    #[inline]
+    fn collect(&mut self, _: T) -> ControlFlow<()> {
+        self.increment();
+        ControlFlow::Continue(())
+    }
 
     #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.count += items.into_iter().count();
         ControlFlow::Continue(())
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.count + items.into_iter().count()
-    }
-}
-
-impl<T> RefCollector for Count<T> {
-    #[inline]
-    fn collect_ref(&mut self, _: &mut Self::Item) -> ControlFlow<()> {
-        self.increment();
-        ControlFlow::Continue(())
-    }
-}
-
-impl<T> Debug for Count<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Count").field("count", &self.count).finish()
-    }
-}
-
-impl<T> Clone for Count<T> {
-    #[inline]
-    fn clone(&self) -> Self {
-        Self {
-            count: self.count,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<T> Default for Count<T> {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }
 

@@ -1,9 +1,6 @@
-use std::{fmt::Debug, marker::PhantomData, ops::ControlFlow};
+use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::{
-    assert_collector, assert_ref_collector,
-    collector::{Collector, RefCollector},
-};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`Collector`] that accumulates items using a function
 /// as long as the function returns successfully.
@@ -64,189 +61,47 @@ use crate::{
 ///
 /// assert_eq!(collector.finish(), 120);
 /// ```
-pub struct TryFold<A, T, F> {
+#[derive(Clone)]
+pub struct TryFold<A, F> {
     accum: A,
     f: F,
-    // Needed, or else the compiler will complain about "unconstraint generics."
-    // Since we use `T` in the function params, it's logical to use `PhantomData` like this.
-    _marker: PhantomData<fn(T)>,
 }
 
-/// A [`RefCollector`] that accumulates items by mutable reference using a function
-/// as long as the function returns successfully.
-///
-/// This is the `Ref` counterpart and shares the same semantics as [`TryFold`].
-/// Ses its documentation for more.
-///
-/// # Examples
-///
-/// ```
-/// use better_collect::{prelude::*, iter::TryFold};
-/// use std::ops::ControlFlow;
-///
-/// let (total_len, concatenated) = ["abc", "de", "fgh"]
-///     .into_iter()
-///     .map(String::from)
-///     .feed_into(
-///         TryFold::new_ref(0, |total_len, s: &mut String| {
-///             *total_len += s.len();
-///             ControlFlow::Continue(())
-///         })
-///         .combine("".to_owned().into_concat())
-///     );
-///
-/// assert_eq!(total_len, 8);
-/// assert_eq!(concatenated, "abcdefgh");
-/// ```
-///
-/// Short-circuiting:
-///
-/// ```
-/// use better_collect::{prelude::*, iter::TryFold};
-/// use std::ops::ControlFlow;
-///
-/// let (concatenated_till_empty, concatenated) = ["abc", "de", "", "fgh"]
-///     .into_iter()
-///     .map(String::from)
-///     .feed_into(
-///         TryFold::new_ref("".to_owned(), |concatenated_till_empty, s: &mut String| {
-///             if s.is_empty() {
-///                 ControlFlow::Break(())
-///             } else {
-///                 *concatenated_till_empty += s;
-///                 ControlFlow::Continue(())
-///             }
-///         })
-///         .combine("".to_owned().into_concat())
-///     );
-///
-/// assert_eq!(concatenated_till_empty, "abcde");
-/// assert_eq!(concatenated, "abcdefgh");
-/// ```
-pub struct TryFoldRef<A, T, F> {
-    accum: A,
-    f: F,
-    // Needed, or else the compiler will complain about "unconstraint generics."
-    // Since we use `&mut T` in the function params, it's logical to use `PhantomData` like this.
-    _marker: PhantomData<fn(&mut T)>,
-}
-
-impl<A, T, F> TryFold<A, T, F> {
+impl<A, F> TryFold<A, F> {
     /// Creates a new instance of this collector with an initial value and an accumulator.
     #[inline]
-    pub const fn new(init: A, f: F) -> Self
+    pub const fn new<T>(init: A, f: F) -> Self
     where
         F: FnMut(&mut A, T) -> ControlFlow<()>,
     {
-        assert_collector(TryFold {
-            accum: init,
-            f,
-            _marker: PhantomData,
-        })
-    }
-
-    /// Creates a new instance of the `Ref` counterpart of this collector
-    /// with an initial value and an accumulator.
-    #[inline]
-    pub const fn new_ref(accum: A, f: F) -> TryFoldRef<A, T, F>
-    where
-        F: FnMut(&mut A, &mut T) -> ControlFlow<()>,
-    {
-        assert_ref_collector(TryFoldRef {
-            accum,
-            f,
-            _marker: PhantomData,
-        })
+        assert_collector::<_, T>(TryFold { accum: init, f })
     }
 }
 
-impl<A, T, F> Collector for TryFold<A, T, F>
+impl<A, F> CollectorBase for TryFold<A, F> {
+    type Output = A;
+
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.accum
+    }
+}
+
+impl<A, T, F> Collector<T> for TryFold<A, F>
 where
     F: FnMut(&mut A, T) -> ControlFlow<()>,
 {
-    type Item = T;
-    type Output = A;
-
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         (self.f)(&mut self.accum, item)
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.accum
-    }
+    // The default implementations for `collect_many` and `collect_then_finish` are sufficient.
 }
 
-impl<A: Clone, T, F: Clone> Clone for TryFold<A, T, F> {
-    fn clone(&self) -> Self {
-        Self {
-            accum: self.accum.clone(),
-            f: self.f.clone(),
-            _marker: PhantomData,
-        }
-    }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.accum.clone_from(&source.accum);
-        self.f.clone_from(&source.f);
-    }
-}
-
-impl<A: Debug, T, F> Debug for TryFold<A, T, F> {
+impl<A: Debug, F> Debug for TryFold<A, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TryFold")
-            .field("accum", &self.accum)
-            .finish()
-    }
-}
-
-impl<A, T, F> Collector for TryFoldRef<A, T, F>
-where
-    F: FnMut(&mut A, &mut T) -> ControlFlow<()>,
-{
-    type Item = T;
-    type Output = A;
-
-    #[inline]
-    fn collect(&mut self, mut item: Self::Item) -> ControlFlow<()> {
-        self.collect_ref(&mut item)
-    }
-
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.accum
-    }
-}
-
-impl<A, T, F> RefCollector for TryFoldRef<A, T, F>
-where
-    F: FnMut(&mut A, &mut T) -> ControlFlow<()>,
-{
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        (self.f)(&mut self.accum, item)
-    }
-}
-
-impl<A: Clone, T, F: Clone> Clone for TryFoldRef<A, T, F> {
-    fn clone(&self) -> Self {
-        Self {
-            accum: self.accum.clone(),
-            f: self.f.clone(),
-            _marker: PhantomData,
-        }
-    }
-
-    fn clone_from(&mut self, source: &Self) {
-        self.accum.clone_from(&source.accum);
-        self.f.clone_from(&source.f);
-    }
-}
-
-impl<A: Debug, T, F> Debug for TryFoldRef<A, T, F> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TryFoldRef")
             .field("accum", &self.accum)
             .finish()
     }

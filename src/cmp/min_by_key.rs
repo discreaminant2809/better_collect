@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 use super::{Min, value_key::ValueKey};
 
@@ -59,27 +59,27 @@ where
     }
 }
 
-impl<T, K, F> Collector for MinByKey<T, K, F>
-where
-    K: Ord,
-    F: FnMut(&T) -> K,
-{
-    type Item = T;
-
+impl<T, K, F> CollectorBase for MinByKey<T, K, F> {
     type Output = Option<T>;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        let item_value_key = ValueKey::new(item, &mut self.f);
-        self.value_key_collector.collect(item_value_key)
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.value_key_collector.finish().map(ValueKey::into_value)
     }
+}
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+impl<T, K, F> Collector<T> for MinByKey<T, K, F>
+where
+    K: Ord,
+    F: FnMut(&T) -> K,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        let item_value_key = ValueKey::new(item, &mut self.f);
+        self.value_key_collector.collect(item_value_key)
+    }
+
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.value_key_collector.collect_many(
             items
                 .into_iter()
@@ -87,7 +87,7 @@ where
         )
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         let Self {
             value_key_collector,
             mut f,

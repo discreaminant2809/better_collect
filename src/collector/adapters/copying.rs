@@ -1,4 +1,4 @@
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 use std::ops::ControlFlow;
 
@@ -14,17 +14,11 @@ impl<C> Copying<C> {
     }
 }
 
-impl<C> Collector for Copying<C>
+impl<C> CollectorBase for Copying<C>
 where
-    C: Collector,
+    C: CollectorBase,
 {
-    type Item = C::Item;
     type Output = C::Output;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        self.0.collect(item)
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
@@ -32,27 +26,47 @@ where
     }
 
     #[inline]
-    fn break_hint(&self) -> bool {
+    fn break_hint(&self) -> ControlFlow<()> {
         self.0.break_hint()
-    }
-
-    #[inline]
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
-        self.0.collect_many(items)
-    }
-
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
-        self.0.collect_then_finish(items)
     }
 }
 
-impl<C> RefCollector for Copying<C>
+impl<'a, C, T> Collector<&'a T> for Copying<C>
 where
-    Self::Item: Copy,
-    C: Collector,
+    C: Collector<T>,
+    T: Clone,
 {
     #[inline]
-    fn collect_ref(&mut self, &mut item: &mut Self::Item) -> ControlFlow<()> {
-        self.0.collect(item)
+    fn collect(&mut self, item: &'a T) -> ControlFlow<()> {
+        self.0.collect(item.clone())
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = &'a T>) -> ControlFlow<()> {
+        self.0.collect_many(items.into_iter().cloned())
+    }
+
+    fn collect_then_finish(self, items: impl IntoIterator<Item = &'a T>) -> Self::Output {
+        self.0.collect_then_finish(items.into_iter().cloned())
+    }
+}
+
+impl<'a, C, T> Collector<&'a mut T> for Copying<C>
+where
+    C: Collector<T>,
+    T: Clone,
+{
+    #[inline]
+    fn collect(&mut self, item: &'a mut T) -> ControlFlow<()> {
+        self.0.collect(item.clone())
+    }
+
+    #[inline]
+    fn collect_many(&mut self, items: impl IntoIterator<Item = &'a mut T>) -> ControlFlow<()> {
+        self.0.collect_many(items.into_iter().cloned())
+    }
+
+    fn collect_then_finish(self, items: impl IntoIterator<Item = &'a mut T>) -> Self::Output {
+        self.0.collect_then_finish(items.into_iter().cloned())
     }
 }

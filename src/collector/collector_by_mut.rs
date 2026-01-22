@@ -1,4 +1,4 @@
-use super::{Collector, IntoCollector};
+use super::{CollectorBase, IntoCollector};
 
 /// A type that can be converted into a collector by mutable reference.
 ///
@@ -14,7 +14,7 @@ use super::{Collector, IntoCollector};
 #[allow(private_bounds)]
 pub trait CollectorByMut: Sealed {
     /// Which collector being produced?
-    type CollectorMut<'a>: Collector
+    type CollectorMut<'a>: CollectorBase
     where
         Self: 'a;
 

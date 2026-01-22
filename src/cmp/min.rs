@@ -2,7 +2,7 @@ use std::{cmp::Ordering, ops::ControlFlow};
 
 use super::{MinBy, MinByKey};
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`Collector`] that computes the minimum value among the items it collects.
 ///
@@ -47,7 +47,7 @@ impl<T> Min<T> {
     where
         T: Ord,
     {
-        assert_collector(Self { min: None })
+        assert_collector::<_, T>(Self { min: None })
     }
 
     /// Creates a new instance of [`MinBy`] with a given comparison function.
@@ -57,7 +57,7 @@ impl<T> Min<T> {
         F: FnMut(&T, &T) -> Ordering,
     {
         #[allow(deprecated)]
-        assert_collector(MinBy::new(f))
+        assert_collector::<_, T>(MinBy::new(f))
     }
 
     /// Creates a new instance of [`MinByKey`] with a given key-extraction function.
@@ -68,7 +68,7 @@ impl<T> Min<T> {
         F: FnMut(&T) -> K,
     {
         #[allow(deprecated)]
-        assert_collector(MinByKey::new(f))
+        assert_collector::<_, T>(MinByKey::new(f))
     }
 }
 
@@ -79,12 +79,18 @@ impl<T: Ord> Default for Min<T> {
     }
 }
 
-impl<T: Ord> Collector for Min<T> {
-    type Item = T;
+impl<T> CollectorBase for Min<T> {
     type Output = Option<T>;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.min
+    }
+}
+
+impl<T: Ord> Collector<T> for Min<T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.min = Some(match self.min.take() {
             Some(min) => min.min(item),
             None => item,
@@ -93,17 +99,12 @@ impl<T: Ord> Collector for Min<T> {
         ControlFlow::Continue(())
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.min
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.min = self.min.take().into_iter().chain(items).min();
         ControlFlow::Continue(())
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.min.into_iter().chain(items).min()
     }
 }

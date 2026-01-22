@@ -1,4 +1,4 @@
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
@@ -17,16 +17,25 @@ impl<C, F> Filter<C, F> {
     }
 }
 
-impl<C, F> Collector for Filter<C, F>
+impl<C, F> CollectorBase for Filter<C, F>
 where
-    C: Collector,
-    F: FnMut(&C::Item) -> bool,
+    C: CollectorBase,
 {
-    type Item = C::Item;
     type Output = C::Output;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.finish()
+    }
+}
+
+impl<C, F, T> Collector<T> for Filter<C, F>
+where
+    C: Collector<T>,
+    F: FnMut(&T) -> bool,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         if (self.pred)(&item) {
             self.collector.collect(item)
         } else {
@@ -34,39 +43,14 @@ where
         }
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.collector.finish()
-    }
-
-    #[inline]
-    fn break_hint(&self) -> bool {
-        self.collector.break_hint()
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector
             .collect_many(items.into_iter().filter(&mut self.pred))
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
             .collect_then_finish(items.into_iter().filter(self.pred))
-    }
-}
-
-impl<C, F> RefCollector for Filter<C, F>
-where
-    C: RefCollector,
-    F: FnMut(&C::Item) -> bool,
-{
-    #[inline]
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        if (self.pred)(item) {
-            self.collector.collect_ref(item)
-        } else {
-            ControlFlow::Continue(())
-        }
     }
 }
 

@@ -3,8 +3,6 @@ use super::Driver;
 
 #[cfg(feature = "unstable")]
 use crate::assert_iterator;
-#[cfg(feature = "unstable")]
-use crate::collector::RefCollector;
 use crate::collector::{Collector, IntoCollector};
 
 /// Extends [`Iterator`] with various methods to work with [`Collector`]s.
@@ -16,7 +14,7 @@ pub trait IteratorExt: Iterator {
     #[inline]
     fn better_collect<C>(&mut self, collector: C) -> C::Output
     where
-        C: IntoCollector<Item = Self::Item>,
+        C: IntoCollector<IntoCollector: Collector<Self::Item>>,
     {
         collector.into_collector().collect_then_finish(self)
     }
@@ -47,7 +45,7 @@ pub trait IteratorExt: Iterator {
     fn feed_into<C>(self, collector: C) -> C::Output
     where
         Self: Sized,
-        C: IntoCollector<Item = Self::Item>,
+        C: IntoCollector<IntoCollector: Collector<Self::Item>>,
     {
         collector.into_collector().collect_then_finish(self)
     }
@@ -94,7 +92,7 @@ pub trait IteratorExt: Iterator {
     ) -> (C::Output, R)
     where
         Self: Sized,
-        C: IntoCollector<Item = Self::Item, IntoCollector: RefCollector>,
+        C: IntoCollector<IntoCollector: for<'a> Collector<&'a mut Self::Item>>,
     {
         let mut collector = collector.into_collector();
         let driver = assert_iterator(Driver::new(self, &mut collector));

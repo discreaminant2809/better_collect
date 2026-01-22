@@ -1,6 +1,6 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 use super::{Max, value_key::ValueKey};
 
@@ -59,24 +59,24 @@ where
     }
 }
 
-impl<T, K, F> Collector for MaxByKey<T, K, F>
-where
-    K: Ord,
-    F: FnMut(&T) -> K,
-{
-    type Item = T;
-
+impl<T, K, F> CollectorBase for MaxByKey<T, K, F> {
     type Output = Option<T>;
-
-    #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
-        let item_value_key = ValueKey::new(item, &mut self.f);
-        self.value_key_collector.collect(item_value_key)
-    }
 
     #[inline]
     fn finish(self) -> Self::Output {
         self.value_key_collector.finish().map(ValueKey::into_value)
+    }
+}
+
+impl<T, K, F> Collector<T> for MaxByKey<T, K, F>
+where
+    K: Ord,
+    F: FnMut(&T) -> K,
+{
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
+        let item_value_key = ValueKey::new(item, &mut self.f);
+        self.value_key_collector.collect(item_value_key)
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {

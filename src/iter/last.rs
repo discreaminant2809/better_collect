@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`Collector`] that stores the last item it collects.
 ///
@@ -39,26 +39,27 @@ impl<T> Last<T> {
     /// Creates an intance of this collector.
     #[inline]
     pub const fn new() -> Self {
-        assert_collector(Last { value: None })
+        assert_collector::<_, T>(Last { value: None })
     }
 }
 
-impl<T> Collector for Last<T> {
-    type Item = T;
+impl<T> CollectorBase for Last<T> {
     type Output = Option<T>;
 
+    #[inline]
+    fn finish(self) -> Self::Output {
+        self.value
+    }
+}
+
+impl<T> Collector<T> for Last<T> {
     #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.value = Some(item);
         ControlFlow::Continue(())
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.value
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // We need a bit complication here since we may risk assigning `None` to `self.value` being `Some`.
         match (&mut self.value, items.into_iter().last()) {
             (Some(value), Some(last)) => *value = last,
@@ -71,7 +72,7 @@ impl<T> Collector for Last<T> {
     }
 
     #[inline]
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         items.into_iter().last().or(self.value)
     }
 }

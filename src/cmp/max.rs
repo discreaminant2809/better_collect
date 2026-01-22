@@ -2,7 +2,7 @@ use std::{cmp::Ordering, ops::ControlFlow};
 
 use super::{MaxBy, MaxByKey};
 
-use crate::{assert_collector, collector::Collector};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
 /// A [`Collector`] that computes the maximum value among the items it collects.
 ///
@@ -79,12 +79,18 @@ impl<T: Ord> Default for Max<T> {
     }
 }
 
-impl<T: Ord> Collector for Max<T> {
-    type Item = T;
+impl<T> CollectorBase for Max<T> {
     type Output = Option<T>;
 
     #[inline]
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.max
+    }
+}
+
+impl<T: Ord> Collector<T> for Max<T> {
+    #[inline]
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         // Because it's `Max`, if `max` is a `None` then it's always smaller than a `Some`.
         // Doesn't work on `Min`, however.
         // Be careful to preserve the semantics of `Iterator::max` that if there are
@@ -93,17 +99,12 @@ impl<T: Ord> Collector for Max<T> {
         ControlFlow::Continue(())
     }
 
-    #[inline]
-    fn finish(self) -> Self::Output {
-        self.max
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.max = self.max.take().into_iter().chain(items).max();
         ControlFlow::Continue(())
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.max.into_iter().chain(items).max()
     }
 }
