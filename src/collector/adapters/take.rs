@@ -182,6 +182,6 @@ mod proptests {
                 }
             },
         }
-        .test_ref_collector()
+        .test_collector()
     }
 }

@@ -169,7 +169,6 @@ mod proptests {
     use crate::prelude::*;
     use crate::test_utils::{
         BasicCollectorTester, CollectorTestParts, CollectorTester, CollectorTesterExt, PredError,
-        RefCollectorTester,
     };
 
     proptest! {
@@ -206,7 +205,7 @@ mod proptests {
                 }
             },
         }
-        .test_ref_collector()
+        .test_collector()
     }
 
     proptest! {
@@ -253,20 +252,8 @@ mod proptests {
             &mut self,
         ) -> CollectorTestParts<
             impl Iterator<Item = Self::Item> + Clone,
-            impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+            impl Collector<i32, Output = Self::Output<'_>>,
             impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = i32>) -> Result<(), PredError>,
-        > {
-            self.ref_collector_test_parts()
-        }
-    }
-
-    impl RefCollectorTester for CollectorMutTester {
-        fn ref_collector_test_parts(
-            &mut self,
-        ) -> CollectorTestParts<
-            impl Iterator<Item = Self::Item> + Clone,
-            impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
-            impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
         > {
             // Don't forget to reset the collector.
             self.collector_base.clone_from(&self.starting_nums);

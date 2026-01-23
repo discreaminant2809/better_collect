@@ -128,7 +128,7 @@ mod proptests {
                 }
             },
         }
-        .test_ref_collector()
+        .test_collector()
     }
 
     fn take_while_pred(&num: &i32) -> bool {
