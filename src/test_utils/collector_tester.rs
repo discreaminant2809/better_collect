@@ -2,14 +2,14 @@ use std::fmt::Debug;
 
 use proptest::{prelude::*, test_runner::TestCaseResult};
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::Collector;
 
 /// Test helper that returns parts needed for collector proptest.
 ///
 /// # Notes
 ///
 /// The [`Output`] should be reset for every call. May not needed
-///  if you can make the output consistent without resetting.
+/// if you can make the output consistent without resetting.
 ///
 /// [`Output`]: CollectorTester::Output
 pub trait CollectorTester {
@@ -22,24 +22,7 @@ pub trait CollectorTester {
         &mut self,
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item> + Clone,
-        impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
-    >;
-}
-
-/// Test helper that returns parts needed for ref collector proptest.
-///
-/// If your tester implements it, its [`CollectorTester`] only needs
-/// to forward the call to this.
-///
-/// The current limitation forces us to have two traits instead of one.
-pub trait RefCollectorTester: CollectorTester {
-    #[allow(clippy::type_complexity)]
-    fn ref_collector_test_parts(
-        &mut self,
-    ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item> + Clone,
-        impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
+        impl Collector<Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     >;
 }
@@ -48,7 +31,7 @@ pub trait RefCollectorTester: CollectorTester {
 pub struct CollectorTestParts<I, C, P>
 where
     I: Iterator + Clone,
-    C: Collector<Item = I::Item>,
+    C: Collector<I::Item>,
     P: FnMut(C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
     /// Iterator provided to feed the collector.
@@ -105,49 +88,6 @@ pub trait CollectorTesterExt: CollectorTester {
     fn test_collector_may_fused(&mut self, collector_fused: bool) -> TestCaseResult {
         test_collector_part(self, collector_fused)
     }
-
-    fn test_ref_collector(&mut self) -> TestCaseResult
-    where
-        Self: RefCollectorTester,
-    {
-        self.test_ref_collector_may_fused(false)
-    }
-
-    fn test_ref_collector_may_fused(&mut self, collector_fused: bool) -> TestCaseResult
-    where
-        Self: RefCollectorTester,
-    {
-        test_collector_part(self, collector_fused)?;
-
-        // `collect_ref()`
-        let mut test_parts = self.ref_collector_test_parts();
-        // Simulate the fact that break_hint is used before looping,
-        // which is the intended use case.
-        let has_stopped = test_parts.collector.break_hint()
-            || test_parts
-                .iter
-                .try_for_each(|mut item| test_parts.collector.collect_ref(&mut item))
-                .is_break();
-        prop_assert_eq!(
-            has_stopped,
-            test_parts.should_break,
-            "`collect_ref()` didn't break correctly"
-        );
-
-        if has_stopped && collector_fused {
-            for mut item in test_parts.iter.clone() {
-                prop_assert!(
-                    test_parts.collector.collect_ref(&mut item).is_break(),
-                    "`collect_ref()` isn't actually fused"
-                );
-            }
-        }
-
-        (test_parts.pred)(test_parts.collector.finish(), &mut test_parts.iter)
-            .map_err(|e| e.of_method("collect_ref"))?;
-
-        Ok(())
-    }
 }
 
 impl<T> CollectorTesterExt for T where T: CollectorTester {}
@@ -159,7 +99,7 @@ pub struct BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 // `where` bound is needed otherwise we get "type annotation needed" for the input iterator.
 where
     I: Iterator,
-    C: Collector<Item = I::Item>,
+    C: Collector<I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
@@ -175,7 +115,7 @@ impl<ItFac, ClFac, SbPred, Pred, I, C> CollectorTester
     for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 where
     I: Iterator + Clone,
-    C: Collector<Item = I::Item>,
+    C: Collector<I::Item>,
     ItFac: FnMut() -> I,
     ClFac: FnMut() -> C,
     SbPred: FnMut(I) -> bool,
@@ -189,7 +129,7 @@ where
         &mut self,
     ) -> CollectorTestParts<
         impl Iterator<Item = Self::Item> + Clone,
-        impl Collector<Item = Self::Item, Output = Self::Output<'_>>,
+        impl Collector<Self::Item, Output = Self::Output<'_>>,
         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
     > {
         CollectorTestParts {
@@ -197,32 +137,6 @@ where
             collector: (self.collector_factory)(),
             should_break: (self.should_break_pred)((self.iter_factory)()),
             pred: |output, it| (self.pred)((self.iter_factory)(), output, it),
-        }
-    }
-}
-
-impl<ItFac, ClFac, SbPred, Pred, I, C> RefCollectorTester
-    for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
-where
-    I: Iterator + Clone,
-    C: RefCollector<Item = I::Item>,
-    ItFac: FnMut() -> I,
-    ClFac: FnMut() -> C,
-    SbPred: FnMut(I) -> bool,
-    Pred: FnMut(I, C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
-{
-    fn ref_collector_test_parts(
-        &mut self,
-    ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item> + Clone,
-        impl RefCollector<Item = Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
-    > {
-        CollectorTestParts {
-            iter: (self.iter_factory)(),
-            collector: (self.collector_factory)(),
-            should_break: (self.should_break_pred)((self.iter_factory)()),
-            pred: |output, remaining| (self.pred)((self.iter_factory)(), output, remaining),
         }
     }
 }

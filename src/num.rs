@@ -7,8 +7,248 @@
 //!
 //! [`Collector`]: crate::collector::Collector
 
-mod product;
-mod sum;
+use std::ops::ControlFlow;
 
-pub use product::*;
-pub use sum::*;
+use crate::collector::{Collector, CollectorBase};
+
+///
+#[derive(Debug, Clone, Copy)]
+pub struct Adding<Num>(Num);
+
+///
+#[derive(Debug, Clone, Copy)]
+pub struct Muling<Num>(Num);
+
+macro_rules! prim_adding_impl {
+    ($pri_ty:ty, $identity:expr) => {
+        impl crate::ops::Adding for $pri_ty {
+            type Output = $pri_ty;
+
+            type Adding = Adding<$pri_ty>;
+
+            #[inline]
+            fn adding() -> Self::Adding {
+                Default::default()
+            }
+        }
+
+        impl Default for Adding<$pri_ty> {
+            #[inline]
+            fn default() -> Self {
+                Adding($identity)
+            }
+        }
+
+        impl CollectorBase for Adding<$pri_ty> {
+            type Output = $pri_ty;
+
+            #[inline]
+            fn finish(self) -> Self::Output {
+                self.0
+            }
+        }
+
+        impl Collector<$pri_ty> for Adding<$pri_ty> {
+            #[inline]
+            fn collect(&mut self, item: $pri_ty) -> ControlFlow<()> {
+                self.0 += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = $pri_ty>,
+            ) -> ControlFlow<()> {
+                self.0 += items.into_iter().sum();
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(
+                mut self,
+                items: impl IntoIterator<Item = $pri_ty>,
+            ) -> Self::Output {
+                self.0 += items.into_iter().sum();
+                self.0
+            }
+        }
+
+        impl<'a> Collector<&'a $pri_ty> for Adding<$pri_ty> {
+            #[inline]
+            fn collect(&mut self, &item: &'a $pri_ty) -> ControlFlow<()> {
+                self.0 += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = &'a $pri_ty>,
+            ) -> ControlFlow<()> {
+                self.0 += items.into_iter().sum();
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(
+                mut self,
+                items: impl IntoIterator<Item = &'a $pri_ty>,
+            ) -> Self::Output {
+                self.0 += items.into_iter().sum();
+                self.0
+            }
+        }
+
+        impl<'a> Collector<&'a mut $pri_ty> for Adding<$pri_ty> {
+            #[inline]
+            fn collect(&mut self, &mut item: &'a mut $pri_ty) -> ControlFlow<()> {
+                self.0 += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = &'a mut $pri_ty>,
+            ) -> ControlFlow<()> {
+                self.0 += items.into_iter().sum();
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(
+                mut self,
+                items: impl IntoIterator<Item = &'a mut $pri_ty>,
+            ) -> Self::Output {
+                self.0 += items.into_iter().sum();
+                self.0
+            }
+        }
+
+        impl crate::ops::Muling for $pri_ty {
+            type Output = $pri_ty;
+
+            type Muling = Muling<$pri_ty>;
+
+            #[inline]
+            fn muling() -> Self::Muling {
+                Default::default()
+            }
+        }
+
+        impl Default for Muling<$pri_ty> {
+            #[inline]
+            fn default() -> Self {
+                Muling($identity)
+            }
+        }
+
+        impl CollectorBase for Muling<$pri_ty> {
+            type Output = $pri_ty;
+
+            #[inline]
+            fn finish(self) -> Self::Output {
+                self.0
+            }
+        }
+
+        impl Collector<$pri_ty> for Muling<$pri_ty> {
+            #[inline]
+            fn collect(&mut self, item: $pri_ty) -> ControlFlow<()> {
+                self.0 += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = $pri_ty>,
+            ) -> ControlFlow<()> {
+                self.0 += items.into_iter().sum();
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(
+                mut self,
+                items: impl IntoIterator<Item = $pri_ty>,
+            ) -> Self::Output {
+                self.0 += items.into_iter().sum();
+                self.0
+            }
+        }
+
+        impl<'a> Collector<&'a $pri_ty> for Muling<$pri_ty> {
+            #[inline]
+            fn collect(&mut self, &item: &'a $pri_ty) -> ControlFlow<()> {
+                self.0 += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = &'a $pri_ty>,
+            ) -> ControlFlow<()> {
+                self.0 += items.into_iter().sum();
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(
+                mut self,
+                items: impl IntoIterator<Item = &'a $pri_ty>,
+            ) -> Self::Output {
+                self.0 += items.into_iter().sum();
+                self.0
+            }
+        }
+
+        impl<'a> Collector<&'a mut $pri_ty> for Muling<$pri_ty> {
+            #[inline]
+            fn collect(&mut self, &mut item: &'a mut $pri_ty) -> ControlFlow<()> {
+                self.0 += item;
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_many(
+                &mut self,
+                items: impl IntoIterator<Item = &'a mut $pri_ty>,
+            ) -> ControlFlow<()> {
+                self.0 += items.into_iter().sum();
+                ControlFlow::Continue(())
+            }
+
+            #[inline]
+            fn collect_then_finish(
+                mut self,
+                items: impl IntoIterator<Item = &'a mut $pri_ty>,
+            ) -> Self::Output {
+                self.0 += items.into_iter().sum();
+                self.0
+            }
+        }
+    };
+}
+
+macro_rules! int_impls {
+    ($($int_ty:ty)*) => {$(
+        prim_adding_impl!($int_ty, 0);
+    )*};
+}
+
+int_impls!(usize u8 u16 u32 u64 u128 isize i8 i16 i32 i64 i128);
+
+macro_rules! float_impls {
+    ($($float_ty:ty)*) => {$(
+        // The "additive identity" of floating point number is -0.0, not 0.0.
+        // See https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.sum.
+        prim_adding_impl!($float_ty, -0.0);
+    )*};
+}
+
+float_impls!(f32 f64);
+
+// TODO: add `Wrapping`
