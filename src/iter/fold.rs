@@ -101,14 +101,6 @@ mod proptests {
         ) {
             all_collect_methods_impl(nums)?;
         }
-
-        /// [`FoldRef`](super::FoldRef)
-        #[test]
-        fn all_collect_methods_ref(
-            nums in propvec(any::<i32>(), ..=5),
-        ) {
-            all_collect_methods_ref_impl(nums)?;
-        }
     }
 
     fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
@@ -137,33 +129,6 @@ mod proptests {
             },
         }
         .test_collector()
-    }
-
-    fn all_collect_methods_ref_impl(nums: Vec<i32>) -> TestCaseResult {
-        BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
-            collector_factory: || {
-                Fold::new_ref(KADANE_INIT, |(sum, max_sum), &mut num| {
-                    kadane_fold(sum, max_sum, num)
-                })
-            },
-            should_break_pred: |_| false,
-            pred: |iter, output, remaining| {
-                let expected = iter.fold(KADANE_INIT, |(mut sum, mut max_sum), num| {
-                    kadane_fold(&mut sum, &mut max_sum, num);
-                    (sum, max_sum)
-                });
-
-                if expected != output {
-                    Err(PredError::IncorrectOutput)
-                } else if remaining.next().is_some() {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
-        }
-        .test_ref_collector()
     }
 
     fn kadane_fold(sum: &mut i32, max_sum: &mut Option<i32>, num: i32) {

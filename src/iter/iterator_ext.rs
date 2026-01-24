@@ -3,7 +3,7 @@ use super::Driver;
 
 #[cfg(feature = "unstable")]
 use crate::assert_iterator;
-use crate::collector::{Collector, IntoCollector};
+use crate::collector::{Collector, CollectorBase, IntoCollector};
 
 /// Extends [`Iterator`] with various methods to work with [`Collector`]s.
 ///

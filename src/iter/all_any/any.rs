@@ -128,14 +128,6 @@ mod proptests {
         ) {
             all_collect_methods_impl(nums)?;
         }
-
-        /// [`AnyRef`](super::AnyRef)
-        #[test]
-        fn all_collect_methods_ref(
-            nums in propvec(any::<i32>(), ..=5),
-        ) {
-            all_collect_methods_ref_impl(nums)?;
-        }
     }
 
     fn all_collect_methods_impl(nums: Vec<i32>) -> TestCaseResult {
@@ -154,23 +146,5 @@ mod proptests {
             },
         }
         .test_collector()
-    }
-
-    fn all_collect_methods_ref_impl(nums: Vec<i32>) -> TestCaseResult {
-        BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
-            collector_factory: || Any::new_ref(|&mut num| num > 0),
-            should_break_pred: |mut iter| iter.any(|num| num > 0),
-            pred: |mut iter, output, remaining| {
-                if iter.any(|num| num > 0) != output {
-                    Err(PredError::IncorrectOutput)
-                } else if iter.ne(remaining) {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
-        }
-        .test_ref_collector()
     }
 }

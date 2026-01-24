@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use proptest::{prelude::*, test_runner::TestCaseResult};
 
-use crate::collector::Collector;
+use crate::collector::{Collector, CollectorBase};
 
 /// Test helper that returns parts needed for collector proptest.
 ///
@@ -152,11 +152,14 @@ fn test_collector_part(
         let mut test_parts = tester.collector_test_parts();
         // Simulate the fact that break_hint is used before looping,
         // which is the intended use case.
-        let has_stopped = test_parts.collector.break_hint()
-            || test_parts
+        let has_stopped = (|| {
+            test_parts.collector.break_hint()?;
+            test_parts
                 .iter
                 .try_for_each(|item| test_parts.collector.collect(item))
-                .is_break();
+        })()
+        .is_break();
+
         prop_assert_eq!(
             has_stopped,
             test_parts.should_break,

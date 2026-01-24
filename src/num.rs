@@ -60,7 +60,7 @@ macro_rules! prim_adding_impl {
                 &mut self,
                 items: impl IntoIterator<Item = $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 += items.into_iter().sum();
+                self.0 += items.into_iter().sum::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -69,7 +69,7 @@ macro_rules! prim_adding_impl {
                 mut self,
                 items: impl IntoIterator<Item = $pri_ty>,
             ) -> Self::Output {
-                self.0 += items.into_iter().sum();
+                self.0 += items.into_iter().sum::<$pri_ty>();
                 self.0
             }
         }
@@ -86,7 +86,7 @@ macro_rules! prim_adding_impl {
                 &mut self,
                 items: impl IntoIterator<Item = &'a $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 += items.into_iter().sum();
+                self.0 += items.into_iter().sum::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -95,7 +95,7 @@ macro_rules! prim_adding_impl {
                 mut self,
                 items: impl IntoIterator<Item = &'a $pri_ty>,
             ) -> Self::Output {
-                self.0 += items.into_iter().sum();
+                self.0 += items.into_iter().sum::<$pri_ty>();
                 self.0
             }
         }
@@ -112,7 +112,7 @@ macro_rules! prim_adding_impl {
                 &mut self,
                 items: impl IntoIterator<Item = &'a mut $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 += items.into_iter().sum();
+                self.0 += items.into_iter().map(|&mut num| num).sum::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -121,7 +121,7 @@ macro_rules! prim_adding_impl {
                 mut self,
                 items: impl IntoIterator<Item = &'a mut $pri_ty>,
             ) -> Self::Output {
-                self.0 += items.into_iter().sum();
+                self.0 += items.into_iter().map(|&mut num| num).sum::<$pri_ty>();
                 self.0
             }
         }
@@ -156,7 +156,7 @@ macro_rules! prim_adding_impl {
         impl Collector<$pri_ty> for Muling<$pri_ty> {
             #[inline]
             fn collect(&mut self, item: $pri_ty) -> ControlFlow<()> {
-                self.0 += item;
+                self.0 *= item;
                 ControlFlow::Continue(())
             }
 
@@ -165,7 +165,7 @@ macro_rules! prim_adding_impl {
                 &mut self,
                 items: impl IntoIterator<Item = $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 += items.into_iter().sum();
+                self.0 *= items.into_iter().sum::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -174,7 +174,7 @@ macro_rules! prim_adding_impl {
                 mut self,
                 items: impl IntoIterator<Item = $pri_ty>,
             ) -> Self::Output {
-                self.0 += items.into_iter().sum();
+                self.0 *= items.into_iter().sum::<$pri_ty>();
                 self.0
             }
         }
@@ -182,7 +182,7 @@ macro_rules! prim_adding_impl {
         impl<'a> Collector<&'a $pri_ty> for Muling<$pri_ty> {
             #[inline]
             fn collect(&mut self, &item: &'a $pri_ty) -> ControlFlow<()> {
-                self.0 += item;
+                self.0 *= item;
                 ControlFlow::Continue(())
             }
 
@@ -191,7 +191,7 @@ macro_rules! prim_adding_impl {
                 &mut self,
                 items: impl IntoIterator<Item = &'a $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 += items.into_iter().sum();
+                self.0 *= items.into_iter().sum::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -200,7 +200,7 @@ macro_rules! prim_adding_impl {
                 mut self,
                 items: impl IntoIterator<Item = &'a $pri_ty>,
             ) -> Self::Output {
-                self.0 += items.into_iter().sum();
+                self.0 *= items.into_iter().sum::<$pri_ty>();
                 self.0
             }
         }
@@ -208,7 +208,7 @@ macro_rules! prim_adding_impl {
         impl<'a> Collector<&'a mut $pri_ty> for Muling<$pri_ty> {
             #[inline]
             fn collect(&mut self, &mut item: &'a mut $pri_ty) -> ControlFlow<()> {
-                self.0 += item;
+                self.0 *= item;
                 ControlFlow::Continue(())
             }
 
@@ -217,7 +217,7 @@ macro_rules! prim_adding_impl {
                 &mut self,
                 items: impl IntoIterator<Item = &'a mut $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 += items.into_iter().sum();
+                self.0 *= items.into_iter().map(|&mut num| num).sum::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -226,7 +226,7 @@ macro_rules! prim_adding_impl {
                 mut self,
                 items: impl IntoIterator<Item = &'a mut $pri_ty>,
             ) -> Self::Output {
-                self.0 += items.into_iter().sum();
+                self.0 *= items.into_iter().map(|&mut num| num).sum::<$pri_ty>();
                 self.0
             }
         }

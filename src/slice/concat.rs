@@ -22,10 +22,7 @@ pub trait Concat: Sized + ConcatSealed {
     /// [`RefCollector`]: crate::collector::RefCollector
     /// [`Output`]: crate::collector::Collector::Output
     #[inline]
-    fn into_concat<T>(self) -> IntoConcat<Self, T>
-    where
-        T: ConcatItem<Self>,
-    {
+    fn into_concat(self) -> IntoConcat<Self> {
         IntoConcat::new(self)
     }
 
@@ -35,10 +32,7 @@ pub trait Concat: Sized + ConcatSealed {
     /// [`RefCollector`]: crate::collector::RefCollector
     /// [`Output`]: crate::collector::Collector::Output
     #[inline]
-    fn concat_mut<T>(&mut self) -> ConcatMut<'_, Self, T>
-    where
-        T: ConcatItem<Self>,
-    {
+    fn concat_mut(&mut self) -> ConcatMut<'_, Self> {
         ConcatMut::new(self)
     }
 }

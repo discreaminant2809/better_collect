@@ -53,13 +53,13 @@ impl<T> crate::collector::Collector<T> for Collector {
 
     /// It won't consume any items in an iterator.
     #[inline]
-    fn collect_many(&mut self, _items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, _items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         ControlFlow::Break(())
     }
 
     /// It won't consume any items in an iterator.
     #[inline]
-    fn collect_then_finish(self, _items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, _items: impl IntoIterator<Item = T>) -> Self::Output {
         // Nothing worth doing here
     }
 }

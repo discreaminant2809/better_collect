@@ -125,14 +125,6 @@ mod proptests {
         ) {
             all_collect_methods_impl(nums)?;
         }
-
-        /// [`TryFoldRef`](super::TryFoldRef)
-        #[test]
-        fn all_collect_methods_ref(
-            nums in propvec(any::<u8>(), ..=5),
-        ) {
-            all_collect_methods_ref_impl(nums)?;
-        }
     }
 
     fn all_collect_methods_impl(nums: Vec<u8>) -> TestCaseResult {
@@ -153,28 +145,6 @@ mod proptests {
             },
         }
         .test_collector()
-    }
-
-    fn all_collect_methods_ref_impl(nums: Vec<u8>) -> TestCaseResult {
-        BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
-            collector_factory: || {
-                TryFold::new_ref(Some(0_u8), |sum, &mut num| collector_closure(sum, num))
-            },
-            should_break_pred: |iter| iter_output(iter).is_none(),
-            pred: |mut iter, output, remaining| {
-                let expected = iter_output(&mut iter);
-
-                if expected != output {
-                    Err(PredError::IncorrectOutput)
-                } else if iter.ne(remaining) {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
-        }
-        .test_ref_collector()
     }
 
     fn collector_closure(sum: &mut Option<u8>, num: u8) -> ControlFlow<()> {

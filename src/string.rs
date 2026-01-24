@@ -91,7 +91,7 @@ impl Collector<char> for IntoCollector {
 
 impl<'a> Collector<&'a char> for IntoCollector {
     #[inline]
-    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+    fn collect(&mut self, &ch: &char) -> ControlFlow<()> {
         self.0.push(ch);
         ControlFlow::Continue(())
     }
@@ -111,14 +111,14 @@ impl<'a> Collector<&'a char> for IntoCollector {
 
 impl<'a> Collector<&'a mut char> for IntoCollector {
     #[inline]
-    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+    fn collect(&mut self, &mut ch: &'a mut char) -> ControlFlow<()> {
         self.0.push(ch);
         ControlFlow::Continue(())
     }
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = &'a mut char>) -> ControlFlow<()> {
-        self.0.extend(items);
+        self.0.extend(items.into_iter().map(|&mut ch| ch));
         ControlFlow::Continue(())
     }
 
@@ -127,7 +127,7 @@ impl<'a> Collector<&'a mut char> for IntoCollector {
         mut self,
         items: impl IntoIterator<Item = &'a mut char>,
     ) -> Self::Output {
-        self.0.extend(items);
+        self.0.extend(items.into_iter().map(|&mut ch| ch));
         self.0
     }
 }
@@ -163,7 +163,7 @@ impl<'a> Collector<char> for CollectorMut<'a> {
 
 impl<'a, 'c> Collector<&'c char> for CollectorMut<'a> {
     #[inline]
-    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+    fn collect(&mut self, &ch: &'c char) -> ControlFlow<()> {
         self.0.push(ch);
         ControlFlow::Continue(())
     }
@@ -183,20 +183,20 @@ impl<'a, 'c> Collector<&'c char> for CollectorMut<'a> {
 
 impl<'a, 'c> Collector<&'c mut char> for CollectorMut<'a> {
     #[inline]
-    fn collect(&mut self, ch: char) -> ControlFlow<()> {
+    fn collect(&mut self, &mut ch: &'c mut char) -> ControlFlow<()> {
         self.0.push(ch);
         ControlFlow::Continue(())
     }
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = &'c mut char>) -> ControlFlow<()> {
-        self.0.extend(items);
+        self.0.extend(items.into_iter().map(|&mut ch| ch));
         ControlFlow::Continue(())
     }
 
     #[inline]
     fn collect_then_finish(self, items: impl IntoIterator<Item = &'c mut char>) -> Self::Output {
-        self.0.extend(items);
+        self.0.extend(items.into_iter().map(|&mut ch| ch));
         self.0
     }
 }

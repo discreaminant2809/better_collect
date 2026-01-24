@@ -60,7 +60,7 @@ mod proptests {
     fn all_collect_methods_impl(count: usize) -> TestCaseResult {
         BasicCollectorTester {
             iter_factory: || std::iter::repeat_n(0, count),
-            collector_factory: Sink::new,
+            collector_factory: || Sink,
             should_break_pred: |_| false,
             pred: |_, _, remaining| {
                 if remaining.count() > 0 {

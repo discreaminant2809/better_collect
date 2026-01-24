@@ -36,7 +36,7 @@ where
 macro_rules! cf_and {
     ($cf:expr, $pred:expr) => {
         // Can't swap, since we have to collect regardless.
-        if $cf && $pred {
+        if $cf.is_break() && $pred.is_break() {
             ControlFlow::Break(())
         } else {
             ControlFlow::Continue(())
@@ -68,7 +68,9 @@ where
         //
         // Since the 1st collector is fused, we won't cause any unsoundness
         // by repeatedly calling it.
-        if self.collector1.break_hint().is_break() && self.collector2.break_hint().is_break() {
+        if self.collector_if_true.break_hint().is_break()
+            && self.collector_if_false.break_hint().is_break()
+        {
             ControlFlow::Break(())
         } else {
             ControlFlow::Continue(())
@@ -85,13 +87,13 @@ where
     fn collect(&mut self, mut item: T) -> ControlFlow<()> {
         if (self.pred)(&mut item) {
             cf_and!(
-                self.collector_if_true.collect(item).is_break(),
-                self.collector_if_false.finished()
+                self.collector_if_true.collect(item),
+                self.collector_if_false.break_hint()
             )
         } else {
             cf_and!(
-                self.collector_if_false.collect(item).is_break(),
-                self.collector_if_true.finished()
+                self.collector_if_false.collect(item),
+                self.collector_if_true.break_hint()
             )
         }
     }
@@ -125,19 +127,16 @@ where
                         // `Iterator::filter_map` is lowkey great workaround in this case.
                         .collect_many(
                             items.filter_map(|mut item| (!(self.pred)(&mut item)).then_some(item)),
-                        )
-                        .is_break(),
-                    self.collector_if_true.finished()
+                        ),
+                    self.collector_if_true.break_hint()
                 )
             }
             ControlFlow::Break(false) => {
                 cf_and!(
-                    self.collector_if_true
-                        .collect_many(
-                            items.filter_map(|mut item| (self.pred)(&mut item).then_some(item)),
-                        )
-                        .is_break(),
-                    self.collector_if_false.finished()
+                    self.collector_if_true.collect_many(
+                        items.filter_map(|mut item| (self.pred)(&mut item).then_some(item)),
+                    ),
+                    self.collector_if_false.break_hint()
                 )
             }
             ControlFlow::Continue(_) => ControlFlow::Continue(()),

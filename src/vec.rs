@@ -219,7 +219,7 @@ mod proptests {
     }
 
     fn all_collect_methods_mut_impl(starting_nums: Vec<i32>, nums: Vec<i32>) -> TestCaseResult {
-        CollectorMutTester::new(starting_nums, nums).test_ref_collector()
+        CollectorMutTester::new(starting_nums, nums).test_collector()
     }
 
     struct CollectorMutTester {

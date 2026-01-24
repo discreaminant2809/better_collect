@@ -1,6 +1,6 @@
 use std::{iter::FusedIterator, ops::ControlFlow};
 
-use crate::collector::{Collector, Fuse as CollectorFuse};
+use crate::collector::{Collector, CollectorBase, Fuse as CollectorFuse};
 
 /// An [`Iterator`] that "drives" the underlying iterator to feed the underlying collector.
 ///
@@ -42,7 +42,7 @@ where
         match self.iter.try_fold(init, {
             let forwardable_fold = &mut forwardable_fold;
             move |accum, mut item| {
-                let cf = self.collector.collect_ref(&mut item);
+                let cf = self.collector.collect(&mut item);
                 let accum = forwardable_fold.fold(accum, item);
                 if cf.is_continue() {
                     ControlFlow::Continue(accum)
@@ -98,7 +98,7 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut item = self.iter.next()?;
-        let _ = self.collector.collect_ref(&mut item);
+        let _ = self.collector.collect(&mut item);
         Some(item)
     }
 
@@ -162,7 +162,7 @@ where
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let mut item = self.iter.next()?;
         for n in (0..n).rev() {
-            if self.collector.collect_ref(&mut item).is_break() {
+            if self.collector.collect(&mut item).is_break() {
                 return self.iter.nth(n);
             }
 

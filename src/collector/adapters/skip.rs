@@ -169,8 +169,7 @@ mod proptests {
             },
             collector_factory: || vec![].into_collector().take(take_count).skip(skip_count),
             should_break_pred: |iter| {
-                Sink::new()
-                    .take(take_count)
+                Sink.take(take_count)
                     .collect_many(iter.skip(skip_count))
                     .is_break()
             },

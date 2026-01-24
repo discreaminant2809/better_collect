@@ -52,7 +52,7 @@ where
 
     #[inline]
     fn finish(self) -> Self::Output {
-        self.finish()
+        self.collector.finish()
     }
 
     #[inline]

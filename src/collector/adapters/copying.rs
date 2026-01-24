@@ -63,10 +63,12 @@ where
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = &'a mut T>) -> ControlFlow<()> {
-        self.0.collect_many(items.into_iter().cloned())
+        self.0
+            .collect_many(items.into_iter().map(|item| &*item).cloned())
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = &'a mut T>) -> Self::Output {
-        self.0.collect_then_finish(items.into_iter().cloned())
+        self.0
+            .collect_then_finish(items.into_iter().map(|item| &*item).cloned())
     }
 }

@@ -79,7 +79,7 @@ where
         self.value_key_collector.collect(item_value_key)
     }
 
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.value_key_collector.collect_many(
             items
                 .into_iter()
@@ -87,7 +87,7 @@ where
         )
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         let Self {
             value_key_collector,
             mut f,

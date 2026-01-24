@@ -644,7 +644,7 @@ macro_rules! dyn_impl {
         impl<'a, T> Collector<T> for &mut (dyn Collector<T> $(+ $traits)* + 'a) {
             #[inline]
             fn collect(&mut self, item: T) -> ControlFlow<()> {
-                <dyn Collector<Item = T>>::collect(*self, item)
+                <dyn Collector<T>>::collect(*self, item)
             }
 
             // The default implementations are sufficient.

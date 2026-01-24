@@ -489,6 +489,18 @@ macro_rules! dyn_impl {
                 <dyn CollectorBase>::break_hint(self)
             }
         }
+
+        impl<'a, T> CollectorBase for &mut (dyn super::Collector<T> $(+ $traits)* + 'a) {
+            type Output = ();
+
+            #[inline]
+            fn finish(self) -> Self::Output {}
+
+            #[inline]
+            fn break_hint(&self) -> ControlFlow<()> {
+                <dyn super::Collector<T>>::break_hint(self)
+            }
+        }
     };
 }
 
