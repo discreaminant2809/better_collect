@@ -1,6 +1,8 @@
 use std::ops::ControlFlow;
 
-use super::{Chain, Cloning, Combine, Copying, Fuse, IntoCollector, MapOutput, Skip, Take, Unzip};
+use super::{
+    Chain, Cloning, Combine, CombineRef, Copying, Fuse, IntoCollector, MapOutput, Skip, Take, Unzip,
+};
 
 ///
 pub trait CollectorBase {
@@ -261,6 +263,16 @@ pub trait CollectorBase {
         C: IntoCollector,
     {
         Combine::new(self, other.into_collector())
+    }
+
+    ///
+    #[inline]
+    fn combine_ref<C>(self, other: C) -> CombineRef<Self, C::IntoCollector>
+    where
+        Self: Sized,
+        C: IntoCollector,
+    {
+        CombineRef::new(self, other.into_collector())
     }
 
     /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
