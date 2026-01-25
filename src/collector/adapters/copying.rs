@@ -34,11 +34,11 @@ where
 impl<'a, C, T> Collector<&'a T> for Copying<C>
 where
     C: Collector<T>,
-    T: Clone,
+    T: Copy,
 {
     #[inline]
-    fn collect(&mut self, item: &'a T) -> ControlFlow<()> {
-        self.0.collect(item.clone())
+    fn collect(&mut self, &item: &'a T) -> ControlFlow<()> {
+        self.0.collect(item)
     }
 
     #[inline]
@@ -54,21 +54,20 @@ where
 impl<'a, C, T> Collector<&'a mut T> for Copying<C>
 where
     C: Collector<T>,
-    T: Clone,
+    T: Copy,
 {
     #[inline]
-    fn collect(&mut self, item: &'a mut T) -> ControlFlow<()> {
-        self.0.collect(item.clone())
+    fn collect(&mut self, &mut item: &'a mut T) -> ControlFlow<()> {
+        self.0.collect(item)
     }
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = &'a mut T>) -> ControlFlow<()> {
-        self.0
-            .collect_many(items.into_iter().map(|item| &*item).cloned())
+        self.0.collect_many(items.into_iter().map(|&mut item| item))
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = &'a mut T>) -> Self::Output {
         self.0
-            .collect_then_finish(items.into_iter().map(|item| &*item).cloned())
+            .collect_then_finish(items.into_iter().map(|&mut item| item))
     }
 }

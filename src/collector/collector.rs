@@ -1,4 +1,4 @@
-use super::{Chain, CollectorBase, Filter, IntoCollector, Map, Partition, TakeWhile, Unbatching};
+use super::{CollectorBase, Filter, IntoCollector, Map, Partition, TakeWhile, Unbatching};
 // #[cfg(feature = "unstable")]
 // use super::{Nest, NestExact};
 
@@ -396,48 +396,6 @@ pub trait Collector<T>: CollectorBase {
     }
 
     // fn step_by()
-
-    /// Creates a [`Collector`] that feeds every item in the first collector until it stops accumulating,
-    /// then continues feeding items into the second one.
-    ///
-    /// The first collector should be finite (typically achieved with [`take`](Collector::take)
-    /// or [`take_while`](Collector::take_while)),
-    /// otherwise it will hoard all incoming items and never pass any to the second.
-    ///
-    /// The [`Output`](Collector::Output) is a tuple containing the outputs of both underlying collectors,
-    /// in order.
-    ///
-    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let mut collector = vec![].into_collector().take(2).chain(vec![]);
-    ///
-    /// assert!(collector.collect(1).is_continue());
-    ///
-    /// // Now the first collector stops accumulating, but the second one is still active.
-    /// assert!(collector.collect(2).is_continue());
-    ///
-    /// // Now the second one takes the spotlight.
-    /// assert!(collector.collect(3).is_continue());
-    /// assert!(collector.collect(4).is_continue());
-    /// assert!(collector.collect(5).is_continue());
-    ///
-    /// assert_eq!(collector.finish(), (vec![1, 2], vec![3, 4, 5]));
-    /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
-    #[inline]
-    fn chain<C>(self, other: C) -> Chain<Self, C::IntoCollector>
-    where
-        Self: Sized,
-        C: IntoCollector<IntoCollector: Collector<T>>,
-    {
-        assert_collector::<_, T>(Chain::new(self, other.into_collector()))
-    }
 
     /// Creates a [`Collector`] that distributes items between two collectors based on a predicate.
     ///

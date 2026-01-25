@@ -1,6 +1,6 @@
 use std::ops::ControlFlow;
 
-use super::{Cloning, Copying, Fuse, IntoCollector, MapOutput, Skip, Take, Unzip};
+use super::{Chain, Cloning, Combine, Copying, Fuse, IntoCollector, MapOutput, Skip, Take, Unzip};
 
 ///
 pub trait CollectorBase {
@@ -163,6 +163,104 @@ pub trait CollectorBase {
         Self: Sized,
     {
         assert_collector_base(Fuse::new(self))
+    }
+
+    /// The most important adaptor. The reason why this crate exists.
+    ///
+    /// Creates a [`Collector`] that lets both collectors collect the same item.
+    /// For each item collected, the first collector collects the item by mutable reference,
+    /// then the second one collects it by either mutable reference or ownership.
+    /// Together, they form a pipeline where each collector processes the item in turn,
+    /// and the final one consumes by ownership.
+    ///
+    /// If the second collector implements [`RefCollector`], this adaptor implements [`RefCollector`],
+    /// allowing the chain to be extended further with additional `combine()` calls.
+    /// Otherwise, it becomes the endpoint of the pipeline.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{prelude::*, cmp::Max};
+    ///
+    /// let mut collector = vec![].into_collector().combine(Max::new());
+    ///
+    /// assert!(collector.collect(4).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(6).is_continue());
+    /// assert!(collector.collect(3).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), (vec![4, 2, 6, 3], Some(6)));
+    /// ```
+    ///
+    /// Even if one collector stops, `combine()` continues as the other does.
+    /// It only stops when both collectors stop.
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![].into_collector().take(3).combine(()); // `()` always stops collecting.
+    ///
+    /// assert!(collector.collect(()).is_continue());
+    /// assert!(collector.collect(()).is_continue());
+    /// // Since `.take(3)` only takes 3 items,
+    /// // it hints a stop right after the 3rd item is collected.
+    /// assert!(collector.collect(()).is_break());
+    /// # // Internal assertion.
+    /// # assert!(collector.collect(()).is_break());
+    ///
+    /// assert_eq!(collector.finish(), (vec![(); 3], ()));
+    /// ```
+    ///
+    /// Collectors can be chained with `combine()` as many as you want,
+    /// as long as every of them except the last implements [`RefCollector`].
+    ///
+    /// Here’s the solution to [LeetCode #1491] to demonstrate it:
+    ///
+    /// ```
+    /// use better_collect::{
+    ///     prelude::*,
+    ///     cmp::{Min, Max}, num::Sum, iter::Count,
+    /// };
+    ///
+    /// # struct Solution;
+    /// impl Solution {
+    ///     pub fn average(salary: Vec<i32>) -> f64 {
+    ///         let (((min, max), count), sum) = salary
+    ///             .into_iter()
+    ///             .feed_into(
+    ///                 Min::new()
+    ///                     .copying()
+    ///                     .combine(Max::new().copying())
+    ///                     .combine(Count::new())
+    ///                     .combine(Sum::<i32>::new())
+    ///             );
+    ///                 
+    ///         let (min, max) = (min.unwrap(), max.unwrap());
+    ///         (sum - max - min) as f64 / (count - 2) as f64
+    ///     }
+    /// }
+    ///
+    /// fn correct(actual: f64, expected: f64) -> bool {
+    ///     const DELTA: f64 = 1E-5;
+    ///     (actual - expected).abs() <= DELTA
+    /// }
+    ///
+    /// assert!(correct(
+    ///     Solution::average(vec![5, 3, 1, 2]), 2.5
+    /// ));
+    /// assert!(correct(
+    ///     Solution::average(vec![1, 2, 4]), 2.0
+    /// ));
+    /// ```
+    ///
+    /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
+    #[inline]
+    fn combine<C>(self, other: C) -> Combine<Self, C::IntoCollector>
+    where
+        Self: Sized,
+        C: IntoCollector,
+    {
+        Combine::new(self, other.into_collector())
     }
 
     /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
@@ -421,6 +519,48 @@ pub trait CollectorBase {
         C: IntoCollector,
     {
         assert_collector_base(Unzip::new(self, other.into_collector()))
+    }
+
+    /// Creates a [`Collector`] that feeds every item in the first collector until it stops accumulating,
+    /// then continues feeding items into the second one.
+    ///
+    /// The first collector should be finite (typically achieved with [`take`](Collector::take)
+    /// or [`take_while`](Collector::take_while)),
+    /// otherwise it will hoard all incoming items and never pass any to the second.
+    ///
+    /// The [`Output`](Collector::Output) is a tuple containing the outputs of both underlying collectors,
+    /// in order.
+    ///
+    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![].into_collector().take(2).chain(vec![]);
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    ///
+    /// // Now the first collector stops accumulating, but the second one is still active.
+    /// assert!(collector.collect(2).is_continue());
+    ///
+    /// // Now the second one takes the spotlight.
+    /// assert!(collector.collect(3).is_continue());
+    /// assert!(collector.collect(4).is_continue());
+    /// assert!(collector.collect(5).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), (vec![1, 2], vec![3, 4, 5]));
+    /// ```
+    ///
+    /// [`RefCollector`]: crate::collector::RefCollector
+    #[inline]
+    fn chain<C>(self, other: C) -> Chain<Self, C::IntoCollector>
+    where
+        Self: Sized,
+        C: IntoCollector,
+    {
+        Chain::new(self, other.into_collector())
     }
 
     /// Creates a [`Collector`] that transforms the final accumulated result.

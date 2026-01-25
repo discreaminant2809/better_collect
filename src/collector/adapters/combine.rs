@@ -174,6 +174,7 @@ mod proptests {
             collector_factory: || {
                 vec![]
                     .into_collector()
+                    .copying()
                     .take(first_count)
                     .combine(vec![].into_collector().take(second_count))
             },

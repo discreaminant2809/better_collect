@@ -89,6 +89,29 @@ impl<T> Collector<T> for IntoCollector<T> {
     }
 }
 
+// impl<'i, T> Collector<&'i T> for IntoCollector<T>
+// where
+//     T: Copy,
+// {
+//     #[inline]
+//     fn collect(&mut self, &item: &'i T) -> ControlFlow<()> {
+//         self.0.push(item);
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_many(&mut self, items: impl IntoIterator<Item = &'i T>) -> ControlFlow<()> {
+//         self.0.extend(items);
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_then_finish(mut self, items: impl IntoIterator<Item = &'i T>) -> Self::Output {
+//         self.0.extend(items);
+//         self.0
+//     }
+// }
+
 impl<'a, T> CollectorBase for CollectorMut<'a, T> {
     type Output = &'a mut Vec<T>;
 
