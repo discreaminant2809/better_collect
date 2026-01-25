@@ -112,6 +112,29 @@ impl<T> Collector<T> for IntoCollector<T> {
 //     }
 // }
 
+// impl<'i, T> Collector<&'i mut T> for IntoCollector<T>
+// where
+//     T: Copy,
+// {
+//     #[inline]
+//     fn collect(&mut self, &mut item: &'i mut T) -> ControlFlow<()> {
+//         self.0.push(item);
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_many(&mut self, items: impl IntoIterator<Item = &'i mut T>) -> ControlFlow<()> {
+//         self.0.extend(items.into_iter().map(|&mut item| item));
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_then_finish(mut self, items: impl IntoIterator<Item = &'i mut T>) -> Self::Output {
+//         self.0.extend(items.into_iter().map(|&mut item| item));
+//         self.0
+//     }
+// }
+
 impl<'a, T> CollectorBase for CollectorMut<'a, T> {
     type Output = &'a mut Vec<T>;
 
@@ -140,6 +163,52 @@ impl<'a, T> Collector<T> for CollectorMut<'a, T> {
         self.0
     }
 }
+
+// impl<'a, 'i, T> Collector<&'i T> for CollectorMut<'a, T>
+// where
+//     T: Copy,
+// {
+//     #[inline]
+//     fn collect(&mut self, &item: &'i T) -> ControlFlow<()> {
+//         self.0.push(item);
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_many(&mut self, items: impl IntoIterator<Item = &'i T>) -> ControlFlow<()> {
+//         self.0.extend(items);
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_then_finish(self, items: impl IntoIterator<Item = &'i T>) -> Self::Output {
+//         self.0.extend(items);
+//         self.0
+//     }
+// }
+
+// impl<'a, 'i, T> Collector<&'i mut T> for CollectorMut<'a, T>
+// where
+//     T: Copy,
+// {
+//     #[inline]
+//     fn collect(&mut self, &mut item: &'i mut T) -> ControlFlow<()> {
+//         self.0.push(item);
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_many(&mut self, items: impl IntoIterator<Item = &'i mut T>) -> ControlFlow<()> {
+//         self.0.extend(items.into_iter().map(|&mut item| item));
+//         ControlFlow::Continue(())
+//     }
+
+//     #[inline]
+//     fn collect_then_finish(self, items: impl IntoIterator<Item = &'i mut T>) -> Self::Output {
+//         self.0.extend(items.into_iter().map(|&mut item| item));
+//         self.0
+//     }
+// }
 
 impl<T> Default for IntoCollector<T> {
     fn default() -> Self {
