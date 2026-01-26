@@ -27,6 +27,11 @@ where
     fn finish(self) -> Self::Output {
         self.collector.finish()
     }
+
+    #[inline]
+    fn break_hint(&self) -> ControlFlow<()> {
+        self.collector.break_hint()
+    }
 }
 
 impl<C, F, T> Collector<T> for Filter<C, F>
@@ -39,7 +44,7 @@ where
         if (self.pred)(&item) {
             self.collector.collect(item)
         } else {
-            ControlFlow::Continue(())
+            self.collector.break_hint()
         }
     }
 
