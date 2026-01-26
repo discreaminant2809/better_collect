@@ -1,7 +1,8 @@
 use std::ops::ControlFlow;
 
 use super::{
-    Chain, Cloning, Combine, CombineRef, Copying, Fuse, IntoCollector, MapOutput, Skip, Take, Unzip,
+    Chain, Cloning, Combine, CombineRef, Copying, Funnel, Fuse, IntoCollector, MapOutput, Skip,
+    Take, Unzip,
 };
 
 ///
@@ -612,6 +613,15 @@ pub trait CollectorBase {
         F: FnOnce(Self::Output) -> T,
     {
         assert_collector_base(MapOutput::new(self, f))
+    }
+
+    ///
+    #[inline]
+    fn funnel(self) -> Funnel<Self>
+    where
+        Self: Sized,
+    {
+        assert_collector_base(Funnel::new(self))
     }
 }
 
