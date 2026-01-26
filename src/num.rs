@@ -7,16 +7,16 @@
 //!
 //! [`Collector`]: crate::collector::Collector
 
-use std::ops::ControlFlow;
+use std::{num::Wrapping, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase};
 
 ///
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Adding<Num>(Num);
 
 ///
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Muling<Num>(Num);
 
 macro_rules! prim_adding_impl {
@@ -125,7 +125,11 @@ macro_rules! prim_adding_impl {
                 self.0
             }
         }
+    };
+}
 
+macro_rules! prim_muling_impl {
+    ($pri_ty:ty, $identity:expr) => {
         impl crate::ops::Muling for $pri_ty {
             type Output = $pri_ty;
 
@@ -236,6 +240,10 @@ macro_rules! prim_adding_impl {
 macro_rules! int_impls {
     ($($int_ty:ty)*) => {$(
         prim_adding_impl!($int_ty, 0);
+        prim_muling_impl!($int_ty, 1);
+
+        prim_adding_impl!(Wrapping<$int_ty>, Wrapping(0));
+        prim_muling_impl!(Wrapping<$int_ty>, Wrapping(1));
     )*};
 }
 
@@ -246,9 +254,8 @@ macro_rules! float_impls {
         // The "additive identity" of floating point number is -0.0, not 0.0.
         // See https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.sum.
         prim_adding_impl!($float_ty, -0.0);
+        prim_muling_impl!($float_ty, 1.0);
     )*};
 }
 
 float_impls!(f32 f64);
-
-// TODO: add `Wrapping`
