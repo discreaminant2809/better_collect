@@ -335,15 +335,13 @@ mod proptests {
         }
     }
 
-    impl CollectorTester for CollectorMutTester {
-        type Item = i32;
-
+    impl CollectorTester<i32> for CollectorMutTester {
         type Output<'a> = &'a mut Vec<i32>;
 
         fn collector_test_parts(
             &mut self,
         ) -> CollectorTestParts<
-            impl Iterator<Item = Self::Item> + Clone,
+            impl Iterator<Item = i32>,
             impl Collector<i32, Output = Self::Output<'_>>,
             impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = i32>) -> Result<(), PredError>,
         > {

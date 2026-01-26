@@ -12,25 +12,23 @@ use crate::collector::{Collector, CollectorBase};
 /// if you can make the output consistent without resetting.
 ///
 /// [`Output`]: CollectorTester::Output
-pub trait CollectorTester {
-    type Item;
-
+pub trait CollectorTester<T> {
     type Output<'a>;
 
     #[allow(clippy::type_complexity)] // Can't satisfy it so I suppress it.
     fn collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item> + Clone,
-        impl Collector<Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
+        impl Iterator<Item = T>,
+        impl Collector<T, Output = Self::Output<'_>>,
+        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = T>) -> Result<(), PredError>,
     >;
 }
 
 /// Test parts for collector testing.
 pub struct CollectorTestParts<I, C, P>
 where
-    I: Iterator + Clone,
+    I: Iterator,
     C: Collector<I::Item>,
     P: FnMut(C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
@@ -80,17 +78,20 @@ impl From<OfMethod> for TestCaseError {
 }
 
 /// Used because we don't want the user to override any methods here.
-pub trait CollectorTesterExt: CollectorTester {
+pub trait CollectorTesterExt<T>: CollectorTester<T> {
     fn test_collector(&mut self) -> TestCaseResult {
-        self.test_collector_may_fused(false)
+        test_collector_part(self, None::<std::iter::Empty<T>>)
     }
 
-    fn test_collector_may_fused(&mut self, collector_fused: bool) -> TestCaseResult {
-        test_collector_part(self, collector_fused)
+    fn test_collector_may_fused(
+        &mut self,
+        items_for_fuse_test: impl IntoIterator<Item = T, IntoIter: Clone>,
+    ) -> TestCaseResult {
+        test_collector_part(self, Some(items_for_fuse_test.into_iter()))
     }
 }
 
-impl<T> CollectorTesterExt for T where T: CollectorTester {}
+impl<CT, T> CollectorTesterExt<T> for CT where CT: CollectorTester<T> {}
 
 /// Basic implementation for [`CollectorTester`] for most use case.
 /// Opt-out if you test the `collector(_mut)` variant, or the collector and output
@@ -111,7 +112,7 @@ where
     pub pred: Pred,
 }
 
-impl<ItFac, ClFac, SbPred, Pred, I, C> CollectorTester
+impl<ItFac, ClFac, SbPred, Pred, I, C> CollectorTester<I::Item>
     for BasicCollectorTester<ItFac, ClFac, SbPred, Pred, I, C>
 where
     I: Iterator + Clone,
@@ -121,16 +122,14 @@ where
     SbPred: FnMut(I) -> bool,
     Pred: FnMut(I, C::Output, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
 {
-    type Item = I::Item;
-
     type Output<'a> = C::Output;
 
     fn collector_test_parts(
         &mut self,
     ) -> CollectorTestParts<
-        impl Iterator<Item = Self::Item> + Clone,
-        impl Collector<Self::Item, Output = Self::Output<'_>>,
-        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = Self::Item>) -> Result<(), PredError>,
+        impl Iterator<Item = I::Item>,
+        impl Collector<I::Item, Output = Self::Output<'_>>,
+        impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = I::Item>) -> Result<(), PredError>,
     > {
         CollectorTestParts {
             iter: (self.iter_factory)(),
@@ -141,9 +140,9 @@ where
     }
 }
 
-fn test_collector_part(
-    tester: &mut (impl CollectorTester + ?Sized),
-    collector_fused: bool,
+fn test_collector_part<T>(
+    tester: &mut (impl CollectorTester<T> + ?Sized),
+    items_for_fuse_test: Option<impl Iterator<Item = T> + Clone>,
 ) -> TestCaseResult {
     // `collect()`
     // Introduce scope so that `test_parts` is dropped,
@@ -166,8 +165,8 @@ fn test_collector_part(
             "`collect()` didn't break correctly"
         );
 
-        if has_stopped && collector_fused {
-            for item in test_parts.iter.clone() {
+        if has_stopped && let Some(items) = items_for_fuse_test.clone() {
+            for item in items {
                 prop_assert!(
                     test_parts.collector.collect(item).is_break(),
                     "`collect()` isn't actually fused"
@@ -198,12 +197,9 @@ fn test_collector_part(
             "`collect_many()` didn't break correctly"
         );
 
-        if has_stopped && collector_fused {
+        if has_stopped && let Some(items) = items_for_fuse_test {
             prop_assert!(
-                test_parts
-                    .collector
-                    .collect_many(test_parts.iter.clone())
-                    .is_break(),
+                test_parts.collector.collect_many(items).is_break(),
                 "`collect_many()` isn't actually fused"
             );
         }
