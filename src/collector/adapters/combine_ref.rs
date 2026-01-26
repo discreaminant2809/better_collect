@@ -126,14 +126,13 @@ mod proptests {
     use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
-    use crate::test_utils::{
-        BasicCollectorTester, CollectorTestParts, CollectorTester, CollectorTesterExt, PredError,
-    };
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
     proptest! {
         /// Precondition:
         /// - [`crate::collector::CollectorBase::take()`]
         /// - [`crate::collector::CollectorBase::copying()`]
+        /// - [`crate::collector::CollectorBase::funnel()`]
         /// - [`crate::vec::IntoCollector`]
         #[test]
         fn all_collect_methods(
@@ -146,39 +145,36 @@ mod proptests {
     }
 
     fn all_collect_methods_impl(
-        mut nums: Vec<i32>,
+        nums: Vec<i32>,
         first_count: usize,
         second_count: usize,
     ) -> TestCaseResult {
-        // BasicCollectorTester {
-        //     iter_factory: || nums.iter_mut(),
-        //     collector_factory: || {
-        //         vec![]
-        //             .into_collector()
-        //             .copying()
-        //             .take(first_count)
-        //             .combine_ref(vec![].into_collector().take(second_count).copying())
-        //     },
-        //     should_break_pred: |iter| iter.count() >= first_count.max(second_count),
-        //     pred: |iter, output, remaining| {
-        //         let max_len = first_count.max(second_count);
+        BasicCollectorTester {
+            iter_factory: || nums.iter().cloned(),
+            collector_factory: || {
+                vec![]
+                    .into_collector()
+                    .copying()
+                    .take(first_count)
+                    .combine_ref(vec![].into_collector().take(second_count).copying())
+                    .funnel()
+            },
+            should_break_pred: |iter| iter.count() >= first_count.max(second_count),
+            pred: |iter, (output1, output2), remaining| {
+                let max_len = first_count.max(second_count);
 
-        //         let (first, second) = (
-        //             iter.as_slice()[..first_count].to_vec(),
-        //             iter.as_slice()[..second_count].to_vec(),
-        //         );
-
-        //         if output != (first, second) {
-        //             Err(PredError::IncorrectOutput)
-        //         } else if iter.skip(max_len).ne(remaining) {
-        //             Err(PredError::IncorrectIterConsumption)
-        //         } else {
-        //             Ok(())
-        //         }
-        //     },
-        // };
-
-        todo!()
+                if output1.into_iter().ne(iter.clone().take(first_count))
+                    || output2.into_iter().ne(iter.clone().take(second_count))
+                {
+                    Err(PredError::IncorrectOutput)
+                } else if iter.skip(max_len).ne(remaining) {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
     }
 
     // struct Tester {
@@ -202,29 +198,29 @@ mod proptests {
     //             second_count,
     //             ..
     //         } = *self;
-    //         let mut nums = self.nums.clone();
-
-    //         let pred = move |(first_output, second_output), remaining| {
-    //             let max_len = first_count.max(second_count);
-
-    //             if first_output != nums[..first_count] || second_output != nums[..second_count] {
-    //                 Err(PredError::IncorrectOutput)
-    //             } else if nums[max_len..].iter_mut().ne(remaining) {
-    //                 Err(PredError::IncorrectIterConsumption)
-    //             } else {
-    //                 Ok(())
-    //             }
-    //         };
+    //         let nums = &self.nums;
 
     //         CollectorTestParts {
-    //             iter: self.nums.iter_mut(),
+    //             iter: self.nums.iter().cloned(),
     //             collector: vec![]
     //                 .into_collector()
     //                 .copying()
     //                 .take(first_count)
-    //                 .combine_ref(vec![].into_collector().copying().take(second_count)),
+    //                 .combine_ref(vec![].into_collector().copying().take(second_count))
+    //                 .funnel(),
     //             should_break: false,
-    //             pred,
+    //             pred: move |(first_output, second_output), remaining| {
+    //                 let max_len = first_count.max(second_count);
+
+    //                 if first_output != nums[..first_count] || second_output != nums[..second_count]
+    //                 {
+    //                     Err(PredError::IncorrectOutput)
+    //                 } else if nums[max_len..].iter().cloned().ne(remaining) {
+    //                     Err(PredError::IncorrectIterConsumption)
+    //                 } else {
+    //                     Ok(())
+    //                 }
+    //             },
     //         }
     //     }
     // }
