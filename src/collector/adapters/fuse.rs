@@ -29,11 +29,12 @@ where
 }
 
 impl<C> Fuse<C> {
-    // /// Returns whether the collector is "fisnished" and will not accept more items.
-    // #[inline]
-    // pub fn finished(&self) -> bool {
-    //     self.break_hint
-    // }
+    /// Use [`Fuse::break_hint()`].
+    #[inline]
+    #[deprecated(since = "0.4.0", note = "Use `Fuse::break_hint()`")]
+    pub fn finished(&self) -> bool {
+        self.break_hint.is_break()
+    }
 
     #[inline]
     fn collect_impl(&mut self, f: impl FnOnce(&mut C) -> ControlFlow<()>) -> ControlFlow<()> {

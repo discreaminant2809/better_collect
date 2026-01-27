@@ -131,7 +131,7 @@ mod proptests {
     use proptest::test_runner::TestCaseResult;
 
     use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
-    use crate::{collector::Sink, prelude::*};
+    use crate::{mem::Dropping, prelude::*};
 
     // We need to use `take()` to simulate the break case when enough items are skipped.
     // Precondition:
@@ -169,7 +169,8 @@ mod proptests {
             },
             collector_factory: || vec![].into_collector().take(take_count).skip(skip_count),
             should_break_pred: |iter| {
-                Sink.take(take_count)
+                Dropping
+                    .take(take_count)
                     .collect_many(iter.skip(skip_count))
                     .is_break()
             },

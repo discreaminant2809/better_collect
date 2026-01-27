@@ -2,25 +2,27 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`RefCollector`] that collects items... but no one knows where they go.
-///
-/// All we know is that it relentlessly consumes them, never to be seen again.
-///
-/// This collector is the counterpart of [`std::iter::empty()`], just like
-/// [`std::io::sink()`] and [`std::io::empty()`].
-///
-/// # Examples
-///
-/// It collected the example. Nothing to show.
+/// Use [`Dropping`](crate::mem::Dropping).
+#[deprecated(since = "0.4.0", note = "Use `Dropping`")]
 #[derive(Clone, Debug, Default)]
 pub struct Sink;
 
+#[allow(deprecated)]
+impl Sink {
+    /// Creates a new instance of this collector.
+    pub const fn new() -> Self {
+        Sink
+    }
+}
+
+#[allow(deprecated)]
 impl CollectorBase for Sink {
     type Output = ();
 
     fn finish(self) -> Self::Output {}
 }
 
+#[allow(deprecated)]
 impl<T> Collector<T> for Sink {
     #[inline]
     fn collect(&mut self, _item: T) -> ControlFlow<()> {
@@ -60,7 +62,12 @@ mod proptests {
     fn all_collect_methods_impl(count: usize) -> TestCaseResult {
         BasicCollectorTester {
             iter_factory: || std::iter::repeat_n(0, count),
-            collector_factory: || Sink,
+            collector_factory: || {
+                #[allow(deprecated)]
+                {
+                    Sink
+                }
+            },
             should_break_pred: |_| false,
             pred: |_, _, remaining| {
                 if remaining.count() > 0 {

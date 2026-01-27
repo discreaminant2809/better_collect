@@ -4,6 +4,8 @@
 //!
 //! [`Collector`]: crate::collector::Collector
 
+mod dropping;
 mod forgetting;
 
+pub use dropping::*;
 pub use forgetting::*;

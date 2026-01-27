@@ -5,6 +5,8 @@
 ### Added
 
 - `CollectorBase`.
+- `crate::mem::Dropping`.
+- `crate::mem::Forgetting`.
 - Generalized concatenation collectors.
 
 ### Changed
@@ -37,6 +39,11 @@
 - `ConcatStr(ing)`.
 - `T` generic in `MapOutput`.
 - Unstable: `Collector::nest(_exact)()` and the aggregate API (for now). They will be re-added later.
+
+### Deprecated
+
+- `Sink`.
+- `Fuse::finished()`.
 
 ## 0.3.2
 
