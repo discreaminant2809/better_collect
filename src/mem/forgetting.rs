@@ -8,10 +8,24 @@ use crate::collector::{Collector, CollectorBase};
 ///
 /// ```no_run
 /// use better_collect::{prelude::*, mem::Forgetting};
+/// use std::cell::Cell;
 ///
-/// std::iter::repeat(vec![0; 100])
-///     // Good luck :)
-///     .feed_into(Forgetting)
+/// #[derive(Clone)]
+/// struct IncCountOnDrop<'a>(&'a Cell<i32>);
+///
+/// impl Drop for IncCountOnDrop<'_> {
+///     fn drop(&mut self) {
+///         self.0.update(|count| count + 1);
+///     }
+/// }
+///
+/// let count = Cell::new(0);
+///
+/// std::iter::repeat_n(IncCountOnDrop(&count), 100)
+///     .feed_into(Forgetting);
+///
+/// // The destructor was never run once.
+/// assert_eq!(count.get(), 0);
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct Forgetting;
