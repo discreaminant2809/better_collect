@@ -9,13 +9,53 @@
 
 use std::{num::Wrapping, ops::ControlFlow};
 
-use crate::collector::{Collector, CollectorBase};
+use crate::collector::{Collector, CollectorBase, assert_collector};
 
+/// A [`Collector`] that adds every collected number.
+/// Its [`Output`](CollectorBase::Output) is the type
+/// that created this collector.
 ///
+/// This `struct` is created by `<Num>::adding()`, where `Num`
+/// is, currently, all integers and floating point numbers,
+/// as well as [`Wrapping`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::prelude::*;
+///
+/// let mut sum = i32::adding();
+///
+/// assert!(sum.collect(1).is_continue());
+/// assert!(sum.collect(&2).is_continue());
+/// assert!(sum.collect(&mut 3).is_continue());
+///
+/// assert_eq!(sum.finish(), 6);
+/// ```
 #[derive(Debug, Clone)]
 pub struct Adding<Num>(Num);
 
+/// A [`Collector`] that adds every collected number.
+/// Its [`Output`](CollectorBase::Output) is the type
+/// that created this collector.
 ///
+/// This `struct` is created by `<Num>::adding()`, where `Num`
+/// is, currently, all integers and floating point numbers,
+/// as well as [`Wrapping`].
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::prelude::*;
+///
+/// let mut product = i32::muling();
+///
+/// assert!(product.collect(-1).is_continue());
+/// assert!(product.collect(&2).is_continue());
+/// assert!(product.collect(&mut 3).is_continue());
+///
+/// assert_eq!(product.finish(), -6);
+/// ```
 #[derive(Debug, Clone)]
 pub struct Muling<Num>(Num);
 
@@ -35,7 +75,7 @@ macro_rules! prim_adding_impl {
         impl Default for Adding<$pri_ty> {
             #[inline]
             fn default() -> Self {
-                Adding($identity)
+                assert_collector::<_, $pri_ty>(Adding($identity))
             }
         }
 
@@ -144,7 +184,7 @@ macro_rules! prim_muling_impl {
         impl Default for Muling<$pri_ty> {
             #[inline]
             fn default() -> Self {
-                Muling($identity)
+                assert_collector::<_, $pri_ty>(Muling($identity))
             }
         }
 
@@ -169,7 +209,7 @@ macro_rules! prim_muling_impl {
                 &mut self,
                 items: impl IntoIterator<Item = $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 *= items.into_iter().sum::<$pri_ty>();
+                self.0 *= items.into_iter().product::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -178,7 +218,7 @@ macro_rules! prim_muling_impl {
                 mut self,
                 items: impl IntoIterator<Item = $pri_ty>,
             ) -> Self::Output {
-                self.0 *= items.into_iter().sum::<$pri_ty>();
+                self.0 *= items.into_iter().product::<$pri_ty>();
                 self.0
             }
         }
@@ -195,7 +235,7 @@ macro_rules! prim_muling_impl {
                 &mut self,
                 items: impl IntoIterator<Item = &'a $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 *= items.into_iter().sum::<$pri_ty>();
+                self.0 *= items.into_iter().product::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -204,7 +244,7 @@ macro_rules! prim_muling_impl {
                 mut self,
                 items: impl IntoIterator<Item = &'a $pri_ty>,
             ) -> Self::Output {
-                self.0 *= items.into_iter().sum::<$pri_ty>();
+                self.0 *= items.into_iter().product::<$pri_ty>();
                 self.0
             }
         }
@@ -221,7 +261,7 @@ macro_rules! prim_muling_impl {
                 &mut self,
                 items: impl IntoIterator<Item = &'a mut $pri_ty>,
             ) -> ControlFlow<()> {
-                self.0 *= items.into_iter().map(|&mut num| num).sum::<$pri_ty>();
+                self.0 *= items.into_iter().map(|&mut num| num).product::<$pri_ty>();
                 ControlFlow::Continue(())
             }
 
@@ -230,7 +270,7 @@ macro_rules! prim_muling_impl {
                 mut self,
                 items: impl IntoIterator<Item = &'a mut $pri_ty>,
             ) -> Self::Output {
-                self.0 *= items.into_iter().map(|&mut num| num).sum::<$pri_ty>();
+                self.0 *= items.into_iter().map(|&mut num| num).product::<$pri_ty>();
                 self.0
             }
         }
@@ -259,3 +299,67 @@ macro_rules! float_impls {
 }
 
 float_impls!(f32 f64);
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::prelude::*;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_adding_int(
+            nums in propvec(any::<i16>().prop_map_into::<i32>(), ..5),
+        ) {
+            all_collect_methods_adding_int_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_adding_int_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || i32::adding(),
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if iter.sum::<i32>() != output {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.next().is_some() {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_muling_int(
+            nums in propvec(any::<i8>().prop_map_into::<i64>(), ..5),
+        ) {
+            all_collect_methods_muling_int_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_muling_int_impl(nums: Vec<i64>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().copied(),
+            collector_factory: || i64::muling(),
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if iter.product::<i64>() != output {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.next().is_some() {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+}

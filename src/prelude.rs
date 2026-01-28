@@ -12,5 +12,6 @@
 pub use crate::{
     collector::{Collector, CollectorBase, CollectorByMut, CollectorByRef, IntoCollector},
     iter::IteratorExt,
+    ops::{Adding, Muling},
     slice::Concat,
 };
