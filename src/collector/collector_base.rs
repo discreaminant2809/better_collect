@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use super::{
-    Chain, Cloning, Combine, CombineFunnel, CombineRef, Copying, Funnel, Fuse, IntoCollector,
-    MapOutput, Skip, Take, Unzip,
+    Chain, Cloning, Combine, CombineClone, CombineFunnel, CombineRef, Copying, Funnel, Fuse,
+    IntoCollector, MapOutput, Skip, Take, Unzip,
 };
 
 ///
@@ -176,6 +176,16 @@ pub trait CollectorBase {
         C: IntoCollector,
     {
         Combine::new(self, other.into_collector())
+    }
+
+    ///
+    #[inline]
+    fn combine_clone<C>(self, other: C) -> CombineClone<Self, C::IntoCollector>
+    where
+        Self: Sized,
+        C: IntoCollector,
+    {
+        CombineClone::new(self, other.into_collector())
     }
 
     /// The most important adaptor. The reason why this crate exists.

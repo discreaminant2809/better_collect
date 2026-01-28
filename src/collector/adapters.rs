@@ -1,6 +1,7 @@
 mod chain;
 mod cloning;
 mod combine;
+mod combine_clone;
 mod combine_funnel;
 mod combine_ref;
 mod copying;
@@ -21,6 +22,7 @@ mod unzip;
 pub use chain::*;
 pub use cloning::*;
 pub use combine::*;
+pub use combine_clone::*;
 pub use combine_funnel::*;
 pub use combine_ref::*;
 pub use copying::*;
