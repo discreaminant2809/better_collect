@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use super::{
-    Chain, Cloning, Combine, CombineRef, Copying, Funnel, Fuse, IntoCollector, MapOutput, Skip,
-    Take, Unzip,
+    Chain, Cloning, CombineFunnel, CombineRef, Copying, Funnel, Fuse, IntoCollector, MapOutput,
+    Skip, Take, Unzip,
 };
 
 ///
@@ -258,12 +258,12 @@ pub trait CollectorBase {
     ///
     /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
     #[inline]
-    fn combine<C>(self, other: C) -> Combine<Self, C::IntoCollector>
+    fn combine_funnel<C>(self, other: C) -> CombineFunnel<Self, C::IntoCollector>
     where
         Self: Sized,
         C: IntoCollector,
     {
-        Combine::new(self, other.into_collector())
+        CombineFunnel::new(self, other.into_collector())
     }
 
     ///
