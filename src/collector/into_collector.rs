@@ -1,4 +1,4 @@
-use super::CollectorBase;
+use super::{Collector, CollectorBase};
 
 /// Conversion into a [`Collector`].
 ///
@@ -6,12 +6,16 @@ use super::CollectorBase;
 ///
 /// # Usage in trait bounds
 ///
-/// Using `IntoCollector` in trait bounds allows a function to be generic over both
-/// [`Collector`] and `IntoCollector`.
+/// Using `IntoCollectorBase` in trait bounds allows a function to be generic over both
+/// [`CollectorBase`] and `IntoCollectorBase`.
 /// This is convenient for users of the function, so when they are using it
 /// they do not have to make an extra call to
-/// [`IntoCollector::into_collector()`] to obtain an instance of [`Collector`].
-pub trait IntoCollector {
+/// [`IntoCollectorBase::into_collector()`] to obtain an instance of [`Collector`].
+///
+/// Prefer [`IntoCollector`] whenever possible. [`IntoCollector`] can specify
+/// the item type more easily, instead of writing
+/// `C: IntoCollectorBase<IntoCollector: Collector<T>>`.
+pub trait IntoCollectorBase {
     /// The output of the collector.
     type Output;
 
@@ -22,7 +26,17 @@ pub trait IntoCollector {
     fn into_collector(self) -> Self::IntoCollector;
 }
 
-impl<C> IntoCollector for C
+/// A trait alias for [`IntoCollectorBase`] types that has its collector
+/// implement [`Collector`].
+///
+/// This trait is automatically implemented for such types.
+///
+/// Users generally should prefer this bound if they want to specify the
+/// item type they need, instead of writing
+/// `C: IntoCollectorBase<IntoCollector: Collector<T>>`.
+pub trait IntoCollector<T>: IntoCollectorBase<IntoCollector: Collector<T>> {}
+
+impl<C> IntoCollectorBase for C
 where
     C: CollectorBase,
 {
@@ -35,3 +49,5 @@ where
         self
     }
 }
+
+impl<C, T> IntoCollector<T> for C where C: IntoCollectorBase<IntoCollector: Collector<T>> {}

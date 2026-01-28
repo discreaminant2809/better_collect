@@ -1,4 +1,4 @@
-use super::{CollectorBase, IntoCollector};
+use super::{CollectorBase, IntoCollectorBase};
 
 /// A type that can be converted into a collector by shared reference.
 ///
@@ -24,10 +24,10 @@ pub trait CollectorByRef: Sealed {
 
 impl<T> CollectorByRef for T
 where
-    for<'a> &'a T: IntoCollector,
+    for<'a> &'a T: IntoCollectorBase,
 {
     type Collector<'a>
-        = <&'a T as IntoCollector>::IntoCollector
+        = <&'a T as IntoCollectorBase>::IntoCollector
     where
         T: 'a;
 
@@ -39,4 +39,4 @@ where
 
 trait Sealed {}
 
-impl<T> Sealed for T where for<'a> &'a T: IntoCollector {}
+impl<T> Sealed for T where for<'a> &'a T: IntoCollectorBase {}

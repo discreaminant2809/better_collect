@@ -4,7 +4,7 @@
 
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{CollectorBase, IntoCollector};
+use crate::collector::{CollectorBase, IntoCollectorBase};
 
 /// A [`Collector`] that always stops accumulating.
 /// Its [`Output`](crate::collector::Collector::Output) is `()`.
@@ -18,7 +18,7 @@ pub struct Collector(());
 
 macro_rules! into_collector_impl {
     ($ty:ty) => {
-        impl IntoCollector for $ty {
+        impl IntoCollectorBase for $ty {
             type Output = ();
 
             type IntoCollector = Collector;

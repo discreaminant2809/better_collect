@@ -14,7 +14,7 @@ pub trait IteratorExt: Iterator {
     #[inline]
     fn better_collect<C>(&mut self, collector: C) -> C::Output
     where
-        C: IntoCollector<IntoCollector: Collector<Self::Item>>,
+        C: IntoCollector<Self::Item>,
     {
         collector.into_collector().collect_then_finish(self)
     }
@@ -45,7 +45,7 @@ pub trait IteratorExt: Iterator {
     fn feed_into<C>(self, collector: C) -> C::Output
     where
         Self: Sized,
-        C: IntoCollector<IntoCollector: Collector<Self::Item>>,
+        C: IntoCollector<Self::Item>,
     {
         collector.into_collector().collect_then_finish(self)
     }
@@ -92,7 +92,7 @@ pub trait IteratorExt: Iterator {
     ) -> (C::Output, R)
     where
         Self: Sized,
-        C: IntoCollector<IntoCollector: for<'a> Collector<&'a mut Self::Item>>,
+        C: for<'a> IntoCollector<&'a mut Self::Item>,
     {
         let mut collector = collector.into_collector();
         let driver = assert_iterator(Driver::new(self, &mut collector));

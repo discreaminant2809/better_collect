@@ -207,7 +207,7 @@ pub struct IntoSyncCollector<T>(SyncSender<T>);
 /// [`Collector`]: crate::collector::Collector
 pub struct SyncCollector<'a, T>(&'a SyncSender<T>);
 
-impl<T> crate::collector::IntoCollector for Sender<T> {
+impl<T> crate::collector::IntoCollectorBase for Sender<T> {
     type Output = Self;
 
     type IntoCollector = IntoCollector<T>;
@@ -239,7 +239,7 @@ impl<T> crate::collector::Collector<T> for IntoCollector<T> {
     // The default implementations for other methods are sufficient.
 }
 
-impl<'a, T> crate::collector::IntoCollector for &'a Sender<T> {
+impl<'a, T> crate::collector::IntoCollectorBase for &'a Sender<T> {
     type Output = Self;
 
     type IntoCollector = Collector<'a, T>;
@@ -271,7 +271,7 @@ impl<'a, T> crate::collector::Collector<T> for Collector<'a, T> {
     // The default implementations for other methods are sufficient.
 }
 
-impl<T> crate::collector::IntoCollector for SyncSender<T> {
+impl<T> crate::collector::IntoCollectorBase for SyncSender<T> {
     type Output = Self;
 
     type IntoCollector = IntoSyncCollector<T>;
@@ -303,7 +303,7 @@ impl<T> crate::collector::Collector<T> for IntoSyncCollector<T> {
     // The default implementations for other methods are sufficient.
 }
 
-impl<'a, T> crate::collector::IntoCollector for &'a SyncSender<T> {
+impl<'a, T> crate::collector::IntoCollectorBase for &'a SyncSender<T> {
     type Output = Self;
 
     type IntoCollector = SyncCollector<'a, T>;

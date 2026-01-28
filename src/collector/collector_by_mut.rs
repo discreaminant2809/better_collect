@@ -1,4 +1,4 @@
-use super::{CollectorBase, IntoCollector};
+use super::{CollectorBase, IntoCollectorBase};
 
 /// A type that can be converted into a collector by mutable reference.
 ///
@@ -24,10 +24,10 @@ pub trait CollectorByMut: Sealed {
 
 impl<T> CollectorByMut for T
 where
-    for<'a> &'a mut T: IntoCollector,
+    for<'a> &'a mut T: IntoCollectorBase,
 {
     type CollectorMut<'a>
-        = <&'a mut T as IntoCollector>::IntoCollector
+        = <&'a mut T as IntoCollectorBase>::IntoCollector
     where
         T: 'a;
 
@@ -39,4 +39,4 @@ where
 
 trait Sealed {}
 
-impl<T> Sealed for T where for<'a> &'a mut T: IntoCollector {}
+impl<T> Sealed for T where for<'a> &'a mut T: IntoCollectorBase {}

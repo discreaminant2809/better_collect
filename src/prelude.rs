@@ -10,7 +10,7 @@
 //! ```
 
 pub use crate::{
-    collector::{Collector, CollectorBase, CollectorByMut, CollectorByRef, IntoCollector},
+    collector::{Collector, CollectorBase, CollectorByMut, CollectorByRef, IntoCollectorBase},
     iter::IteratorExt,
     ops::{Adding, Muling},
     slice::Concat,

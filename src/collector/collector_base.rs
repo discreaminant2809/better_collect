@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use super::{
     Chain, Cloning, Combine, CombineClone, CombineFunnel, CombineRef, Copying, Funnel, Fuse,
-    IntoCollector, MapOutput, Skip, Take, Unzip,
+    IntoCollectorBase, MapOutput, Skip, Take, Unzip,
 };
 
 ///
@@ -173,7 +173,7 @@ pub trait CollectorBase {
     fn combine<C>(self, other: C) -> Combine<Self, C::IntoCollector>
     where
         Self: Sized,
-        C: IntoCollector,
+        C: IntoCollectorBase,
     {
         Combine::new(self, other.into_collector())
     }
@@ -183,7 +183,7 @@ pub trait CollectorBase {
     fn combine_clone<C>(self, other: C) -> CombineClone<Self, C::IntoCollector>
     where
         Self: Sized,
-        C: IntoCollector,
+        C: IntoCollectorBase,
     {
         CombineClone::new(self, other.into_collector())
     }
@@ -281,7 +281,7 @@ pub trait CollectorBase {
     fn combine_funnel<C>(self, other: C) -> CombineFunnel<Self, C::IntoCollector>
     where
         Self: Sized,
-        C: IntoCollector,
+        C: IntoCollectorBase,
     {
         CombineFunnel::new(self, other.into_collector())
     }
@@ -291,7 +291,7 @@ pub trait CollectorBase {
     fn combine_ref<C>(self, other: C) -> CombineRef<Self, C::IntoCollector>
     where
         Self: Sized,
-        C: IntoCollector,
+        C: IntoCollectorBase,
     {
         CombineRef::new(self, other.into_collector())
     }
@@ -549,7 +549,7 @@ pub trait CollectorBase {
     fn unzip<C>(self, other: C) -> Unzip<Self, C::IntoCollector>
     where
         Self: Sized,
-        C: IntoCollector,
+        C: IntoCollectorBase,
     {
         assert_collector_base(Unzip::new(self, other.into_collector()))
     }
@@ -591,7 +591,7 @@ pub trait CollectorBase {
     fn chain<C>(self, other: C) -> Chain<Self, C::IntoCollector>
     where
         Self: Sized,
-        C: IntoCollector,
+        C: IntoCollectorBase,
     {
         Chain::new(self, other.into_collector())
     }

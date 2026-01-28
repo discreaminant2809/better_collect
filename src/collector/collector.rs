@@ -421,7 +421,7 @@ pub trait Collector<T>: CollectorBase {
     fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C::IntoCollector, F>
     where
         Self: Sized,
-        C: IntoCollector<IntoCollector: Collector<T>>,
+        C: IntoCollector<T>,
         F: FnMut(&mut T) -> bool,
     {
         assert_collector::<_, T>(Partition::new(self, other_if_false.into_collector(), pred))

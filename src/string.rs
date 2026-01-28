@@ -38,7 +38,7 @@ pub struct IntoCollector(String);
 #[derive(Debug)]
 pub struct CollectorMut<'a>(&'a mut String);
 
-impl crate::collector::IntoCollector for String {
+impl crate::collector::IntoCollectorBase for String {
     type Output = Self;
 
     type IntoCollector = IntoCollector;
@@ -49,7 +49,7 @@ impl crate::collector::IntoCollector for String {
     }
 }
 
-impl<'a> crate::collector::IntoCollector for &'a mut String {
+impl<'a> crate::collector::IntoCollectorBase for &'a mut String {
     type Output = Self;
 
     type IntoCollector = CollectorMut<'a>;

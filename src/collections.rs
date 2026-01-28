@@ -18,7 +18,7 @@ pub mod vec_deque;
 
 use std::ops::ControlFlow;
 
-use crate::collector::{Collector, CollectorBase, IntoCollector};
+use crate::collector::{Collector, CollectorBase, IntoCollectorBase};
 
 #[cfg(feature = "std")]
 use std::{
@@ -43,7 +43,7 @@ macro_rules! collector_impl {
         #[cfg(feature = $feature)]
         // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
         #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
-        impl<$($generic),*> IntoCollector for $coll_name<$($generic),*>
+        impl<$($generic),*> IntoCollectorBase for $coll_name<$($generic),*>
         where
             $($gen_bound: $bound,)*
         {
@@ -59,7 +59,7 @@ macro_rules! collector_impl {
         #[cfg(feature = $feature)]
         // So that doc.rs doesn't put both "std" and "alloc" in feature flag.
         #[cfg_attr(docsrs, doc(cfg(feature = $feature)))]
-        impl<'a, $($generic),*> IntoCollector for &'a mut $coll_name<$($generic),*>
+        impl<'a, $($generic),*> IntoCollectorBase for &'a mut $coll_name<$($generic),*>
         where
             $($gen_bound: $bound,)*
         {

@@ -38,7 +38,7 @@ pub struct IntoCollector<T>(Vec<T>);
 #[derive(Debug)]
 pub struct CollectorMut<'a, T>(&'a mut Vec<T>);
 
-impl<T> crate::collector::IntoCollector for Vec<T> {
+impl<T> crate::collector::IntoCollectorBase for Vec<T> {
     type Output = Self;
 
     type IntoCollector = IntoCollector<T>;
@@ -49,7 +49,7 @@ impl<T> crate::collector::IntoCollector for Vec<T> {
     }
 }
 
-impl<'a, T> crate::collector::IntoCollector for &'a mut Vec<T> {
+impl<'a, T> crate::collector::IntoCollectorBase for &'a mut Vec<T> {
     type Output = Self;
 
     type IntoCollector = CollectorMut<'a, T>;
