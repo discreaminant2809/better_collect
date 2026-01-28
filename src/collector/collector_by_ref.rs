@@ -24,6 +24,7 @@ pub trait CollectorByRef: Sealed {
 
 impl<T> CollectorByRef for T
 where
+    T: ?Sized,
     for<'a> &'a T: IntoCollectorBase,
 {
     type Collector<'a>
@@ -39,4 +40,9 @@ where
 
 trait Sealed {}
 
-impl<T> Sealed for T where for<'a> &'a T: IntoCollectorBase {}
+impl<T> Sealed for T
+where
+    T: ?Sized,
+    for<'a> &'a T: IntoCollectorBase,
+{
+}

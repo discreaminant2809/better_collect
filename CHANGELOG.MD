@@ -32,6 +32,7 @@
 - Missing `Debug`, `Clone` and `Default` implementations.
 - Incorrect returning `ControlFlow` in many collector implementations.
 - `collect_then_finish()` of `All` and `Any` not returning the correct results.
+- `?Sized` bounds.
 
 ### Removed
 

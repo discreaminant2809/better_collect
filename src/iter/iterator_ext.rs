@@ -101,4 +101,4 @@ pub trait IteratorExt: Iterator {
     }
 }
 
-impl<I: Iterator> IteratorExt for I {}
+impl<I> IteratorExt for I where I: Iterator + ?Sized {}

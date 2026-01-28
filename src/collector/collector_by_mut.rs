@@ -24,6 +24,7 @@ pub trait CollectorByMut: Sealed {
 
 impl<T> CollectorByMut for T
 where
+    T: ?Sized,
     for<'a> &'a mut T: IntoCollectorBase,
 {
     type CollectorMut<'a>
@@ -39,4 +40,9 @@ where
 
 trait Sealed {}
 
-impl<T> Sealed for T where for<'a> &'a mut T: IntoCollectorBase {}
+impl<T> Sealed for T
+where
+    T: ?Sized,
+    for<'a> &'a mut T: IntoCollectorBase,
+{
+}

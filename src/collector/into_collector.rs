@@ -50,4 +50,4 @@ where
     }
 }
 
-impl<C, T> IntoCollector<T> for C where C: IntoCollectorBase<IntoCollector: Collector<T>> {}
+impl<C, T> IntoCollector<T> for C where C: IntoCollectorBase<IntoCollector: Collector<T>> + ?Sized {}
