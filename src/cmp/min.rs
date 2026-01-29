@@ -108,3 +108,108 @@ impl<T: Ord> Collector<T> for Min<T> {
         self.min.into_iter().chain(items).min()
     }
 }
+
+#[cfg(all(test, feature = "std"))]
+mod proptests {
+    use std::cmp::Ordering;
+
+    use proptest::collection::vec as propvec;
+    use proptest::prelude::*;
+    use proptest::test_runner::TestCaseResult;
+
+    use crate::cmp::Min;
+    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+
+    use super::super::test_utils::Id;
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_min(
+            nums in propvec(any::<i32>(), ..5),
+        ) {
+            all_collect_methods_min_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_min_impl(nums: Vec<i32>) -> TestCaseResult {
+        BasicCollectorTester {
+            iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
+            collector_factory: || Min::new(),
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if !Id::full_eq_opt(iter.min(), output) {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.next().is_some() {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_min_by(
+            nums in propvec(any::<i32>(), ..5),
+        ) {
+            all_collect_methods_min_by_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_min_by_impl(nums: Vec<i32>) -> TestCaseResult {
+        // Suppose we compare them by the imaginary part first, then the real part.
+        fn comparator(Id { num: a, .. }: &Id, Id { num: b, .. }: &Id) -> Ordering {
+            let (a, b) = (a.wrapping_add(i32::MAX), b.wrapping_add(i32::MAX));
+            a.cmp(&b)
+        }
+
+        BasicCollectorTester {
+            iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
+            collector_factory: || Min::by(comparator),
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if !Id::full_eq_opt(iter.min_by(comparator), output) {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.next().is_some() {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+
+    proptest! {
+        #[test]
+        fn all_collect_methods_min_by_key(
+            nums in propvec(any::<i32>(), ..5),
+        ) {
+            all_collect_methods_min_by_key_impl(nums)?;
+        }
+    }
+
+    fn all_collect_methods_min_by_key_impl(nums: Vec<i32>) -> TestCaseResult {
+        fn key_extractor(Id { num, .. }: &Id) -> i32 {
+            num.wrapping_add(i32::MAX)
+        }
+
+        BasicCollectorTester {
+            iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
+            collector_factory: || Min::by_key(key_extractor),
+            should_break_pred: |_| false,
+            pred: |iter, output, remaining| {
+                if !Id::full_eq_opt(iter.min_by_key(key_extractor), output) {
+                    Err(PredError::IncorrectOutput)
+                } else if remaining.next().is_some() {
+                    Err(PredError::IncorrectIterConsumption)
+                } else {
+                    Ok(())
+                }
+            },
+        }
+        .test_collector()
+    }
+}
