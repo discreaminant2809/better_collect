@@ -120,6 +120,8 @@ mod proptests {
     use crate::cmp::Max;
     use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
 
+    use super::super::test_utils::Id;
+
     proptest! {
         #[test]
         fn all_collect_methods_max(
@@ -131,11 +133,11 @@ mod proptests {
 
     fn all_collect_methods_max_impl(nums: Vec<i32>) -> TestCaseResult {
         BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
+            iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
             collector_factory: || Max::new(),
             should_break_pred: |_| false,
             pred: |iter, output, remaining| {
-                if iter.max() != output {
+                if !Id::full_eq_opt(iter.max(), output) {
                     Err(PredError::IncorrectOutput)
                 } else if remaining.next().is_some() {
                     Err(PredError::IncorrectIterConsumption)
@@ -150,29 +152,25 @@ mod proptests {
     proptest! {
         #[test]
         fn all_collect_methods_max_by(
-            nums in propvec(any_complex(), ..5),
+            nums in propvec(any::<i32>(), ..5),
         ) {
             all_collect_methods_max_by_impl(nums)?;
         }
     }
 
-    fn all_collect_methods_max_by_impl(nums: Vec<Complex>) -> TestCaseResult {
+    fn all_collect_methods_max_by_impl(nums: Vec<i32>) -> TestCaseResult {
         // Suppose we compare them by the imaginary part first, then the real part.
-        fn comparator(a: &Complex, b: &Complex) -> Ordering {
-            let cmp_im = a.im.cmp(&b.im);
-            if cmp_im.is_ne() {
-                cmp_im
-            } else {
-                a.re.cmp(&b.re)
-            }
+        fn comparator(Id { num: a, .. }: &Id, Id { num: b, .. }: &Id) -> Ordering {
+            let (a, b) = (a.wrapping_add(i32::MAX), b.wrapping_add(i32::MAX));
+            a.cmp(&b)
         }
 
         BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
+            iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
             collector_factory: || Max::by(comparator),
             should_break_pred: |_| false,
             pred: |iter, output, remaining| {
-                if iter.max_by(comparator) != output {
+                if !Id::full_eq_opt(iter.max_by(comparator), output) {
                     Err(PredError::IncorrectOutput)
                 } else if remaining.next().is_some() {
                     Err(PredError::IncorrectIterConsumption)
@@ -187,19 +185,23 @@ mod proptests {
     proptest! {
         #[test]
         fn all_collect_methods_max_by_key(
-            nums in propvec(any_complex(), ..5),
+            nums in propvec(any::<i32>(), ..5),
         ) {
             all_collect_methods_max_by_key_impl(nums)?;
         }
     }
 
-    fn all_collect_methods_max_by_key_impl(nums: Vec<Complex>) -> TestCaseResult {
+    fn all_collect_methods_max_by_key_impl(nums: Vec<i32>) -> TestCaseResult {
+        fn key_extractor(Id { num, .. }: &Id) -> i32 {
+            num.wrapping_add(i32::MAX)
+        }
+
         BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
-            collector_factory: || Max::by_key(Complex::sqr_abs),
+            iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
+            collector_factory: || Max::by_key(key_extractor),
             should_break_pred: |_| false,
             pred: |iter, output, remaining| {
-                if iter.max_by_key(Complex::sqr_abs) != output {
+                if !Id::full_eq_opt(iter.max_by_key(key_extractor), output) {
                     Err(PredError::IncorrectOutput)
                 } else if remaining.next().is_some() {
                     Err(PredError::IncorrectIterConsumption)
@@ -209,31 +211,5 @@ mod proptests {
             },
         }
         .test_collector()
-    }
-
-    /// Helper struct for testing `MaxBy` and `MaxByKey`.
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    struct Complex {
-        re: i32,
-        im: i32,
-    }
-
-    impl Complex {
-        pub fn sqr_abs(&self) -> i32 {
-            // By restricting to `i16`, we guarantee that
-            // this operation never overflows.
-            // 2 * i16::MAX^2 < i32::MAX.
-            self.re.pow(2) + self.im.pow(2)
-        }
-    }
-
-    prop_compose! {
-        fn any_complex()(
-            // Restrict to `i16` because we're gonna calculate its squared abs.
-            re in any::<i16>().prop_map_into::<i32>(),
-            im in any::<i16>().prop_map_into::<i32>(),
-        ) -> Complex {
-            Complex { re, im }
-        }
     }
 }
