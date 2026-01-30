@@ -1,4 +1,4 @@
-use super::{CollectorBase, Filter, IntoCollector, Map, Partition, TakeWhile, Unbatching};
+use super::{CollectorBase, Filter, IntoCollector, Map, Partition, TakeWhile, TeeWith, Unbatching};
 // #[cfg(feature = "unstable")]
 // use super::{Nest, NestExact};
 
@@ -467,6 +467,18 @@ pub trait Collector<T>: CollectorBase {
         F: FnMut(&mut Self, T) -> ControlFlow<()>,
     {
         assert_collector::<_, T>(Unbatching::new(self, f))
+    }
+
+    ///
+    #[inline]
+    #[cfg(feature = "unstable")]
+    fn tee_with<C, F, U>(self, f: F, other: C) -> TeeWith<Self, C::IntoCollector, F>
+    where
+        Self: Collector<U> + Sized,
+        C: IntoCollector<T>,
+        F: FnMut(&mut T) -> U,
+    {
+        assert_collector::<_, T>(TeeWith::new(self, other.into_collector(), f))
     }
 
     // /// Creates a [`Collector`] that collects all outputs produced by an inner collector.

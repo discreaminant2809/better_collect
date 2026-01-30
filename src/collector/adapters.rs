@@ -14,6 +14,8 @@ mod tee;
 mod tee_clone;
 mod tee_funnel;
 mod tee_mut;
+#[cfg(feature = "unstable")]
+mod tee_with;
 mod unbatching;
 mod unzip;
 // #[cfg(feature = "unstable")]
@@ -35,6 +37,8 @@ pub use tee::*;
 pub use tee_clone::*;
 pub use tee_funnel::*;
 pub use tee_mut::*;
+#[cfg(feature = "unstable")]
+pub use tee_with::*;
 pub use unbatching::*;
 pub use unzip::*;
 // #[cfg(feature = "unstable")]
