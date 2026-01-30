@@ -58,6 +58,7 @@ impl<'i, T, C1, C2> Collector<&'i mut T> for TeeMut<C1, C2>
 where
     C1: for<'a> Collector<&'a mut T>,
     C2: Collector<&'i mut T>,
+    T: ?Sized,
 {
     fn collect(&mut self, item: &'i mut T) -> ControlFlow<()> {
         match (self.collector1.collect(item), self.collector2.collect(item)) {

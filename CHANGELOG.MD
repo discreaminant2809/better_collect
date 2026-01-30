@@ -5,6 +5,7 @@
 ### Added
 
 - `CollectorBase`.
+- `IntoCollectorBase`.
 - `crate::mem::Dropping`.
 - `crate::mem::Forgetting`.
 - Generalized concatenation collectors.
