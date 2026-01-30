@@ -8,6 +8,7 @@
 - `crate::mem::Dropping`.
 - `crate::mem::Forgetting`.
 - Generalized concatenation collectors.
+- Different versions of `Tee`.
 
 ### Changed
 
@@ -25,6 +26,7 @@
 - `Collector::skip()`: now stops accumulating
   if the underlying collector has stopped accumulating during skipping,
   regardless of whether the adaptor has skipped enough items or not.
+- `Combine` to `Tee`.
 
 ### Fixed
 

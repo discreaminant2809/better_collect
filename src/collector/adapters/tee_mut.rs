@@ -6,12 +6,12 @@ use super::Fuse;
 
 ///
 #[derive(Debug, Clone)]
-pub struct CombineRef<C1, C2> {
+pub struct TeeMut<C1, C2> {
     collector1: Fuse<C1>,
     collector2: Fuse<C2>,
 }
 
-impl<C1, C2> CombineRef<C1, C2>
+impl<C1, C2> TeeMut<C1, C2>
 where
     C1: CollectorBase,
     C2: CollectorBase,
@@ -24,7 +24,7 @@ where
     }
 }
 
-impl<C1, C2> CollectorBase for CombineRef<C1, C2>
+impl<C1, C2> CollectorBase for TeeMut<C1, C2>
 where
     C1: CollectorBase,
     C2: CollectorBase,
@@ -54,7 +54,7 @@ where
     }
 }
 
-impl<'i, T, C1, C2> Collector<&'i mut T> for CombineRef<C1, C2>
+impl<'i, T, C1, C2> Collector<&'i mut T> for TeeMut<C1, C2>
 where
     C1: for<'a> Collector<&'a mut T>,
     C2: Collector<&'i mut T>,
@@ -156,7 +156,7 @@ mod proptests {
                     .into_collector()
                     .copying()
                     .take(first_count)
-                    .combine_ref(vec![].into_collector().take(second_count).copying())
+                    .tee_mut(vec![].into_collector().take(second_count).copying())
                     .funnel()
             },
             should_break_pred: |iter| iter.count() >= first_count.max(second_count),

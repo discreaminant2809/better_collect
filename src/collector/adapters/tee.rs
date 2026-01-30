@@ -7,12 +7,12 @@ use crate::collector::{Collector, CollectorBase, Fuse};
 /// This `struct` is created by [`CollectorBase::combine()`].
 /// See its documentation for more.
 #[derive(Debug, Clone)]
-pub struct Combine<C1, C2> {
+pub struct Tee<C1, C2> {
     collector1: Fuse<C1>,
     collector2: Fuse<C2>,
 }
 
-impl<C1, C2> Combine<C1, C2>
+impl<C1, C2> Tee<C1, C2>
 where
     C1: CollectorBase,
     C2: CollectorBase,
@@ -25,7 +25,7 @@ where
     }
 }
 
-impl<C1, C2> CollectorBase for Combine<C1, C2>
+impl<C1, C2> CollectorBase for Tee<C1, C2>
 where
     C1: CollectorBase,
     C2: CollectorBase,
@@ -47,7 +47,7 @@ where
     }
 }
 
-impl<T, C1, C2> Collector<T> for Combine<C1, C2>
+impl<T, C1, C2> Collector<T> for Tee<C1, C2>
 where
     C1: Collector<T>,
     C2: Collector<T>,
@@ -147,7 +147,7 @@ mod proptests {
                 vec![]
                     .into_collector()
                     .take(first_count)
-                    .combine(vec![].into_collector().take(second_count))
+                    .tee(vec![].into_collector().take(second_count))
             },
             should_break_pred: |iter| iter.count() >= first_count.max(second_count),
             pred: |iter, (output1, output2), remaining| {

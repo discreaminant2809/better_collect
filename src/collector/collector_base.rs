@@ -1,8 +1,8 @@
 use std::ops::ControlFlow;
 
 use super::{
-    Chain, Cloning, Combine, CombineClone, CombineFunnel, CombineRef, Copying, Funnel, Fuse,
-    IntoCollectorBase, MapOutput, Skip, Take, Unzip,
+    Chain, Cloning, Copying, Funnel, Fuse, IntoCollectorBase, MapOutput, Skip, Take, Tee, TeeClone,
+    TeeFunnel, TeeMut, Unzip,
 };
 
 ///
@@ -170,22 +170,22 @@ pub trait CollectorBase {
 
     ///
     #[inline]
-    fn combine<C>(self, other: C) -> Combine<Self, C::IntoCollector>
+    fn tee<C>(self, other: C) -> Tee<Self, C::IntoCollector>
     where
         Self: Sized,
         C: IntoCollectorBase,
     {
-        Combine::new(self, other.into_collector())
+        Tee::new(self, other.into_collector())
     }
 
     ///
     #[inline]
-    fn combine_clone<C>(self, other: C) -> CombineClone<Self, C::IntoCollector>
+    fn tee_clone<C>(self, other: C) -> TeeClone<Self, C::IntoCollector>
     where
         Self: Sized,
         C: IntoCollectorBase,
     {
-        CombineClone::new(self, other.into_collector())
+        TeeClone::new(self, other.into_collector())
     }
 
     /// The most important adaptor. The reason why this crate exists.
@@ -278,22 +278,22 @@ pub trait CollectorBase {
     ///
     /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
     #[inline]
-    fn combine_funnel<C>(self, other: C) -> CombineFunnel<Self, C::IntoCollector>
+    fn tee_funnel<C>(self, other: C) -> TeeFunnel<Self, C::IntoCollector>
     where
         Self: Sized,
         C: IntoCollectorBase,
     {
-        CombineFunnel::new(self, other.into_collector())
+        TeeFunnel::new(self, other.into_collector())
     }
 
     ///
     #[inline]
-    fn combine_ref<C>(self, other: C) -> CombineRef<Self, C::IntoCollector>
+    fn tee_mut<C>(self, other: C) -> TeeMut<Self, C::IntoCollector>
     where
         Self: Sized,
         C: IntoCollectorBase,
     {
-        CombineRef::new(self, other.into_collector())
+        TeeMut::new(self, other.into_collector())
     }
 
     /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.

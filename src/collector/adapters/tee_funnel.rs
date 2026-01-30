@@ -9,12 +9,12 @@ use super::Fuse;
 /// This `struct` is created by [`CollectorBase::combine_funnel()`].
 /// See its documentation for more.
 #[derive(Debug, Clone)]
-pub struct CombineFunnel<C1, C2> {
+pub struct TeeFunnel<C1, C2> {
     collector1: Fuse<C1>,
     collector2: Fuse<C2>,
 }
 
-impl<C1, C2> CombineFunnel<C1, C2>
+impl<C1, C2> TeeFunnel<C1, C2>
 where
     C1: CollectorBase,
     C2: CollectorBase,
@@ -27,7 +27,7 @@ where
     }
 }
 
-impl<C1, C2> CollectorBase for CombineFunnel<C1, C2>
+impl<C1, C2> CollectorBase for TeeFunnel<C1, C2>
 where
     C1: CollectorBase,
     C2: CollectorBase,
@@ -57,7 +57,7 @@ where
     }
 }
 
-impl<T, C1, C2> Collector<T> for CombineFunnel<C1, C2>
+impl<T, C1, C2> Collector<T> for TeeFunnel<C1, C2>
 where
     C1: for<'a> Collector<&'a mut T>,
     C2: Collector<T>,
@@ -177,7 +177,7 @@ mod proptests {
                     .into_collector()
                     .copying()
                     .take(first_count)
-                    .combine_funnel(vec![].into_collector().take(second_count))
+                    .tee_funnel(vec![].into_collector().take(second_count))
             },
             should_break_pred: |iter| iter.count() >= first_count.max(second_count),
             pred: |iter, output, remaining| {
