@@ -2,7 +2,12 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase};
 
+/// A collector that feeds the underlying collector with
+/// the mutable reference to the item, "pretending" the collector
+/// accepts owned items.
 ///
+/// This `struct` is created by [`CollectorBase::funnel()`].
+/// See its documentation for more.
 pub struct Funnel<C>(C);
 
 impl<C> Funnel<C> {

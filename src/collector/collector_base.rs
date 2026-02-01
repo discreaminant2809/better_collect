@@ -5,7 +5,22 @@ use super::{
     TeeFunnel, TeeMut, Unzip,
 };
 
+/// The base trait of a collector.
 ///
+/// This trait defines the output type and methods that do not depend on the item type.
+/// It is crucial to avoid "type annotation needed" because implementors may implement
+/// different output types and implement methods differently based on the item type,
+/// which is not desired. A collector should only have one and only one output type.
+/// Allowing the output type (and such methods) to vary with the item type would be
+/// confusing regardless.
+///
+/// See [`Collector`](super::Collector) for more information.
+///
+/// # Dyn Compatibility
+///
+/// This trait is *dyn-compatible*, meaning it can be used as a trait object.
+/// However, as a trait object, it is pretty much useless, as the only method
+/// available is [`break_hint()`](CollectorBase::break_hint).
 pub trait CollectorBase {
     /// The result this collector yields, via the [`finish()`](CollectorBase::finish) method.
     ///
@@ -35,28 +50,28 @@ pub trait CollectorBase {
 
     /// Returns a hint whether the collector has stopped accumulating.
     ///
-    /// Returns `true` if it is guaranteed that the collector has stopped accumulating,
-    /// or returns `false` otherwise.
+    /// Returns [`Break(())`] if it is guaranteed that the collector
+    /// has stopped accumulating, or returns [`Continue(())`] otherwise.
     ///
-    /// As specified in the trait's documentation, after the stop is signaled somewhere else,
-    /// including through [`collect()`](Collector::collect) or similar methods,
+    /// As specified in [`Collector`], after the stop is signaled somewhere else,
+    /// including through [`collect()`] or similar methods,
     /// or this method itself, the behavior of this method is unspecified.
     /// This may include returning `false` even if the collector has conceptually stopped.
     ///
     /// This method should be called once and only once before collecting
     /// items in a loop to avoid consuming one item prematurely.
     /// It is not intended for repeatedly checking whether the
-    /// collector has stopped. Use [`fuse()`](Collector::fuse) if you find yourself
-    /// needing such behavior.
+    /// collector has stopped. Use [`fuse()`](CollectorBase::fuse)
+    /// if you find yourself needing such behavior.
     ///
     /// If the collector is uncertain, like "maybe I won’t accumulate… uh, fine, I will,"
     /// it is recommended to just return `false`.
-    /// For example, [`filter()`](Collector::filter) might skip some items it collects,
+    /// For example, [`filter()`] might skip some items it collects,
     /// but still returns `false` as long as the underlying collector can still accumulate.
     /// The filter just denies "undesirable" items, not signal termination
-    /// (this is the job of [`take_while()`](Collector::take_while) instead).
+    /// (this is the job of [`take_while()`] instead).
     ///
-    /// The default implementation always returns `false`.
+    /// The default implementation always returns [`Continue(())`].
     ///
     /// # Examples
     ///
@@ -69,7 +84,7 @@ pub trait CollectorBase {
     ///     .into_collector()
     ///     .take_while(|&x| x != 3);
     ///
-    /// let mut has_stopped = collector.break_hint();
+    /// let mut has_stopped = collector.break_hint().is_break();
     /// let mut num = 0;
     /// while !has_stopped {
     ///     has_stopped = collector.collect(num).is_break();
@@ -93,7 +108,7 @@ pub trait CollectorBase {
     /// // The usage of `break_hint()` here is NOT valid. ⚠️
     /// // By the current implementation, this may loop indefinitely
     /// // until your RAM explodes! (the `Vec` keeps expanding)
-    /// while !collector.break_hint() {
+    /// while collector.break_hint().is_continue() {
     ///     let _ = collector.collect(num);
     ///     num += 1;
     /// }
@@ -101,11 +116,18 @@ pub trait CollectorBase {
     /// // May not be correct anymore. ⚠️
     /// assert_eq!(collector.finish(), [0, 1, 2]);
     /// ```
+    ///
+    /// [`Break(())`]: std::ops::ControlFlow::Break
+    /// [`Continue(())`]: std::ops::ControlFlow::Continue
+    /// [`Collector`]: crate::collector::Collector
+    /// [`collect()`]: crate::collector::Collector::collect
+    /// [`filter()`]: crate::collector::Collector::filter
+    /// [`take_while()`]: crate::collector::Collector::take_while
     fn break_hint(&self) -> ControlFlow<()> {
         ControlFlow::Continue(())
     }
 
-    /// Creates a [`Collector`] that can "safely" collect items even after
+    /// Creates a collector that can "safely" collect items even after
     /// the underlying collector has stopped accumulating,
     /// without triggering undesired behaviors.
     ///
@@ -115,19 +137,21 @@ pub trait CollectorBase {
     /// are guaranteed to **not** be accumulated. This means that at that point,
     /// the following are guaranteed on `fuse()`:
     ///
-    /// - [`collect()`](Collector::collect) and similar methods always return
+    /// - [`collect()`] and similar methods always return
     ///   [`Break(())`].
-    /// - [`break_hint()`](Collector::break_hint) always return `true`.
-    ///
-    /// This adaptor implements [`RefCollector`] if the underlying collector does.
+    /// - [`break_hint()`](CollectorBase::break_hint) always return `true`.
     ///
     /// # Examples
+    ///
+    /// Without `fuse()`:
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
     /// // `take_while()` is one of a few collectors that do NOT fuse internally.
-    /// let mut collector = vec![].into_collector().take_while(|&x| x != 3);
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take_while(|&x| x != 3);
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -140,9 +164,15 @@ pub trait CollectorBase {
     /// // (Spoiler: by the current implementation, it may NOT be `[1, 2]`!)
     /// # // Not shown to the doc. We only confirm our claim here.
     /// # assert_ne!(collector.finish(), [1, 2]);
+    /// ```
     ///
-    /// // Now try `fuse()`.
-    /// let mut collector = vec![].into_collector().take_while(|&x| x != 3).fuse();
+    /// With `fuse()`:
+    ///
+    /// ```
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take_while(|&x| x != 3)
+    ///     .fuse();
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -157,7 +187,7 @@ pub trait CollectorBase {
     /// assert_eq!(collector.finish(), [1, 2]);
     /// ```
     ///
-    /// [`RefCollector`]: crate::collector::RefCollector
+    /// [`collect()`]: crate::collector::Collector::collect
     /// [`Continue(())`]: ControlFlow::Continue
     /// [`Break(())`]: ControlFlow::Break
     #[inline]
@@ -168,7 +198,38 @@ pub trait CollectorBase {
         assert_collector_base(Fuse::new(self))
     }
 
+    /// Creates a collector that lets both collectors collect the same item.
     ///
+    /// For each item collected, the first collector collects the item
+    /// copied with the [`Copy`] trait before the second collector collects it.
+    ///
+    /// `tee()` only stops when **both** collectors have stopped.
+    ///
+    /// If the item type of this adapter is `T`, both collectors must implement
+    /// [`Collector<T>`](super::Collector), and `T` must implement [`Copy`].
+    ///
+    /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
+    /// both underlying collectors, in order.
+    ///
+    /// See [`Collector`](super::Collector) for when this adapter is used
+    /// and other variants of `tee` adapters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{prelude::*, cmp::Max};
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .tee(Max::new());
+    ///
+    /// assert!(collector.collect(4).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(6).is_continue());
+    /// assert!(collector.collect(3).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), (vec![4, 2, 6, 3], Some(6)));
+    /// ```
     #[inline]
     fn tee<C>(self, other: C) -> Tee<Self, C::IntoCollector>
     where
@@ -178,7 +239,46 @@ pub trait CollectorBase {
         Tee::new(self, other.into_collector())
     }
 
+    /// Creates a collector that lets both collectors collect the same item.
     ///
+    /// For each item collected, the first collector collects the item
+    /// cloned with the [`Clone`] trait before the second collector collects it.
+    /// If one of them has stopped, the implementation will **not** clone
+    /// the item, and will instead feed it into the other for optimization.
+    ///
+    /// `tee_clone()` only stops when **both** collectors have stopped.
+    ///
+    /// If the item type of this adapter is `T`, both collectors must implement
+    /// [`Collector<T>`](super::Collector), and `T` must implement [`Clone`].
+    ///
+    /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
+    /// both underlying collectors, in order.
+    ///
+    /// See [`Collector`](super::Collector) for when this adapter is used
+    /// and other variants of `tee` adapters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    /// use std::rc::Rc;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take(2)
+    ///     .tee_clone(vec![]);
+    ///
+    /// assert!(collector.collect(Rc::new(1)).is_continue());
+    /// assert!(collector.collect(Rc::new(2)).is_continue());
+    /// // From here, the `Rc` will NOT be cloned.
+    /// assert!(collector.collect(Rc::new(3)).is_continue());
+    ///
+    /// let (nums1, nums2) = collector.finish();
+    ///
+    /// assert_eq!(nums1.iter().map(|num| *num).eq([1, 2]));
+    /// assert_eq!(nums2.iter().map(|num| *num).eq([1, 2, 3]));
+    /// assert_eq!(nums2.iter().map(Rc::strong_count), [2, 2, 1]);
+    /// ```
     #[inline]
     fn tee_clone<C>(self, other: C) -> TeeClone<Self, C::IntoCollector>
     where
@@ -188,95 +288,41 @@ pub trait CollectorBase {
         TeeClone::new(self, other.into_collector())
     }
 
-    /// The most important adaptor. The reason why this crate exists.
+    /// Creates a collector that lets both collectors collect the same item.
     ///
-    /// Creates a [`Collector`] that lets both collectors collect the same item.
-    /// For each item collected, the first collector collects the item by mutable reference,
-    /// then the second one collects it by either mutable reference or ownership.
-    /// Together, they form a pipeline where each collector processes the item in turn,
-    /// and the final one consumes by ownership.
+    /// For each item collected, the first collector collects
+    /// the mutable reference of the item before the second collector collects it.
     ///
-    /// If the second collector implements [`RefCollector`], this adaptor implements [`RefCollector`],
-    /// allowing the chain to be extended further with additional `combine()` calls.
-    /// Otherwise, it becomes the endpoint of the pipeline.
+    /// `tee_funnel()` only stops when **both** collectors have stopped.
+    ///
+    /// If the item type of this adapter is `T`,
+    /// the first collector must implement [`for<'a> Collector<&'a mut T>`](super::Collector)
+    /// (a collector that can collect a mutable reference with any lifetime),
+    /// and the second collector must implement [`Collector<T>`](super::Collector).
+    ///
+    /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
+    /// both underlying collectors, in order.
+    ///
+    /// See [`Collector`](super::Collector) for when this adapter is used
+    /// and other variants of `tee` adapters.
     ///
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, cmp::Max};
-    ///
-    /// let mut collector = vec![].into_collector().combine(Max::new());
-    ///
-    /// assert!(collector.collect(4).is_continue());
-    /// assert!(collector.collect(2).is_continue());
-    /// assert!(collector.collect(6).is_continue());
-    /// assert!(collector.collect(3).is_continue());
-    ///
-    /// assert_eq!(collector.finish(), (vec![4, 2, 6, 3], Some(6)));
-    /// ```
-    ///
-    /// Even if one collector stops, `combine()` continues as the other does.
-    /// It only stops when both collectors stop.
-    ///
-    /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let mut collector = vec![].into_collector().take(3).combine(()); // `()` always stops collecting.
+    /// let mut collector = String::new()
+    ///     .into_concat()
+    ///     .tee_funnel(vec![]);
     ///
-    /// assert!(collector.collect(()).is_continue());
-    /// assert!(collector.collect(()).is_continue());
-    /// // Since `.take(3)` only takes 3 items,
-    /// // it hints a stop right after the 3rd item is collected.
-    /// assert!(collector.collect(()).is_break());
-    /// # // Internal assertion.
-    /// # assert!(collector.collect(()).is_break());
+    /// let strings = ["noble", "and", "singer"].map(String::from);
+    /// assert!(collector.collect_many(strings).is_continue());
     ///
-    /// assert_eq!(collector.finish(), (vec![(); 3], ()));
+    /// let (concat, string_vec) = collector.finish();
+    ///
+    /// assert_eq!(concat, "nobleandsinger");
+    /// assert_eq!(string_vec, ["noble", "and", "singer"]);
     /// ```
-    ///
-    /// Collectors can be chained with `combine()` as many as you want,
-    /// as long as every of them except the last implements [`RefCollector`].
-    ///
-    /// Here’s the solution to [LeetCode #1491] to demonstrate it:
-    ///
-    /// ```
-    /// use better_collect::{
-    ///     prelude::*,
-    ///     cmp::{Min, Max}, num::Sum, iter::Count,
-    /// };
-    ///
-    /// # struct Solution;
-    /// impl Solution {
-    ///     pub fn average(salary: Vec<i32>) -> f64 {
-    ///         let (((min, max), count), sum) = salary
-    ///             .into_iter()
-    ///             .feed_into(
-    ///                 Min::new()
-    ///                     .copying()
-    ///                     .combine(Max::new().copying())
-    ///                     .combine(Count::new())
-    ///                     .combine(Sum::<i32>::new())
-    ///             );
-    ///                 
-    ///         let (min, max) = (min.unwrap(), max.unwrap());
-    ///         (sum - max - min) as f64 / (count - 2) as f64
-    ///     }
-    /// }
-    ///
-    /// fn correct(actual: f64, expected: f64) -> bool {
-    ///     const DELTA: f64 = 1E-5;
-    ///     (actual - expected).abs() <= DELTA
-    /// }
-    ///
-    /// assert!(correct(
-    ///     Solution::average(vec![5, 3, 1, 2]), 2.5
-    /// ));
-    /// assert!(correct(
-    ///     Solution::average(vec![1, 2, 4]), 2.0
-    /// ));
-    /// ```
-    ///
-    /// [LeetCode #1491]: https://leetcode.com/problems/average-salary-excluding-the-minimum-and-maximum-salary
     #[inline]
     fn tee_funnel<C>(self, other: C) -> TeeFunnel<Self, C::IntoCollector>
     where
@@ -286,7 +332,48 @@ pub trait CollectorBase {
         TeeFunnel::new(self, other.into_collector())
     }
 
+    /// Creates a collector that lets both collectors collect the same item.
     ///
+    /// For each item collected, the first collector collects
+    /// the mutable reference of the item before the second collector also
+    /// collects the mutable reference of it.
+    ///
+    /// `tee_mut()` only stops when **both** collectors have stopped.
+    ///
+    /// If the item type of this adapter is `&'i mut T`,
+    /// the first collector must implement [`for<'a> Collector<&'a mut T>`](super::Collector)
+    /// (a collector that can collect a mutable reference with any lifetime),
+    /// and the second collector must implement [`Collector<&'i mut T>`](super::Collector).
+    ///
+    /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
+    /// both underlying collectors, in order.
+    ///
+    /// See [`Collector`](super::Collector) for when this adapter is used
+    /// and other variants of `tee` adapters.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::{prelude::*, cmp::Max};
+    ///
+    /// let mut collector = String::new()
+    ///     .into_concat()
+    ///     .map(|s: &mut String| &s[..])
+    ///     .tee_mut(Max::new().map({
+    ///         let f = |s: &mut String| s.len();
+    ///         f
+    ///     })
+    ///     .tee_funnel(vec![]);
+    ///
+    /// let strings = ["noble", "and", "singer"].map(String::from);
+    /// assert!(collector.collect_many(strings).is_continue());
+    ///
+    /// let ((concat, max_len), string_vec) = collector.finish();
+    ///
+    /// assert_eq!(concat, "nobleandsinger");
+    /// assert_eq!(max_len, Some(6));
+    /// assert_eq!(string_vec, ["noble", "and", "singer"]);
+    /// ```
     #[inline]
     fn tee_mut<C>(self, other: C) -> TeeMut<Self, C::IntoCollector>
     where
@@ -296,71 +383,31 @@ pub trait CollectorBase {
         TeeMut::new(self, other.into_collector())
     }
 
-    /// Creates a [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
+    /// Creates a collector that [`clone`](Clone::clone)s every collected item.
     ///
-    /// This is useful when you need ownership of items, but you still want to [`combine`]
-    /// the underlying collector into another collector.
-    /// (Reminder: only [`RefCollector`]s are [`combine`]-able.)
+    /// This is useful when you have a [`Collector<T>`](super::Collector), but you
+    /// need a [`for<'a> Collector<&'a mut T>`](super::Collector)
+    /// or [`for<'a> Collector<&'a T>`](super::Collector).
     ///
-    /// You may not need this adaptor when working with [`Copy`] types (e.g., primitive types)
-    /// since collectors usually implement [`RefCollector`] to collect them seamlessly.
-    /// However, for non-[`Copy`] types like [`String`], this adaptor becomes necessary.
-    ///
-    /// As a [`Collector`], `cloning()` does nothing (effectively a no-op) and is usually useless
-    /// at the end of a [`combine`] chain.
-    /// It only performs its intended behavior when used as a [`RefCollector`].
+    /// Many collectors may have implementations for references, such as collections.
+    /// In this case, you do not need this adapter.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let collector_res = ["a", "b", "c"]
-    ///     .into_iter()
-    ///     .map(String::from)
-    ///     // `Vec<String>` does not implement `RefCollector`,
-    ///     // so we must call `cloning()` to make it `combine`-able.
-    ///     // Otherwise, the first `Vec` would consume each item,
-    ///     // leaving nothing for the second.
-    ///     .feed_into(vec![].into_collector().cloning().combine(vec![]));
+    /// let collector = vec![]
+    ///     .into_concat()
+    ///     .cloning() // Try putting `cloning` before every other collector
+    ///     .filter(|num| num.len() > 1);
     ///
-    /// let desired_vec = vec!["a".to_owned(), "b".to_owned(), "c".to_owned()];
-    /// assert_eq!(collector_res, (desired_vec.clone(), desired_vec));
+    /// let concat = [vec![0, 1, 2], vec![3], vec![4, 5]]
+    ///     .iter()
+    ///     .feed_into(collector);
     ///
-    /// // Equivalent to:
-    /// let unzip_res: (Vec<_>, Vec<_>) = ["a", "b", "c"]
-    ///     .into_iter()
-    ///     .map(String::from)
-    ///     .map(|s| (s.clone(), s))
-    ///     .unzip();
-    ///
-    /// assert_eq!(collector_res, unzip_res);
+    /// assert_eq!(concat, [0, 1, 2, 4, 5]);
     /// ```
-    ///
-    /// For [`Copy`] types, this adaptor is usually unnecessary:
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let collector_res = [1, 2, 3]
-    ///     .into_iter()
-    ///     // Just `combine` normally.
-    ///     // `Vec<i32>::IntoCollector` implements `RefCollector` since `i32` is `Copy`.
-    ///     .feed_into(vec![].into_collector().combine(vec![]));
-    ///
-    /// assert_eq!(collector_res, (vec![1, 2, 3], vec![1, 2, 3]));
-    ///
-    /// // Equivalent to:
-    /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
-    ///     .into_iter()
-    ///     .map(|num| (num, num))
-    ///     .unzip();
-    ///
-    /// assert_eq!(collector_res, unzip_res);
-    /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
-    /// [`combine`]: crate::collector::RefCollector::combine
     #[inline]
     fn cloning(self) -> Cloning<Self>
     where
@@ -369,46 +416,30 @@ pub trait CollectorBase {
         Cloning::new(self)
     }
 
-    /// Creates a [`RefCollector`] that copies every collected item.
+    /// Creates a collector that copies every collected item.
     ///
-    /// This is useful when you need ownership of items, but you still want to [`combine`]
-    /// the underlying collector into another collector.
-    /// (Reminder: only [`RefCollector`]s are [`combine`]-able.)
+    /// This is useful when you have a [`Collector<T>`](super::Collector), but you
+    /// need a [`for<'a> Collector<&'a mut T>`](super::Collector)
+    /// or [`for<'a> Collector<&'a T>`](super::Collector).
     ///
-    /// You usually don’t need this adaptor when working with [`Copy`] types (e.g., primitives),
-    /// since collectors often implement [`RefCollector`] to collect them seamlessly.
-    /// However, if your collector does not support it, this adaptor provides a fallback.
+    /// Many collectors may have implementations for references, such as collections.
+    /// In this case, you do not need this adapter.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let collector_copying_res = [1, 2, 3]
-    ///     .into_iter()
-    ///     .feed_into(vec![].into_collector().copying().combine(vec![]));
+    /// let collector = vec![]
+    ///     .into_collector()
+    ///     .copying();
     ///
-    /// assert_eq!(collector_copying_res, (vec![1, 2, 3], vec![1, 2, 3]));
+    /// let concat = [0, 1, 2, 3, 4]
+    ///     .iter()
+    ///     .feed_into(collector);
     ///
-    /// // Equivalent to:
-    /// let unzip_res: (Vec<_>, Vec<_>) = [1, 2, 3]
-    ///     .into_iter()
-    ///     .map(|s| (s, s))
-    ///     .unzip();
-    ///
-    /// assert_eq!(collector_copying_res, unzip_res);
-    ///
-    /// // Also equivalent to using `combine` directly,
-    /// // since `Vec<i32>::IntoCollector` implements `RefCollector`.
-    /// let collector_normal_res = [1, 2, 3]
-    ///     .into_iter()
-    ///     .feed_into(vec![].into_collector().combine(vec![]));
-    ///
-    /// assert_eq!(collector_copying_res, collector_normal_res);
+    /// assert_eq!(concat, [0, 1, 2, 3, 4]);
     /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
-    /// [`combine`]: crate::collector::RefCollector::combine
     #[inline]
     fn copying(self) -> Copying<Self>
     where
@@ -417,22 +448,22 @@ pub trait CollectorBase {
         Copying::new(self)
     }
 
-    /// Creates a [`Collector`] that stops accumulating after collecting the first `n` items,
-    /// or fewer if the underlying collector ends sooner.
+    /// Creates a collector that stops accumulating after collecting the first `n` items,
+    /// or fewer if the underlying collector stops sooner.
     ///
-    /// `take(n)` collects items until either `n` items have been collected or the underlying collector
-    /// stops, whichever happens first.
-    /// For collections, the [`Output`](Collector::Output) will contain at most `n` more items than
-    /// it had before construction.
-    ///
-    /// This also implements [`RefCollector`] if the underlying collector does.
+    /// `take(n)` collects items until either `n` items have been collected
+    /// or the underlying collector stops, whichever happens first.
+    /// For collections, the [`Output`](CollectorBase::Output) will contain
+    /// at most `n` more items than it had before construction.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let mut collector = vec![].into_collector().take(3);
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take(3);
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -444,8 +475,6 @@ pub trait CollectorBase {
     ///
     /// assert_eq!(collector.finish(), [1, 2, 3]);
     /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
     #[inline]
     fn take(self, n: usize) -> Take<Self>
     where
@@ -454,26 +483,25 @@ pub trait CollectorBase {
         Take::new(self, n)
     }
 
-    /// Creates a [`Collector`] that skips the first `n` collected items before it begins
-    /// accumulating them.
+    /// Creates a collector that skips the first `n` collected items
+    /// before it begins accumulating them.
     ///
-    /// `skip(n)` ignores collected items until `n` items have been collected. After that,
-    /// subsequent items are accumulated normally.
+    /// `skip(n)` ignores collected items until `n` items have been collected.
+    /// After that, subsequent items are accumulated normally.
     ///
     /// Note that in the current implementation,
     /// if the underlying collector has stopped accumulating during skipping,
-    /// its [`collect()`] and similar methods will return [`Break(())`] and
-    /// [`break_hint()`] will return `true`,
+    /// its [`collect()`], [`break_hint()`] and similar methods will return [`Break(())`],
     /// regardless of whether the adaptor has skipped enough items or not.
-    ///
-    /// This also implements [`RefCollector`] if the underlying collector does.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let mut collector = vec![].into_collector().skip(3);
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .skip(3);
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(2).is_continue());
@@ -486,10 +514,9 @@ pub trait CollectorBase {
     /// assert_eq!(collector.finish(), [4, 5]);
     /// ```
     ///
-    /// [`RefCollector`]: crate::collector::RefCollector
     /// [`Break(())`]: ControlFlow::Break
-    /// [`collect()`]: Collector::collect
-    /// [`break_hint()`]: Collector::break_hint
+    /// [`collect()`]: super::Collector::collect
+    /// [`break_hint()`]: CollectorBase::break_hint
     fn skip(self, n: usize) -> Skip<Self>
     where
         Self: Sized,
@@ -497,13 +524,11 @@ pub trait CollectorBase {
         Skip::new(self, n)
     }
 
-    /// Creates a [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
+    /// Creates a collector that destructures each 2-tuple `(A, B)` item and distributes its fields:
     /// `A` goes to the first collector, and `B` goes to the second collector.
     ///
     /// `unzip()` is useful when you want to split an [`Iterator`]
     /// producing tuples or structs into multiple collections.
-    ///
-    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
     ///
     /// # Examples
     ///
@@ -543,8 +568,6 @@ pub trait CollectorBase {
     /// assert_eq!(names, vec!["Alice", "Bob"]);
     /// assert_eq!(emails, vec!["alice@mail.com", "bob@mail.com"]);
     /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
     #[inline]
     fn unzip<C>(self, other: C) -> Unzip<Self, C::IntoCollector>
     where
@@ -554,24 +577,25 @@ pub trait CollectorBase {
         assert_collector_base(Unzip::new(self, other.into_collector()))
     }
 
-    /// Creates a [`Collector`] that feeds every item in the first collector until it stops accumulating,
+    /// Creates a collector that feeds every item in the first collector until it stops accumulating,
     /// then continues feeding items into the second one.
     ///
-    /// The first collector should be finite (typically achieved with [`take`](Collector::take)
-    /// or [`take_while`](Collector::take_while)),
+    /// The first collector should be finite (typically achieved with
+    /// [`take`](CollectorBase::take) or [`take_while`](super::Collector::take_while)),
     /// otherwise it will hoard all incoming items and never pass any to the second.
     ///
-    /// The [`Output`](Collector::Output) is a tuple containing the outputs of both underlying collectors,
-    /// in order.
-    ///
-    /// This adaptor also implements [`RefCollector`] if both underlying collectors do.
+    /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
+    /// both underlying collectors, in order.
     ///
     /// # Examples
     ///
     /// ```
     /// use better_collect::prelude::*;
     ///
-    /// let mut collector = vec![].into_collector().take(2).chain(vec![]);
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .take(2)
+    ///     .chain(vec![]);
     ///
     /// assert!(collector.collect(1).is_continue());
     ///
@@ -585,8 +609,6 @@ pub trait CollectorBase {
     ///
     /// assert_eq!(collector.finish(), (vec![1, 2], vec![3, 4, 5]));
     /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
     #[inline]
     fn chain<C>(self, other: C) -> Chain<Self, C::IntoCollector>
     where
@@ -596,18 +618,16 @@ pub trait CollectorBase {
         Chain::new(self, other.into_collector())
     }
 
-    /// Creates a [`Collector`] that transforms the final accumulated result.
+    /// Creates a collector that transforms the final accumulated result.
     ///
     /// This is used when your output gets "ugly" after a chain of adaptors,
     /// or when you do not want to break your API by (accidentally) rearranging adaptors,
     /// or when you just want a different output type for your collector.
     ///
-    /// This also implements [`RefCollector`] if the underlying collector does.
-    ///
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, num::Sum, cmp::Max};
+    /// use better_collect::{prelude::*, cmp::Max};
     ///
     /// #[derive(Debug, PartialEq)]
     /// struct Stats {
@@ -615,9 +635,9 @@ pub trait CollectorBase {
     ///     max: i32,
     /// }
     ///
-    /// let mut collector = Sum::<i32>::new()
-    ///     .combine(Max::new())
-    ///     .map_output(|(sum, max)| Stats { sum, max: max.unwrap() });
+    /// let mut collector = i32::adding()
+    ///     .tee(Max::new())
+    ///     .map_output(|(sum, max)| Stats { sum, max: max.unwrap_or(i32::MIN) });
     ///
     /// assert!(collector.collect(1).is_continue());
     /// assert!(collector.collect(3).is_continue());
@@ -635,7 +655,22 @@ pub trait CollectorBase {
         assert_collector_base(MapOutput::new(self, f))
     }
 
+    /// Creates a collector that feeds the underlying collector with
+    /// the mutable reference to the item, "pretending" the collector
+    /// accepts owned items.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .funnel();
+    ///
+    /// assert!(collector.collect_many([1, 2, 3]).is_continue());
+    /// assert_eq!(collector.finish(), [1, 2, 3]);
+    /// ```
     #[inline]
     fn funnel(self) -> Funnel<Self>
     where
@@ -700,4 +735,31 @@ where
     C: CollectorBase,
 {
     collector
+}
+
+fn foo() {
+    use crate::{cmp::Max, prelude::*};
+
+    let mut collector = String::new()
+        .into_concat()
+        .map({
+            fn closure<F: FnMut(&mut String) -> &str>(f: F) -> F {
+                f
+            }
+            closure(|s: &mut String| &s[..])
+        })
+        .tee_mut(Max::new().map({
+            let f = |s: &mut String| s.len();
+            f
+        }))
+        .tee_funnel(vec![]);
+
+    let strings = ["noble", "and", "singer"].map(String::from);
+    assert!(collector.collect_many(strings).is_continue());
+
+    let ((concat, max_len), string_vec) = collector.finish();
+
+    assert_eq!(concat, "nobleandsinger");
+    assert_eq!(max_len, Some(6));
+    assert_eq!(string_vec, ["noble", "and", "singer"]);
 }
