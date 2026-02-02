@@ -40,7 +40,7 @@ pub trait CollectorBase {
     ///     .into_collector()
     ///     .take(999)
     ///     .fuse()
-    ///     .filter(|&x| x > 0);
+    ///     .filter(|&x: &i32| x > 0);
     ///
     /// assert_eq!(v.finish(), [1, 2, 3]);
     /// ```
@@ -169,6 +169,8 @@ pub trait CollectorBase {
     /// With `fuse()`:
     ///
     /// ```
+    /// use better_collect::prelude::*;
+    ///
     /// let mut collector = vec![]
     ///     .into_collector()
     ///     .take_while(|&x| x != 3)
@@ -211,8 +213,8 @@ pub trait CollectorBase {
     /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
     /// both underlying collectors, in order.
     ///
-    /// See [`Collector`](super::Collector) for when this adapter is used
-    /// and other variants of `tee` adapters.
+    /// See the [module-level documentation](crate::collector) for
+    /// when this adapter is used and other variants of `tee` adapters.
     ///
     /// # Examples
     ///
@@ -236,7 +238,7 @@ pub trait CollectorBase {
         Self: Sized,
         C: IntoCollectorBase,
     {
-        Tee::new(self, other.into_collector())
+        assert_collector_base(Tee::new(self, other.into_collector()))
     }
 
     /// Creates a collector that lets both collectors collect the same item.
@@ -254,8 +256,8 @@ pub trait CollectorBase {
     /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
     /// both underlying collectors, in order.
     ///
-    /// See [`Collector`](super::Collector) for when this adapter is used
-    /// and other variants of `tee` adapters.
+    /// See the [module-level documentation](crate::collector) for
+    /// when this adapter is used and other variants of `tee` adapters.
     ///
     /// # Examples
     ///
@@ -275,9 +277,9 @@ pub trait CollectorBase {
     ///
     /// let (nums1, nums2) = collector.finish();
     ///
-    /// assert_eq!(nums1.iter().map(|num| *num).eq([1, 2]));
-    /// assert_eq!(nums2.iter().map(|num| *num).eq([1, 2, 3]));
-    /// assert_eq!(nums2.iter().map(Rc::strong_count), [2, 2, 1]);
+    /// assert!(nums1.iter().map(|num| **num).eq([1, 2]));
+    /// assert!(nums2.iter().map(|num| **num).eq([1, 2, 3]));
+    /// assert!(nums2.iter().map(Rc::strong_count).eq([2, 2, 1]));
     /// ```
     #[inline]
     fn tee_clone<C>(self, other: C) -> TeeClone<Self, C::IntoCollector>
@@ -285,7 +287,7 @@ pub trait CollectorBase {
         Self: Sized,
         C: IntoCollectorBase,
     {
-        TeeClone::new(self, other.into_collector())
+        assert_collector_base(TeeClone::new(self, other.into_collector()))
     }
 
     /// Creates a collector that lets both collectors collect the same item.
@@ -303,8 +305,8 @@ pub trait CollectorBase {
     /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
     /// both underlying collectors, in order.
     ///
-    /// See [`Collector`](super::Collector) for when this adapter is used
-    /// and other variants of `tee` adapters.
+    /// See the [module-level documentation](crate::collector) for
+    /// when this adapter is used and other variants of `tee` adapters.
     ///
     /// # Examples
     ///
@@ -313,6 +315,12 @@ pub trait CollectorBase {
     ///
     /// let mut collector = String::new()
     ///     .into_concat()
+    ///     .map({
+    ///         fn closure() -> impl FnMut(&mut String) -> &str {
+    ///             |s| &s[..]
+    ///         }
+    ///         closure()
+    ///     })
     ///     .tee_funnel(vec![]);
     ///
     /// let strings = ["noble", "and", "singer"].map(String::from);
@@ -329,7 +337,7 @@ pub trait CollectorBase {
         Self: Sized,
         C: IntoCollectorBase,
     {
-        TeeFunnel::new(self, other.into_collector())
+        assert_collector_base(TeeFunnel::new(self, other.into_collector()))
     }
 
     /// Creates a collector that lets both collectors collect the same item.
@@ -348,21 +356,26 @@ pub trait CollectorBase {
     /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
     /// both underlying collectors, in order.
     ///
-    /// See [`Collector`](super::Collector) for when this adapter is used
-    /// and other variants of `tee` adapters.
+    /// See the [module-level documentation](crate::collector) for
+    /// when this adapter is used and other variants of `tee` adapters.
     ///
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, cmp::Max};
+    /// use better_collect::{cmp::Max, prelude::*};
     ///
     /// let mut collector = String::new()
     ///     .into_concat()
-    ///     .map(|s: &mut String| &s[..])
+    ///     .map({
+    ///         fn closure() -> impl FnMut(&mut String) -> &str {
+    ///             |s| &s[..]
+    ///         }
+    ///         closure()
+    ///     })
     ///     .tee_mut(Max::new().map({
     ///         let f = |s: &mut String| s.len();
     ///         f
-    ///     })
+    ///     }))
     ///     .tee_funnel(vec![]);
     ///
     /// let strings = ["noble", "and", "singer"].map(String::from);
@@ -380,7 +393,7 @@ pub trait CollectorBase {
         Self: Sized,
         C: IntoCollectorBase,
     {
-        TeeMut::new(self, other.into_collector())
+        assert_collector_base(TeeMut::new(self, other.into_collector()))
     }
 
     /// Creates a collector that [`clone`](Clone::clone)s every collected item.
@@ -400,7 +413,7 @@ pub trait CollectorBase {
     /// let collector = vec![]
     ///     .into_concat()
     ///     .cloning() // Try putting `cloning` before every other collector
-    ///     .filter(|num| num.len() > 1);
+    ///     .filter(|num: &&Vec<_>| num.len() > 1);
     ///
     /// let concat = [vec![0, 1, 2], vec![3], vec![4, 5]]
     ///     .iter()
@@ -413,7 +426,7 @@ pub trait CollectorBase {
     where
         Self: Sized,
     {
-        Cloning::new(self)
+        assert_collector_base(Cloning::new(self))
     }
 
     /// Creates a collector that copies every collected item.
@@ -445,7 +458,7 @@ pub trait CollectorBase {
     where
         Self: Sized,
     {
-        Copying::new(self)
+        assert_collector_base(Copying::new(self))
     }
 
     /// Creates a collector that stops accumulating after collecting the first `n` items,
@@ -480,7 +493,7 @@ pub trait CollectorBase {
     where
         Self: Sized,
     {
-        Take::new(self, n)
+        assert_collector_base(Take::new(self, n))
     }
 
     /// Creates a collector that skips the first `n` collected items
@@ -521,7 +534,7 @@ pub trait CollectorBase {
     where
         Self: Sized,
     {
-        Skip::new(self, n)
+        assert_collector_base(Skip::new(self, n))
     }
 
     /// Creates a collector that destructures each 2-tuple `(A, B)` item and distributes its fields:
@@ -615,7 +628,7 @@ pub trait CollectorBase {
         Self: Sized,
         C: IntoCollectorBase,
     {
-        Chain::new(self, other.into_collector())
+        assert_collector_base(Chain::new(self, other.into_collector()))
     }
 
     /// Creates a collector that transforms the final accumulated result.
@@ -735,31 +748,4 @@ where
     C: CollectorBase,
 {
     collector
-}
-
-fn foo() {
-    use crate::{cmp::Max, prelude::*};
-
-    let mut collector = String::new()
-        .into_concat()
-        .map({
-            fn closure<F: FnMut(&mut String) -> &str>(f: F) -> F {
-                f
-            }
-            closure(|s: &mut String| &s[..])
-        })
-        .tee_mut(Max::new().map({
-            let f = |s: &mut String| s.len();
-            f
-        }))
-        .tee_funnel(vec![]);
-
-    let strings = ["noble", "and", "singer"].map(String::from);
-    assert!(collector.collect_many(strings).is_continue());
-
-    let ((concat, max_len), string_vec) = collector.finish();
-
-    assert_eq!(concat, "nobleandsinger");
-    assert_eq!(max_len, Some(6));
-    assert_eq!(string_vec, ["noble", "and", "singer"]);
 }
