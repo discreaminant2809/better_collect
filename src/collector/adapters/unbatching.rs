@@ -38,7 +38,7 @@ where
 
 impl<C, T, F> Collector<T> for Unbatching<C, F>
 where
-    C: Collector<T>,
+    C: CollectorBase,
     F: FnMut(&mut C, T) -> ControlFlow<()>,
 {
     #[inline]

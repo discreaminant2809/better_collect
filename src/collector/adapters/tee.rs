@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase, Fuse};
 
 /// A [`Collector`] that lets both collectors collect the same item.
 ///
-/// This `struct` is created by [`CollectorBase::combine()`].
+/// This `struct` is created by [`CollectorBase::tee()`].
 /// See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Tee<C1, C2> {

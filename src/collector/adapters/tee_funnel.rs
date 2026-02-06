@@ -6,7 +6,7 @@ use super::Fuse;
 
 /// A [`Collector`] that lets both collectors collect the same item.
 ///
-/// This `struct` is created by [`CollectorBase::combine_funnel()`].
+/// This `struct` is created by [`CollectorBase::tee_funnel()`].
 /// See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct TeeFunnel<C1, C2> {

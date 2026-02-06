@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use super::{
     Chain, Cloning, Copying, Funnel, Fuse, IntoCollectorBase, MapOutput, Skip, Take, Tee, TeeClone,
-    TeeFunnel, TeeMut, Unzip,
+    TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector_base,
 };
 
 /// The base trait of a collector.
@@ -14,11 +14,18 @@ use super::{
 /// Allowing the output type (and such methods) to vary with the item type would be
 /// confusing regardless.
 ///
-/// See [`Collector`](super::Collector) for more information.
+/// Implementors should never implement this trait alone, but also implement
+/// [`Collector`](super::collector).
+///
+/// See the [module-level documentation](super) for more information.
 ///
 /// # Dyn Compatibility
 ///
 /// This trait is *dyn-compatible*, meaning it can be used as a trait object.
+/// You do not need to specify the [`Output`](CollectorBase::Output) type.
+/// The compiler will even emit a warning if you add the
+/// [`Output`](CollectorBase::Output) type.
+///
 /// However, as a trait object, it is pretty much useless, as the only method
 /// available is [`break_hint()`](CollectorBase::break_hint).
 pub trait CollectorBase {
@@ -691,6 +698,34 @@ pub trait CollectorBase {
     {
         assert_collector_base(Funnel::new(self))
     }
+
+    /// Creates a collector with a custom collection logic.
+    ///
+    /// This adaptor is useful for behaviors that cannot be expressed
+    /// through existing adaptors without cloning or intermediate allocations.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = Vec::<i32>::new()
+    ///     .into_collector()
+    ///     .unbatching(|v, arr: &[_]| v.collect_many(arr));
+    ///
+    /// assert!(collector.collect(&[1, 2, 3]).is_continue());
+    /// assert!(collector.collect(&[4, 5]).is_continue());
+    /// assert!(collector.collect(&[6, 7, 8, 9]).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    /// ```
+    fn unbatching<F, T>(self, f: F) -> Unbatching<Self, F>
+    where
+        Self: Sized,
+        F: FnMut(&mut Self, T) -> ControlFlow<()>,
+    {
+        assert_collector_base(Unbatching::new(self, f))
+    }
 }
 
 impl<C> CollectorBase for &mut C
@@ -741,11 +776,3 @@ dyn_impl!(Send Sync);
 
 // `Output` shouldn't be required to be specified.
 fn _dyn_compatible(_: &mut dyn CollectorBase) {}
-
-#[inline(always)]
-fn assert_collector_base<C>(collector: C) -> C
-where
-    C: CollectorBase,
-{
-    collector
-}

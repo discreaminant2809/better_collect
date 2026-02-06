@@ -4,7 +4,10 @@ use crate::collector::{Collector, CollectorBase};
 
 use super::Fuse;
 
+/// A [`Collector`] that lets both collectors collect the same item.
 ///
+/// This `struct` is created by [`CollectorBase::tee_mut()`].
+/// See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct TeeMut<C1, C2> {
     collector1: Fuse<C1>,
