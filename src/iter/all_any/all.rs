@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 
 use super::raw_all_any::RawAllAny;
 
-/// A [`Collector`] that tests whether all collected items satisfy a predicate.
+/// A collector that tests whether all collected items satisfy a predicate.
 ///
 /// Its [`Output`] is initially `true` and remains `true` as long as every collected item
 /// satisfies the predicate.
@@ -12,8 +12,6 @@ use super::raw_all_any::RawAllAny;
 /// it returns [`Break`], and the [`Output`] becomes `false`.
 ///
 /// This collector corresponds to [`Iterator::all()`].
-///
-/// This collector has a `Ref` counterpart created by [`new_ref()`](All::new_ref).
 ///
 /// # Examples
 ///
@@ -44,7 +42,7 @@ use super::raw_all_any::RawAllAny;
 /// ```
 ///
 /// [`Break`]: std::ops::ControlFlow::Break
-/// [`Output`]: Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Clone)]
 pub struct All<F> {
     inner: RawAllAny<F, true>,

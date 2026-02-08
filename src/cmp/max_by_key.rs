@@ -7,7 +7,7 @@ use super::{Max, value_key::ValueKey};
 /// A [`Collector`] that computes the item among the items it collects
 /// that gives the maximum value from a function.
 ///
-/// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
+/// Its [`Output`](CollectorBase::Output) is `None` if it has not collected any items,
 /// or `Some` containing the maximum item otherwise.
 ///
 /// This collector is constructed by [`Max::by_key()`](super::Max::by_key).

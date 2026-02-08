@@ -2,12 +2,10 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that accumulates items using a function.
+/// A collector that accumulates items using a function.
 ///
 /// This collector corresponds to [`Iterator::fold()`], except that
 /// the accumulated value is mutated in place.
-///
-/// This collector has a `Ref` counterpart created by [`new_ref()`](Fold::new_ref).
 ///
 /// # Examples
 ///

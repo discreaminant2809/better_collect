@@ -128,10 +128,10 @@ pub trait Collector<T>: CollectorBase {
     /// Collects items from an iterator, consumes the collector, and produces the accumulated result.
     ///
     /// This is equivalent to calling [`collect_many`](Collector::collect_many)  
-    /// followed by [`finish`](Collector::finish) (which is the default implementation),
+    /// followed by [`finish`](CollectorBase::finish) (which is the default implementation),
     /// but it can be overridden for optimization (e.g., to skip tracking internal state)
     /// because the collector will be dropped anyway.
-    /// For instance, [`take()`](Collector::take) overrides this method to avoid tracking
+    /// For instance, [`take()`](CollectorBase::take) overrides this method to avoid tracking
     /// how many items have been collected.
     ///
     /// Unlike [`collect()`](Self::collect), callers are **not** required to check for
@@ -230,6 +230,8 @@ pub trait Collector<T>: CollectorBase {
     ///
     /// assert_eq!(collector.finish(), [2, 4, 0]);
     /// ```
+    ///
+    /// [`Continue`]: ControlFlow::Continue
     #[inline]
     fn filter<F>(self, pred: F) -> Filter<Self, F>
     where

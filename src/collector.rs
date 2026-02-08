@@ -25,7 +25,7 @@
 //! especially for adaptors that take generic functions.
 //! This is due to current limitations in Rust’s type inference for closure parameters.
 //!
-//! Moreover, if you ever... [TODO]
+//! Moreover, if you ever... {TODO}
 //!
 //! # Example
 //!
@@ -51,12 +51,20 @@
 //!     }
 //! }
 //!
-//! impl Collector for Tokenizer {
-//!     type Item = String;
+//! // We have to implement this trait first.
+//! impl CollectorBase for Tokenizer {
 //!     // For now, for simplicity, we just return the struct itself.
 //!     type Output = Self;
 //!
-//!     fn collect(&mut self, word: Self::Item) -> ControlFlow<()> {
+//!     fn finish(self) -> Self::Output {
+//!         // Just return itself.
+//!         self
+//!     }
+//! }
+//!
+//! impl Collector<String> for Tokenizer {
+//!
+//!     fn collect(&mut self, word: String) -> ControlFlow<()> {
 //!         self.indices
 //!             .entry(word)
 //!             .or_insert_with_key(|word| {
@@ -67,11 +75,6 @@
 //!
 //!         // Tokenizer never stops accumulating.
 //!         ControlFlow::Continue(())
-//!     }
-//!
-//!     fn finish(self) -> Self::Output {
-//!         // Just return itself.
-//!         self
 //!     }
 //! }
 //!

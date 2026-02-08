@@ -2,9 +2,9 @@ use crate::collector::{Collector, CollectorBase};
 
 use std::ops::ControlFlow;
 
-/// A [`RefCollector`] that copies every collected item.
+/// A collector that copies every collected item.
 ///
-/// This `struct` is created by [`Collector::copying()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::copying()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Copying<C>(C);
 

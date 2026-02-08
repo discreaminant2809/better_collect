@@ -2,10 +2,10 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that skips the first `n` collected items before it begins
+/// A collector that skips the first `n` collected items before it begins
 /// accumulating them.
 ///
-/// This `struct` is created by [`Collector::skip()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::skip()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Skip<C> {
     collector: C,

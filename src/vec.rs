@@ -1,8 +1,6 @@
 //! [`Collector`]s for [`Vec`].
 //!
 //! This module corresponds to [`mod@std::vec`].
-//!
-//! [`Collector`]: crate::collector::Collector
 
 use crate::{
     collector::{Collector, CollectorBase},
@@ -14,27 +12,21 @@ use std::{borrow::Borrow, ops::ControlFlow};
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::vec::Vec;
 
-/// A [`Collector`] that pushes collected items into a [`Vec`].
+/// A collector that pushes collected items into a [`Vec`].
 /// Its [`Output`] is [`Vec`].
-///
-/// This also implements [`RefCollector`] if `T` is [`Copy`].
 ///
 /// This struct is created by `Vec::into_collector()`.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Debug, Clone)]
 pub struct IntoCollector<T>(Vec<T>);
 
-/// A [`Collector`] that pushes collected items into a [`&mut Vec`](Vec).
+/// A collector that pushes collected items into a [`&mut Vec`](Vec).
 /// Its [`Output`] is [`&mut Vec`](Vec).
-///
-/// This also implements [`RefCollector`] if `T` is [`Copy`].
 ///
 /// This struct is created by `Vec::collector_mut()`.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Debug)]
 pub struct CollectorMut<'a, T>(&'a mut Vec<T>);
 

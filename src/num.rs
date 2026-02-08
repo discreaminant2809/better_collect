@@ -1,17 +1,15 @@
-//! Numeric-related [`Collector`]s.
+//! Numeric-related collectors.
 //!
-//! This module provides specialized [`Sum`](crate::ops::Sum) and [`Product`](crate::ops::Product)
-//! for numeric types in the standard library.
+//! This module provides [`Adding`](crate::ops::Adding) and [`Muling`](crate::ops::Muling)
+//! collectors for numeric types in the standard library.
 //!
 //! This module corresponds to [`std::num`].
-//!
-//! [`Collector`]: crate::collector::Collector
 
 use std::{num::Wrapping, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that adds every collected number.
+/// A collector that adds every collected number.
 /// Its [`Output`](CollectorBase::Output) is the type
 /// that created this collector.
 ///
@@ -35,11 +33,11 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 #[derive(Debug, Clone)]
 pub struct Adding<Num>(Num);
 
-/// A [`Collector`] that adds every collected number.
+/// A collector that adds every collected number.
 /// Its [`Output`](CollectorBase::Output) is the type
 /// that created this collector.
 ///
-/// This `struct` is created by `<Num>::adding()`, where `Num`
+/// This `struct` is created by `<Num>::muling()`, where `Num`
 /// is, currently, all integers and floating point numbers,
 /// as well as [`Wrapping`].
 ///

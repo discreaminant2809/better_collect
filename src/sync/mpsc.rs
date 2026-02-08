@@ -11,8 +11,8 @@ use std::{
 
 use crate::collector::CollectorBase;
 
-/// A [`Collector`] that sends items through a [`std::sync::mpsc::channel()`].
-/// Its [`Output`](crate::collector::Collector::Output) is [`Sender`].
+/// A collector that sends items through a [`std::sync::mpsc::channel()`].
+/// Its [`Output`](CollectorBase::Output) is [`Sender`].
 ///
 /// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///
@@ -60,8 +60,8 @@ use crate::collector::CollectorBase;
 /// [`Collector`]: crate::collector::Collector
 pub struct IntoCollector<T>(Sender<T>);
 
-/// A [`Collector`] that sends items through a [`std::sync::mpsc::channel()`].
-/// Its [`Output`](crate::collector::Collector::Output) is [`&Sender`](Sender).
+/// A collector that sends items through a [`std::sync::mpsc::channel()`].
+/// Its [`Output`](CollectorBase::Output) is [`&Sender`](Sender).
 ///
 /// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///
@@ -109,8 +109,8 @@ pub struct IntoCollector<T>(Sender<T>);
 /// [`Collector`]: crate::collector::Collector
 pub struct Collector<'a, T>(&'a Sender<T>);
 
-/// A [`Collector`] that sends items through a [`std::sync::mpsc::sync_channel()`].
-/// Its [`Output`](crate::collector::Collector::Output) is [`SyncSender`].
+/// A collector that sends items through a [`std::sync::mpsc::sync_channel()`].
+/// Its [`Output`](CollectorBase::Output) is [`SyncSender`].
 ///
 /// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///
@@ -158,8 +158,8 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 /// [`Collector`]: crate::collector::Collector
 pub struct IntoSyncCollector<T>(SyncSender<T>);
 
-/// A [`Collector`] that sends items through a [`std::sync::mpsc::sync_channel()`].
-/// Its [`Output`](crate::collector::Collector::Output) is [`&SyncSender`](SyncSender).
+/// A collector that sends items through a [`std::sync::mpsc::sync_channel()`].
+/// Its [`Output`](CollectorBase::Output) is [`&SyncSender`](SyncSender).
 ///
 /// If the receiver has hung up, this collector returns [`Break(())`](ControlFlow::Break).
 ///

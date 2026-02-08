@@ -34,12 +34,12 @@ pub trait IteratorExt: Iterator {
     /// ```
     /// use better_collect::{prelude::*, cmp::Max};
     ///
-    /// let (nums, max) = [4, 2, 6, 3]
+    /// let (max, nums) = [4, 2, 6, 3]
     ///     .into_iter()
-    ///     .feed_into(vec![].into_collector().combine(Max::new()));
+    ///     .feed_into(Max::new().tee(vec![]));
     ///
-    /// assert_eq!(nums, [4, 2, 6, 3]);
     /// assert_eq!(max, Some(6));
+    /// assert_eq!(nums, [4, 2, 6, 3]);
     /// ```
     #[inline]
     fn feed_into<C>(self, collector: C) -> C::Output
@@ -77,7 +77,14 @@ pub trait IteratorExt: Iterator {
     /// let (s_no_ws, len_no_ws) = "the noble and the singer"
     ///     .split_whitespace()
     ///     .feed_into_with_puller(
-    ///         "".to_owned().into_concat(),
+    ///         String::new()
+    ///             .into_concat()
+    ///             .map({
+    ///                 fn f<'a>(s: &mut &'a str) -> &'a str {
+    ///                     s
+    ///                 }
+    ///                 f
+    ///             }),
     ///         |driver| driver.count(),
     ///     );
     ///

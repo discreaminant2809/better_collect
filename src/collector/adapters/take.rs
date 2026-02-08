@@ -2,9 +2,9 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that stops accumulating after collecting the first `n` items.
+/// A collector that stops accumulating after collecting the first `n` items.
 ///
-/// This `struct` is created by [`Collector::take()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::take()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Take<C> {
     collector: C,

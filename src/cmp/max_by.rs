@@ -9,7 +9,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// A [`Collector`] that computes the maximum value among the items it collects
 /// according to a comparison function.
 ///
-/// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
+/// Its [`Output`](CollectorBase::Output) is `None` if it has not collected any items,
 /// or `Some` containing the maximum item otherwise.
 ///
 /// This collector is constructed by [`Max::by()`](super::Max::by).

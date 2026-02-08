@@ -2,7 +2,7 @@ use std::{iter, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, Fuse};
 
-/// A [`Collector`] that lets both collectors collect the same item.
+/// A collector that lets both collectors collect the same item.
 ///
 /// This `struct` is created by [`Collector::tee_with()`].
 /// See its documentation for more.

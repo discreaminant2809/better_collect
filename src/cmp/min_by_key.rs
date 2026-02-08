@@ -7,7 +7,7 @@ use super::{Min, value_key::ValueKey};
 /// A [`Collector`] that computes the item among the items it collects
 /// that gives the minimum value from a key-extraction function.
 ///
-/// Its [`Output`](Collector::Output) is `None` if it has not collected any items,
+/// Its [`Output`](CollectorBase::Output) is `None` if it has not collected any items,
 /// or `Some` containing the minimum item otherwise.
 ///
 /// This collector is constructed by [`Min::by_key()`](super::Min::by_key).

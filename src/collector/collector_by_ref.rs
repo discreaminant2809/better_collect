@@ -6,11 +6,14 @@ use super::{CollectorBase, IntoCollectorBase};
 /// a collector from `&T`.
 ///
 /// You cannot implement this trait directly.
-/// Instead, you should implement [`IntoCollector`] for `&T` (where `T` is your type)
+/// Instead, you should implement [`IntoCollectorBase`] for `&T`
+/// (where `T` is your type)
 /// and this trait is automatically implemented for `T`.
 ///
 /// This trait is not intended for use in bounds.
-/// Use [`IntoCollector`] in trait bounds instead.
+/// Use [`IntoCollector`] or [`IntoCollectorBase`] in trait bounds instead.
+///
+/// [`IntoCollector`]: super::IntoCollector
 #[allow(private_bounds)]
 pub trait CollectorByRef: Sealed {
     /// Which collector being produced?
@@ -18,7 +21,7 @@ pub trait CollectorByRef: Sealed {
     where
         Self: 'a;
 
-    /// Creates a [`Collector`] from a shared reference of a value.
+    /// Creates a collector from a shared reference of a value.
     fn collector(&self) -> Self::Collector<'_>;
 }
 

@@ -1,8 +1,8 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{Collector, CollectorBase};
+use crate::collector::{Collector, CollectorBase, assert_collector_base};
 
-/// A [`RefCollector`] that counts the number of items it collects.
+/// A collector that counts the number of items it collects.
 ///
 /// This collector corresponds to [`Iterator::count()`].
 ///
@@ -36,7 +36,7 @@ impl Count {
     /// Creates a new instance of this collector with an initial count of 0.
     #[inline]
     pub const fn new() -> Self {
-        Count { count: 0 }
+        assert_collector_base(Count { count: 0 })
     }
 
     /// Returns the current count.

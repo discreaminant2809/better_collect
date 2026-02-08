@@ -2,9 +2,9 @@ use crate::collector::{Collector, CollectorBase};
 
 use std::ops::ControlFlow;
 
-/// A [`RefCollector`] that [`clone`](Clone::clone)s every collected item.
+/// A collector that [`clone`](Clone::clone)s every collected item.
 ///
-/// This `struct` is created by [`Collector::cloning()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::cloning()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Cloning<C>(C);
 

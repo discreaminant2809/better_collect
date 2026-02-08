@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase};
 
 /// A [`Collector`] with a custom collection logic.
 ///
-/// This `struct` is created by [`Collector::unbatching()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::unbatching()`]. See its documentation for more.
 #[derive(Clone)]
 pub struct Unbatching<C, F> {
     collector: C,

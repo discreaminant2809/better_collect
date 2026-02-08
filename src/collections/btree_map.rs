@@ -1,8 +1,6 @@
-//! [`Collector`]s for [`BTreeMap`]
+//! Collectors for [`BTreeMap`]
 //!
 //! This module corresponds to [`std::collections::btree_map`].
-//!
-//! [`Collector`]: crate::collector::Collector
 
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap;
@@ -17,29 +15,21 @@ use alloc::collections::btree_map::{Entry, OccupiedEntry, VacantEntry};
 // #[cfg(feature = "unstable")]
 // use crate::aggregate::{Group, GroupMap, OccupiedGroup, VacantGroup};
 
-/// A [`Collector`] that inserts collected items into a [`BTreeMap`].
+/// A collector that inserts collected items into a [`BTreeMap`].
 /// Its [`Output`] is [`BTreeMap`].
-///
-/// This also implements [`RefCollector`] if `T` is [`Copy`].
 ///
 /// This struct is created by `BTreeMap::into_collector()`.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
-/// [`RefCollector`]: crate::collector::RefCollector
+/// [`Output`]: crate::collector::CollectorBase::Output
 #[derive(Debug, Clone)]
 pub struct IntoCollector<K, V>(pub(super) BTreeMap<K, V>);
 
-/// A [`Collector`] that inserts collected items into a [`&mut BTreeMap`](BTreeMap).
+/// A collector that inserts collected items into a [`&mut BTreeMap`](BTreeMap).
 /// Its [`Output`] is [`&mut BTreeMap`](BTreeMap).
-///
-/// This also implements [`RefCollector`] if `T` is [`Copy`].
 ///
 /// This struct is created by `BTreeMap::collector_mut()`.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
-/// [`RefCollector`]: crate::collector::RefCollector
+/// [`Output`]: crate::collector::CollectorBase::Output
 #[derive(Debug)]
 pub struct CollectorMut<'a, K, V>(pub(super) &'a mut BTreeMap<K, V>);
 

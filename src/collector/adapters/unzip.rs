@@ -2,10 +2,10 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase, Fuse};
 
-/// A [`Collector`] that destructures each 2-tuple `(A, B)` item and distributes its fields:
+/// A collector that destructures each 2-tuple `(A, B)` item and distributes its fields:
 /// `A` goes to the first collector, and `B` goes to the second collector.
 ///
-/// This `struct` is created by [`Collector::unzip()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::unzip()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Unzip<C1, C2> {
     // `Fuse` is neccessary since either may end earlier.

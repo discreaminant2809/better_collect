@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that searches for the first item satisfying a predicate.
+/// A collector that searches for the first item satisfying a predicate.
 ///
 /// If no matching item has been found, its [`Output`] is `None`.
 /// When the collector encounters an item that makes the predicate return `true`,
@@ -39,7 +39,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// ```
 ///
 /// [`Break`]: std::ops::ControlFlow::Break
-/// [`Output`]: Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Clone)]
 pub struct Find<T, F> {
     state: State<T, F>,

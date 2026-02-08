@@ -6,8 +6,8 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{CollectorBase, IntoCollectorBase};
 
-/// A [`Collector`] that always stops accumulating.
-/// Its [`Output`](crate::collector::Collector::Output) is `()`.
+/// A collector that always stops accumulating.
+/// Its [`Output`](CollectorBase::Output) is `()`.
 ///
 /// This struct is created by `().into_collector()`
 /// and `().collector()`.

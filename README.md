@@ -8,7 +8,7 @@ Provides a composable, declarative way to consume an iterator.
 
 If [`Iterator`] is the "source half" of data pipeline, [`Collector`] is the "sink half" of the pipeline.
 
-In order words, [`Iterator`] describes *how to produce* data, and [`Collector`] describes *how to consume* it.
+In order words, [`Iterator`] describes how to produce data, and [`Collector`] describes how to consume it.
 
 ## Motivation
 
@@ -82,12 +82,12 @@ assert_eq!(max, 3);
 This crate proposes a one-pass, declarative approach:
 
 ```rust
-use better_collect::{prelude::*, num::Sum, cmp::Max};
+use better_collect::{prelude::*, cmp::Max};
 
 let nums = [1, 3, 2];
 let (sum, max) = nums
     .into_iter()
-    .feed_into(Sum::<i32>::new().combine(Max::new()));
+    .feed_into(i32::adding().tee(Max::new()));
 
 assert_eq!(sum, 6);
 assert_eq!(max.unwrap(), 3);
@@ -110,43 +110,43 @@ fn socket_stream() -> impl Iterator<Item = String> {
 // - How many bytes were read.
 // - The last-seen data.
 
-// Usually, we're pretty much stuck with for-loop (tradition, `(try_)fold`, `(try_)for_each`).
+// Usually, we're pretty much stuck with for-loop
+// (tradition, `(try_)fold`, `(try_)for_each`).
 // No common existing tools can help us here:
-let mut received = vec![];
 let mut byte_read = 0_usize;
+let mut received = vec![];
 let mut last_seen = None;
 
 for data in socket_stream() {
-    received.push(data.clone());
     byte_read += data.len();
+    received.push(data.clone());
     last_seen = Some(data);
 }
 
-let expected = (received, byte_read, last_seen);
+let expected = (byte_read, received, last_seen);
 
 // This crate's way:
-use better_collect::{prelude::*, iter::Last, num::Sum};
+use better_collect::{prelude::*, iter::Last};
 
-let ((received, byte_read), last_seen) = socket_stream()
+let ((byte_read, received), last_seen) = socket_stream()
     .feed_into(
-        vec![]
-            .into_collector()
-            .cloning()
-            // Use `map_ref` so that our collector is a `RefCollector`
-            // (only a `RefCollector` is `combine`-able)
-            .combine(Sum::<usize>::new().map_ref(|data: &mut String| data.len()))
-            .combine(Last::new())
+        usize::adding()
+            .map({
+                let f = |data: &mut String| data.len();
+                f
+            })
+            .tee_funnel(vec![])
+            .tee_clone(Last::new())
     );
 
-assert_eq!((received, byte_read, last_seen), expected);
+assert_eq!((byte_read, received, last_seen), expected);
 ```
 
 Very declarative! We describe what we want to collect.
 
-You might think this is just like [`Iterator::unzip()`], but this crate does a bit better:
-it can split the data and feed separately **WITHOUT** additional allocation.
+You might think this is just like [`Iterator::unzip()`]...
 
-To demonstrate the difference, take this example:
+Consider this example:
 
 ```rust
 use std::collections::HashSet;
@@ -176,67 +176,29 @@ let unzip_way: (String, HashSet<_>) = socket_stream()
 let collector_way = socket_stream()
     // No clone. The data flows smoothly.
     .feed_into(
-        "".to_owned()
+        String::new()
             .into_concat()
-            .combine(HashSet::new())
+            .map({
+                fn f(s: &mut String) -> &str {
+                    &s[..]
+                }
+                f
+            })
+            .tee_funnel(HashSet::new())
     );
 
 assert_eq!(unzip_way, collector_way);
 ```
 
-## Traits
+## Crate stucture
 
-### Main traits
+Modules in this crate mirror those in the standard library, because this crate
+extends many types there. There is also `collector` which
+contains collector functionalities that work behind [`feed_into()`],
+and `prelude` which re-exports commons items for easier use.
 
-Unlike [`std::iter`], this crate defines two main traits instead. Roughly:
-
-```rust
-use std::ops::ControlFlow;
-
-pub trait Collector {
-    type Item;
-
-    type Output
-    where
-        Self: Sized;
-
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()>;
-
-    fn finish(self) -> Self::Output
-    where
-        Self: Sized;
-}
-
-pub trait RefCollector: Collector {
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()>;
-}
-```
-
-[`Collector`] is similar to [`Extend`], but it also returns a [`ControlFlow`]
-value to indicate whether it should stop accumulating items after a call to
-[`collect()`].
-This serves as a hint for adaptors like [`combine()`] or [`chain()`]
-to "vectorize" the remaining items to another collector.
-In short, it is like a composable [`Extend`].
-
-[`RefCollector`] is a collector that does not require ownership of an item
-to process it.
-This allows items to flow through multiple collectors without being consumed,
-avoiding unnecessary cloning.
-It powers [`combine()`], which creates a pipeline of collectors,
-letting each item pass through safely by reference until the final collector
-takes ownership.
-
-### Other traits
-
-[`IteratorExt`] extends [`Iterator`] with the
-[`feed_into()`] method, which feeds all items from an iterator
-into a [`Collector`] and returns the collector’s result.
-To use this method, the [`IteratorExt`] trait must be imported.
-
-[`IntoCollector`] is a conversion trait that converts a type into a [`Collector`].
-
-More types, traits and functions can be found in this crate's documentation.
+It is recommended to read the documentation of `collector` next
+if you want to delve into how collectors work.
 
 ## Features
 
@@ -257,24 +219,15 @@ More types, traits and functions can be found in this crate's documentation.
   under this flag anymore.
 
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html
-[`RefCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html
-[`IteratorExt`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html
-[`IntoCollector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.IntoCollector.html
-[`collect()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#tymethod.collect
 [`feed_into()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.feed_into
-[`chain()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html#method.chain
-[`combine()`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.RefCollector.html#method.combine
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
-[`Extend`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Extend.html
 [`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
 [`Iterator::inspect()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.inspect
 [`Iterator::unzip()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.unzip
-[`std::iter`]: https://doc.rust-lang.org/std/iter/index.html
 [`Vec`]: https://doc.rust-lang.org/1.90.0/std/vec/struct.Vec.html
 [`HashSet`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashSet.html
 [`HashMap`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.HashMap.html
 [`LinkedList`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.LinkedList.html
-[`ControlFlow`]: https://doc.rust-lang.org/1.90.0/std/ops/enum.ControlFlow.html
 [`alloc`]: https://doc.rust-lang.org/1.90.0/alloc/index.html
 [`std`]: https://doc.rust-lang.org/1.90.0/std/index.html
 [`VecDeque`]: https://doc.rust-lang.org/1.90.0/std/collections/struct.VecDeque.html

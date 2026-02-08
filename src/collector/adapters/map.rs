@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that calls a closure on each item before collecting.
+/// A collector that calls a closure on each item before collecting.
 ///
 /// This `struct` is created by [`Collector::map()`]. See its documentation for more.
 #[derive(Clone)]

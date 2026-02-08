@@ -2,10 +2,10 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
-/// A [`Collector`] that reduces all collected items into a single value
+/// A collector that reduces all collected items into a single value
 /// by repeatedly applying a reduction function.
 ///
-/// If no items have been collected, its [`Output`](crate::collector::Collector::Output) is `None`;
+/// If no items have been collected, its [`Output`](CollectorBase::Output) is `None`;
 /// otherwise, it returns `Some` containing the result of the reduction.
 ///
 /// This collector corresponds to [`Iterator::reduce()`].

@@ -1,4 +1,4 @@
-//! [`Collector`]s for [`BinaryHeap`]
+//! Collectors for [`BinaryHeap`]
 //!
 //! This module corresponds to [`std::collections::binary_heap`].
 //!
@@ -21,36 +21,26 @@
 //! #
 //! # collector.collect(1);
 //! ```
-//!
-//! [`Collector`]: crate::collector::Collector
 
 #[cfg(not(feature = "std"))]
 use alloc::collections::BinaryHeap;
 #[cfg(feature = "std")]
 use std::collections::BinaryHeap;
 
-/// A [`Collector`] that pushes collected items into a [`BinaryHeap`].
+/// A collector that pushes collected items into a [`BinaryHeap`].
 /// Its [`Output`] is [`BinaryHeap`].
-///
-/// This also implements [`RefCollector`] if `T` is [`Copy`].
 ///
 /// This struct is created by `BinaryHeap::into_collector()`.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
-/// [`RefCollector`]: crate::collector::RefCollector
+/// [`Output`]: crate::collector::CollectorBase::Output
 #[derive(Debug, Clone)]
 pub struct IntoCollector<T>(pub(super) BinaryHeap<T>);
 
-/// A [`Collector`] that pushes collected items into a [`&mut BinaryHeap`](BinaryHeap).
+/// A collector that pushes collected items into a [`&mut BinaryHeap`](BinaryHeap).
 /// Its [`Output`] is [`&mut BinaryHeap`](BinaryHeap).
-///
-/// This also implements [`RefCollector`] if `T` is [`Copy`].
 ///
 /// This struct is created by `BinaryHeap::collector_mut()`.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
-/// [`RefCollector`]: crate::collector::RefCollector
+/// [`Output`]: crate::collector::CollectorBase::Output
 #[derive(Debug)]
 pub struct CollectorMut<'a, T>(pub(super) &'a mut BinaryHeap<T>);

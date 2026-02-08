@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, Fuse};
 
-/// A [`Collector`] that distributes items between two collectors based on a predicate.
+/// A collector that distributes items between two collectors based on a predicate.
 ///
 /// This `struct` is created by [`Collector::partition()`]. See its documentation for more.
 #[derive(Clone)]

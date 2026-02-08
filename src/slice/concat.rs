@@ -4,46 +4,41 @@ mod into_concat;
 pub use concat_mut::*;
 pub use into_concat::*;
 
-/// Converts a container into [`Collector`]s that concatenate items.
+/// Converts a container into collectors that concatenate items.
 ///
 /// This trait is currently sealed. It exists only to add methods
 /// for types that can hold the concatenation result.
 ///
 /// See its implementors for examples, and see [`ConcatItem`]
-/// for supported [`Item`] types.
+/// for supported item types.
 ///
-/// [`Collector`]: crate::collector::Collector
-/// [`Item`]: crate::collector::Collector::Item
+/// This trait is sealed and for providing methods only.
+/// If you want to support concatenation collectors for your type, create your own.
 #[allow(private_bounds)]
 pub trait Concat: Sized + ConcatSealed {
-    /// Creates a [`RefCollector`] that concatenates items.
+    /// Creates a collector that concatenates items.
     /// The [`Output`] type is the wrapped type.
     ///
-    /// [`RefCollector`]: crate::collector::RefCollector
-    /// [`Output`]: crate::collector::Collector::Output
+    /// [`Output`]: crate::collector::CollectorBase::Output
     #[inline]
     fn into_concat(self) -> IntoConcat<Self> {
         IntoConcat::new(self)
     }
 
-    /// Creates a [`RefCollector`] that concatenates items into a mutable reference.
+    /// Creates a collector that concatenates items into a mutable reference.
     /// The [`Output`] type is a mutable reference of the wrapped type.
     ///
-    /// [`RefCollector`]: crate::collector::RefCollector
-    /// [`Output`]: crate::collector::Collector::Output
+    /// [`Output`]: crate::collector::CollectorBase::Output
     #[inline]
     fn concat_mut(&mut self) -> ConcatMut<'_, Self> {
         ConcatMut::new(self)
     }
 }
 
-/// Marks a type that can be used as the [`Item`] type for the [`Concat`]'s [`Collector`]s.
+/// Marks a type that can be used as the item type `T` for the [`Concat`]'s collectors.
 ///
 /// This trait is currently sealed. It exists only to determine
 /// which types can be concatenated into which types.
-///
-/// [`Collector`]: crate::collector::Collector
-/// [`Item`]: crate::collector::Collector::Item
 #[allow(private_bounds)]
 pub trait ConcatItem<OwnedSlice>: Sized + ConcatItemSealed<OwnedSlice> {}
 

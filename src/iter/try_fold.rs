@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that accumulates items using a function
+/// A collector that accumulates items using a function
 /// as long as the function returns successfully.
 ///
 /// This collector corresponds to [`Iterator::try_fold()`], except that
@@ -11,8 +11,6 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 ///
 /// Currently, it only supports [`ControlFlow`] as the function’s return type.
 /// More types may be supported once the [`Try`](std::ops::Try) trait is stabilized.
-///
-/// This collector has a `Ref` counterpart created by [`new_ref()`](TryFold::new_ref).
 ///
 /// # Examples
 ///

@@ -4,7 +4,8 @@
 //! collectors for string concatenation.
 //!
 //! Collectors from [`String`] can collect `char`s. If you want to concat strings instead,
-//! use [`ConcatStr`] or [`ConcatString`].
+//! use [`into_concat()`](Concat::into_concat) or [`concat_mut()`](Concat::concat_mut)
+//! method on a string.
 //!
 //! This module corresponds to [`std::string`].
 
@@ -18,23 +19,23 @@ use crate::{
     slice::{Concat, ConcatItem, ConcatItemSealed, ConcatSealed},
 };
 
-/// A [`RefCollector`] that pushes `char`s into a [`String`].
+/// A collector that pushes `char`s into a [`String`].
 /// Its [`Output`] is [`String`].
 ///
 /// This struct is created by `String::into_collector()`.
 ///
 /// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Debug, Clone, Default)]
 pub struct IntoCollector(String);
 
-/// A [`RefCollector`] that pushes `char`s into a [`&mut String`](String).
+/// A collector that pushes `char`s into a [`&mut String`](String).
 /// Its [`Output`] is [`&mut String`](String).
 ///
 /// This struct is created by `String::collector_mut()`.
 ///
 /// [`Collector`]: crate::collector::Collector
-/// [`Output`]: crate::collector::Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Debug)]
 pub struct CollectorMut<'a>(&'a mut String);
 

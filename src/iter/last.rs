@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that stores the last item it collects.
+/// A collector that stores the last item it collects.
 ///
 /// If no items have been collected, its [`Output`] is `None`;
 /// otherwise, it is `Some` containing the most recently collected item.
@@ -29,7 +29,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// assert_eq!(Last::<i32>::new().finish(), None);
 /// ```
 ///
-/// [`Output`]: Collector::Output
+/// [`Output`]: CollectorBase::Output
 #[derive(Debug, Clone)]
 pub struct Last<T> {
     value: Option<T>,

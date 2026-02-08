@@ -2,7 +2,7 @@ use crate::collector::{Collector, CollectorBase};
 
 use std::{fmt::Debug, ops::ControlFlow};
 
-/// A [`Collector`] that uses a closure to determine whether an item should be collected.
+/// A collector that uses a closure to determine whether an item should be collected.
 ///
 /// This `struct` is created by [`Collector::filter()`]. See its documentation for more.
 #[derive(Clone)]

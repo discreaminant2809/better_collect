@@ -2,13 +2,11 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that can "safely" collect items even after
+/// A collector that can "safely" collect items even after
 /// the underlying collector has stopped accumulating,
 /// without triggering undesired behaviors.
 ///
-/// This `struct` is created by [`Collector::fuse()`]. See its documentation for more.
-///
-/// [`Break(())`]: ControlFlow::Break
+/// This `struct` is created by [`CollectorBase::fuse()`]. See its documentation for more.
 #[derive(Debug, Clone)]
 pub struct Fuse<C> {
     collector: C,

@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that accumulates items as long as a predicate returns `true`.
+/// A collector that accumulates items as long as a predicate returns `true`.
 ///
 /// This `struct` is created by [`Collector::take_while()`]. See its documentation for more.
 #[derive(Clone)]

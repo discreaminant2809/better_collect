@@ -15,7 +15,7 @@ use super::{
 /// confusing regardless.
 ///
 /// Implementors should never implement this trait alone, but also implement
-/// [`Collector`](super::collector).
+/// [`Collector`](super::Collector).
 ///
 /// See the [module-level documentation](super) for more information.
 ///
@@ -665,8 +665,6 @@ pub trait CollectorBase {
     ///
     /// assert_eq!(collector.finish(), Stats { sum: 6, max: 3 });
     /// ```
-    ///
-    /// [`RefCollector`]: crate::collector::RefCollector
     fn map_output<F, T>(self, f: F) -> MapOutput<Self, F>
     where
         Self: Sized,
