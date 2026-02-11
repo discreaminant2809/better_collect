@@ -7,8 +7,8 @@ use alloc::collections::BTreeMap;
 #[cfg(feature = "std")]
 use std::collections::BTreeMap;
 
-#[cfg(all(not(feature = "std"), feature = "unstable"))]
-use alloc::collections::btree_map::{Entry, OccupiedEntry, VacantEntry};
+// #[cfg(all(not(feature = "std"), feature = "unstable"))]
+// use alloc::collections::btree_map::{Entry, OccupiedEntry, VacantEntry};
 // #[cfg(all(feature = "std", feature = "unstable"))]
 // use std::collections::btree_map::{Entry, OccupiedEntry, VacantEntry};
 

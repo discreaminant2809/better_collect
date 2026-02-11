@@ -1,9 +1,11 @@
 use std::ops::ControlFlow;
 
+#[cfg(feature = "unstable")]
+use super::TeeWith;
 use super::{
     Chain, Cloning, Collector, Copying, Filter, Funnel, Fuse, IntoCollector, IntoCollectorBase,
-    Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel, TeeMut, TeeWith,
-    Unbatching, Unzip, assert_collector, assert_collector_base,
+    Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel, TeeMut, Unbatching,
+    Unzip, assert_collector, assert_collector_base,
 };
 
 /// The base trait of a collector.
@@ -976,6 +978,7 @@ fn _dyn_compatible(_: &mut dyn CollectorBase) {}
 
 // You actually read this? So here's a workaround for issues
 // when you can't even name the type (e.g. closures, async blocks).
+#[cfg(feature = "std")]
 fn _unnamed_type_workaround() {
     use crate::{cmp::Max, prelude::*};
 

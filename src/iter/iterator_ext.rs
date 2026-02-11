@@ -1,9 +1,9 @@
 #[cfg(feature = "unstable")]
 use super::Driver;
 
+use crate::collector::{Collector, IntoCollector};
 #[cfg(feature = "unstable")]
-use crate::assert_iterator;
-use crate::collector::{Collector, CollectorBase, IntoCollector};
+use crate::{assert_iterator, collector::CollectorBase};
 
 /// Extends [`Iterator`] with various methods to work with [`Collector`]s.
 ///

@@ -10,6 +10,7 @@
 - `crate::mem::Forgetting`.
 - Generalized concatenation collectors.
 - Different versions of `Tee`.
+- `clb_once!`, `clb_mut!` and `clb!`.
 
 ### Changed
 

@@ -28,6 +28,7 @@ pub use min_by::*;
 pub use min_by_key::*;
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod test_utils {
     use std::cmp::Ordering;
 
