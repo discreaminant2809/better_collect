@@ -64,7 +64,6 @@
 //! }
 //!
 //! impl Collector<String> for Tokenizer {
-//!
 //!     fn collect(&mut self, word: String) -> ControlFlow<()> {
 //!         self.indices
 //!             .entry(word)

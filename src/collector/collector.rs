@@ -1,4 +1,4 @@
-use super::{CollectorBase, Filter, IntoCollector, Map, Partition, TakeWhile, TeeWith};
+use super::CollectorBase;
 // #[cfg(feature = "unstable")]
 // use super::{Nest, NestExact};
 
@@ -46,7 +46,7 @@ pub trait Collector<T>: CollectorBase {
     ///
     /// If the collector is uncertain, like "maybe I won’t accumulate… uh, fine, I will,"
     /// it is recommended to just return [`Continue(())`].
-    /// For example, [`filter()`](Collector::filter) might skip some items it collects,
+    /// For example, [`filter()`](CollectorBase::filter) might skip some items it collects,
     /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate.
     /// The filter just denies "undesirable" items, not signal termination
     /// (this is the job of [`take_while()`] instead).
@@ -88,7 +88,7 @@ pub trait Collector<T>: CollectorBase {
     ///
     /// [`Continue(())`]: ControlFlow::Continue
     /// [`Break(())`]: ControlFlow::Break
-    /// [`take_while()`]: Collector::take_while
+    /// [`take_while()`]: CollectorBase::take_while
     fn collect(&mut self, item: T) -> ControlFlow<()>;
 
     /// Collects items from an iterator and returns a [`ControlFlow`] indicating whether
@@ -161,49 +161,6 @@ pub trait Collector<T>: CollectorBase {
         this.finish()
     }
 
-    /// Creates a collector that calls a closure on each item before collecting.
-    ///
-    /// This is used when you need a collector that collects `U`,
-    /// but you have a collector that collects `T`. In that case,
-    /// you can use `map()` to transform `U` into `T` before passing it along.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let mut collector = vec![].into_collector().map(|num| num * num);
-    ///
-    /// assert!(collector.collect_many(1..=5).is_continue());
-    ///
-    /// assert_eq!(collector.finish(), [1, 4, 9, 16, 25]);
-    /// ```
-    ///
-    /// If you have multiple collectors with different item types, this adaptor bridges them.
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let (_strings, lens) = ["a", "bcd", "ef"]
-    ///     .into_iter()
-    ///     .feed_into(
-    ///         "".to_owned()
-    ///             .into_concat()
-    ///             // Limitation: type annotation may be needed.
-    ///             .tee(vec![].into_collector().map(|s: &str| s.len()))
-    ///     );
-    ///
-    /// assert_eq!(lens, [1, 3, 2]);
-    /// ```
-    #[inline]
-    fn map<F, U>(self, f: F) -> Map<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(U) -> T,
-    {
-        assert_collector::<_, U>(Map::new(self, f))
-    }
-
     // /// A special case for [`map()`](Collector::map) that works around
     // /// lifetime inference issues in closure parameters.
     // ///
@@ -236,136 +193,6 @@ pub trait Collector<T>: CollectorBase {
     // {
     //     assert_collector::<_, &mut U>(Map::new(self, f))
     // }
-
-    /// Creates a collector that uses a closure to determine whether an item should be accumulated.
-    ///
-    /// The underlying collector only collects items for which the given predicate returns `true`.
-    ///
-    /// Note that even if an item is not collected, this adaptor will still return
-    /// [`Continue`] as long as the underlying collector does. If you want the collector to stop
-    /// after the first `false`, consider using [`take_while()`](Collector::take_while) instead.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let mut collector = vec![]
-    ///     .into_collector()
-    ///     .filter(|&x| x % 2 == 0);
-    ///
-    /// assert!(collector.collect(2).is_continue());
-    /// assert!(collector.collect(4).is_continue());
-    /// assert!(collector.collect(0).is_continue());
-    ///
-    /// // Still `Continue` even if an item doesn’t satisfy the predicate.
-    /// assert!(collector.collect(1).is_continue());
-    ///
-    /// assert_eq!(collector.finish(), [2, 4, 0]);
-    /// ```
-    ///
-    /// [`Continue`]: ControlFlow::Continue
-    #[inline]
-    fn filter<F>(self, pred: F) -> Filter<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&T) -> bool,
-    {
-        assert_collector::<_, T>(Filter::new(self, pred))
-    }
-
-    /// Creates a collector that accumulates items as long as a predicate returns `true`.
-    ///
-    /// `take_while()` collects items until it encounters one for which the predicate returns `false`.
-    /// Conceptually, that item and all subsequent ones will **not** be accumulated.
-    /// However, you should ensure that you do not feed more items after it has signaled
-    /// a stop.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let mut collector = "".to_owned()
-    ///     .into_concat()
-    ///     .take_while(|&s| s != "stop");
-    ///
-    /// assert!(collector.collect("abc").is_continue());
-    /// assert!(collector.collect("def").is_continue());
-    ///
-    /// // Immediately stops after "stop".
-    /// assert!(collector.collect("stop").is_break());
-    ///
-    /// assert_eq!(collector.finish(), "abcdef");
-    /// ```
-    fn take_while<F>(self, pred: F) -> TakeWhile<Self, F>
-    where
-        Self: Sized,
-        F: FnMut(&T) -> bool,
-    {
-        assert_collector::<_, T>(TakeWhile::new(self, pred))
-    }
-
-    // fn step_by()
-
-    /// Creates a collector that distributes items between two collectors based on a predicate.
-    ///
-    /// Items for which the predicate returns `true` are sent to the first collector,
-    /// and those for which it returns `false` go to the second collector.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use better_collect::prelude::*;
-    ///
-    /// let collector = vec![]
-    ///     .into_collector()
-    ///     .partition(|&mut x| x % 2 == 0, vec![]);
-    /// let (evens, odds) = collector.collect_then_finish(-5..5);
-    ///
-    /// assert_eq!(evens, [-4, -2, 0, 2, 4]);
-    /// assert_eq!(odds, [-5, -3, -1, 1, 3]);
-    /// ```
-    #[inline]
-    fn partition<C, F>(self, pred: F, other_if_false: C) -> Partition<Self, C::IntoCollector, F>
-    where
-        Self: Sized,
-        C: IntoCollector<T>,
-        F: FnMut(&mut T) -> bool,
-    {
-        assert_collector::<_, T>(Partition::new(self, other_if_false.into_collector(), pred))
-    }
-
-    /// Creates a collector that lets both collectors collect the same item.
-    ///
-    /// For each item collected, the first collector collects the item
-    /// mapped by a given closure before the second collector collects it.
-    /// If the second collector stops accumulating, the item will **not**
-    /// be mapped, and instead is fed directly into the first collector.
-    ///
-    /// `tee_with()` only stops when **both** collectors have stopped.
-    ///
-    /// If the item type of this adapter is `T`, the first collector must implement
-    /// [`Collector<T>`](super::Collector) and [`Collector<U>`](super::Collector),
-    /// and the second collector must implement [`Collector<T>`](super::Collector).
-    /// Since many collectors do not collect two or more types of items,
-    /// `U` is effectively also `T` in this case.
-    ///
-    /// The [`Output`](CollectorBase::Output) is a tuple containing the outputs of
-    /// both underlying collectors, in order.
-    ///
-    /// See the [module-level documentation](crate::collector) for
-    /// when this adapter is used and other variants of `tee` adapters.
-    #[inline]
-    #[cfg(feature = "unstable")]
-    fn tee_with<C, F, U>(self, f: F, other: C) -> TeeWith<Self, C::IntoCollector, F>
-    where
-        Self: Collector<U> + Sized,
-        C: IntoCollector<T>,
-        F: FnMut(&mut T) -> U,
-    {
-        assert_collector::<_, T>(TeeWith::new(self, other.into_collector(), f))
-    }
 
     // /// Creates a [`Collector`] that collects all outputs produced by an inner collector.
     // ///
@@ -515,11 +342,3 @@ dyn_impl!(Send Sync);
 
 // `Output` shouldn't be required to be specified.
 fn _dyn_compatible<T>(_: &mut dyn Collector<T>) {}
-
-#[inline(always)]
-fn assert_collector<C, T>(collector: C) -> C
-where
-    C: Collector<T>,
-{
-    collector
-}

@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase};
 
 /// A collector that calls a closure on each item before collecting.
 ///
-/// This `struct` is created by [`Collector::map()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::map()`]. See its documentation for more.
 #[derive(Clone)]
 pub struct Map<C, F> {
     collector: C,

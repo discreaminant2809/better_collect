@@ -4,7 +4,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 /// A collector that uses a closure to determine whether an item should be collected.
 ///
-/// This `struct` is created by [`Collector::filter()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::filter()`]. See its documentation for more.
 #[derive(Clone)]
 pub struct Filter<C, F> {
     collector: C,

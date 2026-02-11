@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase};
 
 /// A collector that accumulates items as long as a predicate returns `true`.
 ///
-/// This `struct` is created by [`Collector::take_while()`]. See its documentation for more.
+/// This `struct` is created by [`CollectorBase::take_while()`]. See its documentation for more.
 #[derive(Clone)]
 pub struct TakeWhile<C, F> {
     collector: C,
