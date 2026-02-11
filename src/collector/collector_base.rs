@@ -318,16 +318,11 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use better_collect::{prelude::*, clb_mut};
     ///
     /// let mut collector = String::new()
     ///     .into_concat()
-    ///     .map({
-    ///         fn closure() -> impl FnMut(&mut String) -> &str {
-    ///             |s| &s[..]
-    ///         }
-    ///         closure()
-    ///     })
+    ///     .map(clb_mut!(|s: &mut String| -> &str { &s[..] }))
     ///     .tee_funnel(vec![]);
     ///
     /// let strings = ["noble", "and", "singer"].map(String::from);
@@ -369,20 +364,14 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{cmp::Max, prelude::*};
+    /// use better_collect::{cmp::Max, prelude::*, clb_mut};
     ///
     /// let mut collector = String::new()
     ///     .into_concat()
-    ///     .map({
-    ///         fn closure() -> impl FnMut(&mut String) -> &str {
-    ///             |s| &s[..]
-    ///         }
-    ///         closure()
-    ///     })
-    ///     .tee_mut(Max::new().map({
-    ///         let f = |s: &mut String| s.len();
-    ///         f
-    ///     }))
+    ///     .map(clb_mut!(|s: &mut String| -> &str { &s[..] }))
+    ///     .tee_mut(Max::new().map(
+    ///         clb_mut!(|s: &mut String| -> usize { s.len() })
+    ///     ))
     ///     .tee_funnel(vec![]);
     ///
     /// let strings = ["noble", "and", "singer"].map(String::from);
@@ -724,6 +713,42 @@ pub trait CollectorBase {
     {
         assert_collector_base(Unbatching::new(self, f))
     }
+
+    // ///
+    // #[inline]
+    // fn map_ref_ref<F, T, U>(self, f: F) -> Map<Self, F>
+    // where
+    //     Self: for<'a> Collector<&'a T> + Sized,
+    //     F: FnMut(&U) -> &T,
+    //     T: ?Sized,
+    //     U: ?Sized,
+    // {
+    //     assert_collector::<_, &U>(Map::new(self, f))
+    // }
+
+    // ///
+    // #[inline]
+    // fn map_mut_ref<F, T, U>(self, f: F) -> Map<Self, F>
+    // where
+    //     Self: for<'a> Collector<&'a T> + Sized,
+    //     F: FnMut(&mut U) -> &T,
+    //     T: ?Sized,
+    //     U: ?Sized,
+    // {
+    //     assert_collector::<_, &mut U>(Map::new(self, f))
+    // }
+
+    // ///
+    // #[inline]
+    // fn map_mut_mut<F, T, U>(self, f: F) -> Map<Self, F>
+    // where
+    //     Self: for<'a> Collector<&'a mut T> + Sized,
+    //     F: FnMut(&mut U) -> &mut T,
+    //     T: ?Sized,
+    //     U: ?Sized,
+    // {
+    //     assert_collector::<_, &mut U>(Map::new(self, f))
+    // }
 }
 
 impl<C> CollectorBase for &mut C
@@ -774,3 +799,27 @@ dyn_impl!(Send Sync);
 
 // `Output` shouldn't be required to be specified.
 fn _dyn_compatible(_: &mut dyn CollectorBase) {}
+
+// You actually read this? So here's a workaround for issues
+// when you can't even name the type (e.g. closures, async blocks).
+fn _unnamed_type_workaround() {
+    use crate::{cmp::Max, prelude::*};
+
+    [|| ""].into_iter().feed_into(
+        Max::new()
+            .map({
+                fn f(s: &mut impl FnMut() -> &'static str) -> &'static str {
+                    s()
+                }
+                f
+            })
+            .take_while({
+                fn f(_: &&mut impl FnMut() -> &'static str) -> bool {
+                    true
+                }
+                f
+                // |_| true
+            })
+            .tee_funnel(vec![]),
+    );
+}

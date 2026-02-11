@@ -124,15 +124,14 @@
 //! let expected = (byte_read, received, last_seen);
 //!
 //! // This crate's way:
-//! use better_collect::{prelude::*, iter::Last};
+//! use better_collect::{prelude::*, iter::Last, clb_mut};
 //!
 //! let ((byte_read, received), last_seen) = socket_stream()
 //!     .feed_into(
 //!         usize::adding()
-//!             .map({
-//!                 let f = |data: &mut String| data.len();
-//!                 f
-//!             })
+//!             .map(
+//!                 clb_mut!(|s: &mut String| -> usize { s.len() })
+//!             )
 //!             .tee_funnel(vec![])
 //!             .tee_clone(Last::new())
 //!     );
@@ -148,7 +147,7 @@
 //!
 //! ```
 //! use std::collections::HashSet;
-//! use better_collect::prelude::*;
+//! use better_collect::{prelude::*, clb_mut};
 //!
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
@@ -176,12 +175,7 @@
 //!     .feed_into(
 //!         String::new()
 //!             .into_concat()
-//!             .map({
-//!                 fn f(s: &mut String) -> &str {
-//!                     &s[..]
-//!                 }
-//!                 f
-//!             })
+//!             .map(clb_mut!(|s: &mut String| -> &str { &s[..] }))
 //!             .tee_funnel(HashSet::new())
 //!     );
 //!
@@ -261,8 +255,236 @@ pub mod vec;
 #[cfg(all(test, feature = "std"))]
 mod test_utils;
 
+/// Introduces the [`#!\[feature = closure_lifetime_binder\]`] to help dealing with
+/// poor lifetime inference issues of the compiler while using collectors.
+///
+/// This macro creates an [`FnOnce`] closure.
+///
+/// To use generics and lifetimes outside of the closure, put them in the `use`
+/// item first.
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::clb_once;
+///
+/// # fn foo<'b, T: 'b>() {
+/// clb_once!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x });
+/// # }
+/// ```
+///
+/// [`#!\[feature = closure_lifetime_binder\]`]: <https://rust-lang.github.io/rfcs/3216-closure-lifetime-binder.html>
+#[macro_export]
+macro_rules! clb_once {
+    (
+        use<$($use_lts:lifetime,)* $($use_tys:ident),*>
+        for<$($lts:lifetime),* $(,)?>
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        ({
+            fn __closure__<$($use_lts,)* __F__, $($use_tys),*>(f: __F__) -> __F__
+            where
+                __F__: for<$($lts),*> ::core::ops::FnOnce($($param_tys),*) -> $ret_ty,
+            {
+                f
+            }
+
+            __closure__::<$($use_lts,)* _, $($use_tys),*>
+        })($($move_kw)? |$($params),*| $block)
+    };
+
+    (
+        for<$($lts:lifetime),* $(,)?>
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        $crate::clb_once!(
+            use<>
+            for<$($lts),*>
+            $($move_kw)?
+            |$($params: $param_tys),*| -> $ret_ty $block
+        )
+    };
+
+    (
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        $crate::clb_once!(
+            for<>
+            $($move_kw)?
+            |$($params: $param_tys),*| -> $ret_ty $block
+        )
+    };
+}
+
+/// Introduces the [`#!\[feature = closure_lifetime_binder\]`] to help dealing with
+/// poor lifetime inference issues of the compiler while using collectors.
+///
+/// This macro creates an [`FnMut`] closure.
+///
+/// To use generics and lifetimes outside of the closure, put them in the `use`
+/// item first.
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::clb_mut;
+///
+/// # fn foo<'b, T: 'b>() {
+/// clb_mut!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x });
+/// # }
+/// ```
+///
+/// [`#!\[feature = closure_lifetime_binder\]`]: <https://rust-lang.github.io/rfcs/3216-closure-lifetime-binder.html>
+#[macro_export]
+macro_rules! clb_mut {
+    (
+        use<$($use_lts:lifetime,)* $($use_tys:ident),*>
+        for<$($lts:lifetime),* $(,)?>
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        ({
+            fn __closure__<$($use_lts,)* __F__, $($use_tys),*>(f: __F__) -> __F__
+            where
+                __F__: for<$($lts),*> ::core::ops::FnMut($($param_tys),*) -> $ret_ty,
+            {
+                f
+            }
+
+            __closure__::<$($use_lts,)* _, $($use_tys),*>
+        })($($move_kw)? |$($params),*| $block)
+    };
+
+    (
+        for<$($lts:lifetime),* $(,)?>
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        $crate::clb_mut!(
+            use<>
+            for<$($lts),*>
+            $($move_kw)?
+            |$($params: $param_tys),*| -> $ret_ty $block
+        )
+    };
+
+    (
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        $crate::clb_mut!(
+            for<>
+            $($move_kw)?
+            |$($params: $param_tys),*| -> $ret_ty $block
+        )
+    };
+}
+
+/// Introduces the [`#!\[feature = closure_lifetime_binder\]`] to help dealing with
+/// poor lifetime inference issues of the compiler while using collectors.
+///
+/// This macro creates an [`Fn`] closure.
+///
+/// To use generics and lifetimes outside of the closure, put them in the `use`
+/// item first.
+///
+/// # Examples
+///
+/// ```
+/// use better_collect::clb;
+///
+/// # fn foo<'b, T: 'b>() {
+/// clb!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x });
+/// # }
+/// ```
+///
+/// [`#!\[feature = closure_lifetime_binder\]`]: <https://rust-lang.github.io/rfcs/3216-closure-lifetime-binder.html>
+#[macro_export]
+macro_rules! clb {
+    (
+        use<$($use_lts:lifetime,)* $($use_tys:ident),*>
+        for<$($lts:lifetime),* $(,)?>
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        ({
+            fn __closure__<$($use_lts,)* __F__, $($use_tys),*>(f: __F__) -> __F__
+            where
+                __F__: for<$($lts),*> ::core::ops::Fn($($param_tys),*) -> $ret_ty,
+            {
+                f
+            }
+
+            __closure__::<$($use_lts,)* _, $($use_tys),*>
+        })($($move_kw)? |$($params),*| $block)
+    };
+
+    (
+        for<$($lts:lifetime),* $(,)?>
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        $crate::clb!(
+            use<>
+            for<$($lts),*>
+            $($move_kw)?
+            |$($params: $param_tys),*| -> $ret_ty $block
+        )
+    };
+
+    (
+        $($move_kw:ident)?
+        |$($params:ident: $param_tys:ty),*| -> $ret_ty:ty $block:block
+    ) => {
+        $crate::clb!(
+            for<>
+            $($move_kw)?
+            |$($params: $param_tys),*| -> $ret_ty $block
+        )
+    };
+}
+
 #[cfg(feature = "unstable")]
 #[inline(always)]
 const fn assert_iterator<I: Iterator>(iterator: I) -> I {
     iterator
+}
+
+#[allow(
+    clippy::extra_unused_type_parameters,
+    clippy::extra_unused_lifetimes,
+    clippy::clone_on_copy,
+    clippy::drop_non_drop
+)]
+fn _test_clb<'b, T: 'b>() {
+    macro_rules! test_clb {
+        ($macro:ident -> $fn_trait:ident) => {{
+            fn assert_this_fn<F, T0, T1, R>(f: F) -> F
+            where
+                F: $fn_trait(T0, T1) -> R,
+            {
+                f
+            }
+
+            let _ = assert_this_fn($macro!(|x: i32, _y: &i32| -> i32 {
+                x
+            }))
+            .clone();
+
+            let _ = assert_this_fn($macro!(for<'a> move |x: &'a i32, _y: &i32| -> &'a i32 {
+                x
+            }))
+            .clone();
+
+            let _ = assert_this_fn($macro!(use<T> for<'a> |x: &'a i32, _y: T| -> &'a i32 { x }));
+            let _ = assert_this_fn($macro!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x }));
+        }};
+    }
+
+    test_clb!(clb_once -> FnOnce);
+    test_clb!(clb_mut -> FnMut);
+    test_clb!(clb -> Fn);
 }

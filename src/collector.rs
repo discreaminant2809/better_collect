@@ -25,7 +25,8 @@
 //! especially for adaptors that take generic functions.
 //! This is due to current limitations in Rust’s type inference for closure parameters.
 //!
-//! Moreover, if you ever... {TODO}
+//! Moreover, if you ever... (TODO: How to deal with "`collect` method not found,"
+//! and "implementation of `FnMut` is not general enough")
 //!
 //! # Example
 //!
