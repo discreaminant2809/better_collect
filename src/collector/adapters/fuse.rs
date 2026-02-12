@@ -91,7 +91,7 @@ mod proptests {
     use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
-    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+    use crate::test_utils::{CollectorTestParts, CollectorTester, CollectorTesterExt, PredError};
 
     proptest! {
         /// We use
@@ -114,28 +114,55 @@ mod proptests {
     }
 
     fn all_collect_methods_impl(nums: Vec<i32>, take_count: usize) -> TestCaseResult {
-        BasicCollectorTester {
-            iter_factory: || nums.iter().copied(),
-            collector_factory: || {
-                vec![]
-                    .into_collector()
-                    .take(take_count)
-                    .take_while(|&num| num > 0)
-                    .fuse()
-            },
-            should_break_pred: |mut iter| take_count == 0 || !iter.all(|num| num > 0),
-            pred: |mut iter, output, remaining| {
-                let expected = iter.by_ref().take_while(|&num| num > 0).take(take_count);
+        Tester { nums, take_count }.test_collector()
+    }
 
-                if expected.ne(output) {
-                    Err(PredError::IncorrectOutput)
-                } else if iter.ne(remaining) {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
+    struct Tester {
+        nums: Vec<i32>,
+        take_count: usize,
+    }
+
+    impl CollectorTester for Tester {
+        type Item<'a> = i32;
+
+        type Output<'a> = Vec<i32>;
+
+        fn collector_test_parts<'a>(
+            &'a mut self,
+        ) -> crate::test_utils::CollectorTestParts<
+            impl Iterator<Item = Self::Item<'a>>,
+            impl Collector<Self::Item<'a>, Output = Self::Output<'a>>,
+            impl FnMut(
+                Self::Output<'a>,
+                &mut dyn Iterator<Item = Self::Item<'a>>,
+            ) -> Result<(), PredError>,
+            impl Iterator<Item = Self::Item<'a>>,
+        > {
+            CollectorTestParts {
+                iter: self.nums.iter().copied(),
+                collector: vec![]
+                    .into_collector()
+                    .take(self.take_count)
+                    .take_while(|&num| num > 0)
+                    .fuse(),
+                should_break: self.take_count == 0 || !self.nums.iter().all(|&num| num > 0),
+                pred: |output, remaining| {
+                    let mut iter = self.nums.iter().copied();
+                    let expected = iter
+                        .by_ref()
+                        .take_while(|&num| num > 0)
+                        .take(self.take_count);
+
+                    if expected.ne(output) {
+                        Err(PredError::IncorrectOutput)
+                    } else if iter.ne(remaining) {
+                        Err(PredError::IncorrectIterConsumption)
+                    } else {
+                        Ok(())
+                    }
+                },
+                iter_for_fuse_test: Some([1, 2].into_iter()),
+            }
         }
-        .test_collector_may_fused([1, 2])
     }
 }

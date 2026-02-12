@@ -253,6 +253,7 @@ mod proptests {
     use crate::prelude::*;
     use crate::test_utils::{
         BasicCollectorTester, CollectorTestParts, CollectorTester, CollectorTesterExt, PredError,
+        none_iter_for_fuse_test,
     };
 
     proptest! {
@@ -327,15 +328,20 @@ mod proptests {
         }
     }
 
-    impl CollectorTester<i32> for CollectorMutTester {
+    impl CollectorTester for CollectorMutTester {
+        type Item<'a> = i32;
         type Output<'a> = &'a mut Vec<i32>;
 
-        fn collector_test_parts(
-            &mut self,
+        fn collector_test_parts<'a>(
+            &'a mut self,
         ) -> CollectorTestParts<
-            impl Iterator<Item = i32>,
-            impl Collector<i32, Output = Self::Output<'_>>,
-            impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = i32>) -> Result<(), PredError>,
+            impl Iterator<Item = Self::Item<'a>>,
+            impl Collector<Self::Item<'a>, Output = Self::Output<'a>>,
+            impl FnMut(
+                Self::Output<'a>,
+                &mut dyn Iterator<Item = Self::Item<'a>>,
+            ) -> Result<(), PredError>,
+            impl Iterator<Item = Self::Item<'a>>,
         > {
             // Don't forget to reset the collector.
             self.collector_base.clone_from(&self.starting_nums);
@@ -356,6 +362,7 @@ mod proptests {
                 collector: self.collector_base.collector_mut(),
                 should_break: false,
                 pred: output_pred,
+                iter_for_fuse_test: none_iter_for_fuse_test(),
             }
         }
     }

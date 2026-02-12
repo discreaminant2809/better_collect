@@ -130,7 +130,9 @@ mod proptests {
     use proptest::test_runner::TestCaseResult;
 
     use crate::prelude::*;
-    use crate::test_utils::{BasicCollectorTester, CollectorTesterExt, PredError};
+    use crate::test_utils::{
+        CollectorTestParts, CollectorTester, CollectorTesterExt, PredError, none_iter_for_fuse_test,
+    };
 
     proptest! {
         /// Precondition:
@@ -153,79 +155,77 @@ mod proptests {
         first_count: usize,
         second_count: usize,
     ) -> TestCaseResult {
-        BasicCollectorTester {
-            iter_factory: || nums.iter().cloned(),
-            collector_factory: || {
-                vec![]
+        Tester::new(nums, first_count, second_count).test_collector()
+    }
+
+    struct Tester {
+        nums: Vec<i32>,
+        nums_for_iter: Vec<i32>,
+        first_count: usize,
+        second_count: usize,
+    }
+
+    impl Tester {
+        fn new(nums: Vec<i32>, first_count: usize, second_count: usize) -> Self {
+            Self {
+                nums_for_iter: nums.clone(),
+                nums,
+                first_count,
+                second_count,
+            }
+        }
+    }
+
+    impl CollectorTester for Tester {
+        type Item<'a> = &'a mut i32;
+        type Output<'a> = (Vec<i32>, Vec<i32>);
+
+        fn collector_test_parts<'a>(
+            &'a mut self,
+        ) -> CollectorTestParts<
+            impl Iterator<Item = Self::Item<'a>>,
+            impl Collector<Self::Item<'a>, Output = Self::Output<'a>>,
+            impl FnMut(
+                Self::Output<'a>,
+                &mut dyn Iterator<Item = Self::Item<'a>>,
+            ) -> Result<(), PredError>,
+            impl Iterator<Item = Self::Item<'a>>,
+        > {
+            let Self {
+                first_count,
+                second_count,
+                ref mut nums,
+                ref mut nums_for_iter,
+                ..
+            } = *self;
+
+            CollectorTestParts {
+                iter: nums_for_iter.iter_mut(),
+                collector: vec![]
                     .into_collector()
                     .copying()
                     .take(first_count)
-                    .tee_mut(vec![].into_collector().take(second_count).copying())
-                    .funnel()
-            },
-            should_break_pred: |iter| iter.count() >= first_count.max(second_count),
-            pred: |iter, (output1, output2), remaining| {
-                let max_len = first_count.max(second_count);
+                    .tee_mut(vec![].into_collector().copying().take(second_count)),
+                should_break: first_count.max(second_count) <= nums.len(),
+                pred: move |(first_output, second_output), remaining| {
+                    let max_len = first_count.max(second_count);
 
-                if output1.into_iter().ne(iter.clone().take(first_count))
-                    || output2.into_iter().ne(iter.clone().take(second_count))
-                {
-                    Err(PredError::IncorrectOutput)
-                } else if iter.skip(max_len).ne(remaining) {
-                    Err(PredError::IncorrectIterConsumption)
-                } else {
-                    Ok(())
-                }
-            },
+                    if first_output != nums[..first_count.min(nums.len())]
+                        || second_output != nums[..second_count.min(nums.len())]
+                    {
+                        Err(PredError::IncorrectOutput)
+                    } else if nums[max_len.min(nums.len())..]
+                        .iter()
+                        .copied()
+                        .ne(remaining.map(|&mut item| item))
+                    {
+                        Err(PredError::IncorrectIterConsumption)
+                    } else {
+                        Ok(())
+                    }
+                },
+                iter_for_fuse_test: none_iter_for_fuse_test(),
+            }
         }
-        .test_collector()
     }
-
-    // struct Tester {
-    //     nums: Vec<i32>,
-    //     first_count: usize,
-    //     second_count: usize,
-    // }
-
-    // impl CollectorTester<i32> for Tester {
-    //     type Output<'a> = (Vec<i32>, Vec<i32>);
-
-    //     fn collector_test_parts(
-    //         &mut self,
-    //     ) -> CollectorTestParts<
-    //         impl Iterator<Item = i32>,
-    //         impl Collector<i32, Output = Self::Output<'_>>,
-    //         impl FnMut(Self::Output<'_>, &mut dyn Iterator<Item = i32>) -> Result<(), PredError>,
-    //     > {
-    //         let Self {
-    //             first_count,
-    //             second_count,
-    //             ..
-    //         } = *self;
-    //         let nums = &self.nums;
-
-    //         CollectorTestParts {
-    //             iter: self.nums.iter().cloned(),
-    //             collector: vec![]
-    //                 .into_collector()
-    //                 .copying()
-    //                 .take(first_count)
-    //                 .combine_ref(vec![].into_collector().copying().take(second_count))
-    //                 .funnel(),
-    //             should_break: false,
-    //             pred: move |(first_output, second_output), remaining| {
-    //                 let max_len = first_count.max(second_count);
-
-    //                 if first_output != nums[..first_count] || second_output != nums[..second_count]
-    //                 {
-    //                     Err(PredError::IncorrectOutput)
-    //                 } else if nums[max_len..].iter().cloned().ne(remaining) {
-    //                     Err(PredError::IncorrectIterConsumption)
-    //                 } else {
-    //                     Ok(())
-    //                 }
-    //             },
-    //         }
-    //     }
-    // }
 }
