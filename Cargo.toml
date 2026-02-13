@@ -13,7 +13,9 @@ keywords = ["collector", "fold", "unzip", "composition", "iterator"]
 [dependencies]
 
 [dev-dependencies]
+criterion = "0.8.2"
 proptest = { version = "1.9.0", default-features = false, features = ["std"] }
+rand = "0.10.0"
 
 [features]
 default = ["std"]
@@ -24,3 +26,7 @@ unstable = []
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[[bench]]
+name = "sum_max"
+harness = false
