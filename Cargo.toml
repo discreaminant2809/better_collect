@@ -30,3 +30,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [[bench]]
 name = "sum_max"
 harness = false
+
+[[bench]]
+name = "large_state"
+harness = false
