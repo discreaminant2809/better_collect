@@ -3,9 +3,9 @@ use std::ops::ControlFlow;
 #[cfg(feature = "unstable")]
 use super::TeeWith;
 use super::{
-    Chain, Cloning, Collector, Copying, Filter, Funnel, Fuse, IntoCollector, IntoCollectorBase,
-    Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel, TeeMut, Unbatching,
-    Unzip, assert_collector, assert_collector_base,
+    Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, IntoCollector,
+    IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel,
+    TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
 };
 
 /// The base trait of a collector.
@@ -925,6 +925,64 @@ pub trait CollectorBase {
     // {
     //     assert_collector::<_, &mut U>(Map::new(self, f))
     // }
+
+    /// A collector that flattens items by one level of nesting before collecting.
+    ///
+    /// Each item will be converted into an iterator, then the underlying collector
+    /// collects every element in that iterator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .flatten();
+    ///
+    /// assert!(collector.collect([1, 2]).is_continue());
+    /// assert!(collector.collect(&[] as &[i32]).is_continue());
+    /// assert!(collector.collect(vec![3, 4, 5]).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2, 3, 4, 5]);
+    /// ```
+    #[inline]
+    fn flatten(self) -> Flatten<Self>
+    where
+        Self: Sized,
+    {
+        assert_collector_base(Flatten::new(self))
+    }
+
+    /// A collector that collects elements in each iterator item provided by a closure.
+    ///
+    /// Each item will be mapped into an iterator by a closure,
+    /// then the underlying collector collects every element in that iterator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = String::new()
+    ///     .into_collector()
+    ///     .flat_map(str::chars);
+    ///
+    /// assert!(collector.collect("elegance ").is_continue());
+    /// assert!(collector.collect("and ").is_continue());
+    /// assert!(collector.collect("radiance").is_continue());
+    ///
+    /// assert_eq!(collector.finish(), "elegance and radiance");
+    /// ```
+    #[inline]
+    fn flat_map<F, T, I>(self, f: F) -> FlatMap<Self, F>
+    where
+        Self: Collector<I::Item> + Sized,
+        F: FnMut(T) -> I,
+        I: IntoIterator,
+    {
+        assert_collector::<_, T>(FlatMap::new(self, f))
+    }
 }
 
 impl<C> CollectorBase for &mut C

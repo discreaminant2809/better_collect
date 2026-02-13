@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+### Added
+
+- `CollectorBase::flatten()` and `CollectorBase::flat_map()`.
+
 ## 0.4.0
 
 ### Added
