@@ -2,7 +2,7 @@ use std::{fmt::Debug, mem::forget, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that "[forgets](forget)" every item it collects.
+/// A collector that "[forgets](forget)" every item it collects.
 ///
 /// # Examples
 ///

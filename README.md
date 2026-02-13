@@ -1,4 +1,4 @@
-# better_collect 0.4.0
+# better_collect 0.4.1
 
 [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
 [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
@@ -126,15 +126,14 @@ for data in socket_stream() {
 let expected = (byte_read, received, last_seen);
 
 // This crate's way:
-use better_collect::{prelude::*, iter::Last};
+use better_collect::{prelude::*, iter::Last, clb_mut};
 
 let ((byte_read, received), last_seen) = socket_stream()
     .feed_into(
         usize::adding()
-            .map({
-                let f = |data: &mut String| data.len();
-                f
-            })
+            .map(
+                clb_mut!(|s: &mut String| -> usize { s.len() })
+            )
             .tee_funnel(vec![])
             .tee_clone(Last::new())
     );
@@ -150,7 +149,7 @@ Consider this example:
 
 ```rust
 use std::collections::HashSet;
-use better_collect::prelude::*;
+use better_collect::{prelude::*, clb_mut};
 
 // Suppose we open a connection...
 fn socket_stream() -> impl Iterator<Item = String> {
@@ -178,12 +177,7 @@ let collector_way = socket_stream()
     .feed_into(
         String::new()
             .into_concat()
-            .map({
-                fn f(s: &mut String) -> &str {
-                    &s[..]
-                }
-                f
-            })
+            .map(clb_mut!(|s: &mut String| -> &str { &s[..] }))
             .tee_funnel(HashSet::new())
     );
 

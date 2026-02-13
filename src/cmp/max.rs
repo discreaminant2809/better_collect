@@ -4,7 +4,7 @@ use super::{MaxBy, MaxByKey};
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that computes the maximum value among the items it collects.
+/// A collector that computes the maximum value among the items it collects.
 ///
 /// Its [`Output`](CollectorBase::Output) is `None` if it has not collected any items,
 /// or `Some` containing the maximum item otherwise.

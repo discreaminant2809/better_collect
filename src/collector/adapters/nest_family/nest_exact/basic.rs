@@ -4,7 +4,7 @@ use crate::collector::{Collector, RefCollector};
 
 use super::{super::strategy::CloneStrategy, with_strategy::WithStrategy};
 
-/// A [`Collector`] that collects all outputs produced by an inner collector.
+/// A collector that collects all outputs produced by an inner collector.
 ///
 /// This `struct` is created by [`Collector::nest_exact()`]. See its documentation for more.
 // Needed because the "Available on crate feature" does not show up on doc.rs

@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 
 use super::{Min, value_key::ValueKey};
 
-/// A [`Collector`] that computes the item among the items it collects
+/// A collector that computes the item among the items it collects
 /// that gives the minimum value from a key-extraction function.
 ///
 /// Its [`Output`](CollectorBase::Output) is `None` if it has not collected any items,

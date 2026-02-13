@@ -2,7 +2,7 @@ use std::ops::ControlFlow;
 
 use crate::collector::{Collector, CollectorBase};
 
-/// A [`Collector`] that [`drops`](drop) every collected items.
+/// A collector that [`drops`](drop) every collected items.
 ///
 /// # Examples
 ///

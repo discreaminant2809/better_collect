@@ -1,5 +1,26 @@
 //! Module contains traits and `struct`s for collectors.
 //!
+//! # `tee` variants
+//!
+//! There are different adapters to "tee" items into multiple collectors
+//! (let each item be collected by multiple collectors).
+//! Conceptually, they differ in how the item is passed
+//! from one collector to another, either by cloning or by reference:
+//!
+//! - [`tee()`](CollectorBase::tee): a [`Copy`] of the item is passed.
+//! - [`tee_clone()`](CollectorBase::tee_clone): the item is [`Clone`]d before being passed.
+//! - [`tee_funnel()`](CollectorBase::tee_funnel): the item is passed by mutable reference,
+//!   while the original collector takes ownership.
+//! - [`tee_mut()`](CollectorBase::tee_mut): the item is passed by mutable reference,
+//!   while the original collector also takes a mutable reference.
+//!
+//! Due to Rust's emphasis on ownership and borrowing, multiple adapters
+//! are provided so that you can explicitly choose between cloning and borrowing
+//! based on your needs. Usually, you should avoid cloning whenever possible,
+//! and the method name `tee_clone` expresses your intent of cloning clearly.
+//! It is recommended to check each adapter's documentation
+//! for detailed semantics and examples.
+//!
 //! # Unspecified behaviors
 //!
 //! Unless stated otherwise by the collector’s implementation, after any of

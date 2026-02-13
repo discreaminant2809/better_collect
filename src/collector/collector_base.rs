@@ -63,10 +63,11 @@ pub trait CollectorBase {
     /// Returns [`Break(())`] if it is guaranteed that the collector
     /// has stopped accumulating, or returns [`Continue(())`] otherwise.
     ///
-    /// As specified in [`Collector`], after the stop is signaled somewhere else,
-    /// including through [`collect()`] or similar methods,
-    /// or this method itself, the behavior of this method is unspecified.
-    /// This may include returning `false` even if the collector has conceptually stopped.
+    /// As specified in the [module-level documentation](crate::collector),
+    /// after the stop is signaled somewhere else,
+    /// including through [`collect()`] or similar methods or this method itself,
+    /// the behavior of this method is unspecified.
+    /// This may include returning [`Break(())`] even if the collector has conceptually stopped.
     ///
     /// This method should be called once and only once before collecting
     /// items in a loop to avoid consuming one item prematurely.
@@ -75,10 +76,10 @@ pub trait CollectorBase {
     /// if you find yourself needing such behavior.
     ///
     /// If the collector is uncertain, like "maybe I won’t accumulate… uh, fine, I will,"
-    /// it is recommended to just return `false`.
+    /// it is recommended to just return [`Continue(())`].
     /// For example, [`filter()`] might skip some items it collects,
-    /// but still returns `false` as long as the underlying collector can still accumulate.
-    /// The filter just denies "undesirable" items, not signal termination
+    /// but still returns [`Continue(())`] as long as the underlying collector can still accumulate.
+    /// The filter just denies "undesirable" items and does not signal termination
     /// (this is the job of [`take_while()`] instead).
     ///
     /// The default implementation always returns [`Continue(())`].
@@ -145,11 +146,9 @@ pub trait CollectorBase {
     /// including accumulating again.
     /// `fuse()` ensures that once a collector has stopped, subsequent items
     /// are guaranteed to **not** be accumulated. This means that at that point,
-    /// the following are guaranteed on `fuse()`:
-    ///
-    /// - [`collect()`] and similar methods always return
-    ///   [`Break(())`].
-    /// - [`break_hint()`](CollectorBase::break_hint) always return `true`.
+    /// [`collect()`](Collector::collect), [`collect_many()`](Collector::collect_many)
+    /// and [`break_hint()`](CollectorBase::break_hint) are
+    /// guaranteed to return [`Break(())`].
     ///
     /// # Examples
     ///
@@ -199,7 +198,6 @@ pub trait CollectorBase {
     /// assert_eq!(collector.finish(), [1, 2]);
     /// ```
     ///
-    /// [`collect()`]: crate::collector::Collector::collect
     /// [`Continue(())`]: ControlFlow::Continue
     /// [`Break(())`]: ControlFlow::Break
     #[inline]

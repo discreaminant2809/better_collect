@@ -6,7 +6,7 @@ use std::{
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-/// A [`Collector`] that computes the minimum value among the items it collects
+/// A collector that computes the minimum value among the items it collects
 /// according to a comparison function.
 ///
 /// Its [`Output`](CollectorBase::Output) is `None` if it has not collected any items,

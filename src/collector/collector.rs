@@ -194,7 +194,7 @@ pub trait Collector<T>: CollectorBase {
     //     assert_collector::<_, &mut U>(Map::new(self, f))
     // }
 
-    // /// Creates a [`Collector`] that collects all outputs produced by an inner collector.
+    // /// Creates a collector that collects all outputs produced by an inner collector.
     // ///
     // /// The inner collector collects items first until it stops accumulating,
     // /// then, the outer collector collects the output produced by the inner collector,
@@ -246,7 +246,7 @@ pub trait Collector<T>: CollectorBase {
     //     assert_collector::<_, T>(Nest::new(self, inner.into_collector()))
     // }
 
-    // /// Creates a [`Collector`] that collects all outputs produced by an inner collector.
+    // /// Creates a collector that collects all outputs produced by an inner collector.
     // ///
     // /// The inner collector collects items first until it stops accumulating,
     // /// then, the outer collector collects the output produced by the inner collector,

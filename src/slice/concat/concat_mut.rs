@@ -4,7 +4,7 @@ use crate::collector::{Collector, CollectorBase};
 
 use super::ConcatItem;
 
-/// A [`Collector`] that concatenates items.
+/// A collector that concatenates items.
 ///
 /// This `struct` is created by [`Concat::concat_mut()`]. See its documentation for more.
 ///
