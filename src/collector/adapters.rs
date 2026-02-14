@@ -8,6 +8,8 @@ mod funnel;
 mod fuse;
 mod map;
 mod map_output;
+#[cfg(feature = "unstable")]
+mod nest_family;
 mod partition;
 mod skip;
 mod take;
@@ -20,8 +22,6 @@ mod tee_mut;
 mod tee_with;
 mod unbatching;
 mod unzip;
-// #[cfg(feature = "unstable")]
-// mod nest_family;
 
 pub use chain::*;
 pub use cloning::*;
@@ -33,6 +33,8 @@ pub use funnel::*;
 pub use fuse::*;
 pub use map::*;
 pub use map_output::*;
+#[cfg(feature = "unstable")]
+pub use nest_family::*;
 pub use partition::*;
 pub use skip::*;
 pub use take::*;
@@ -45,5 +47,3 @@ pub use tee_mut::*;
 pub use tee_with::*;
 pub use unbatching::*;
 pub use unzip::*;
-// #[cfg(feature = "unstable")]
-// pub use nest_family::*;

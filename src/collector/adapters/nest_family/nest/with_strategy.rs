@@ -3,14 +3,14 @@ use std::{
     ops::ControlFlow,
 };
 
-use crate::collector::{Collector, Fuse, RefCollector};
+use crate::collector::{Collector, CollectorBase, Fuse};
 
-use super::super::strategy::Strategy;
+use super::super::strategy::{Strategy, StrategyBase};
 
 #[derive(Clone)]
 pub struct WithStrategy<CO, S>
 where
-    S: Strategy,
+    S: StrategyBase,
 {
     // It's possible that the active inner has been accumulating,
     // but then `break_hint` is called and it signals a stop.
@@ -25,8 +25,8 @@ where
 
 impl<CO, S> WithStrategy<CO, S>
 where
-    CO: Collector,
-    S: Strategy,
+    CO: CollectorBase,
+    S: StrategyBase,
 {
     pub(super) fn new(outer: CO, strategy: S) -> Self {
         Self {
@@ -37,16 +37,34 @@ where
     }
 }
 
-impl<CO, S> Collector for WithStrategy<CO, S>
+impl<CO, S> CollectorBase for WithStrategy<CO, S>
 where
-    CO: Collector<Item = <S::Collector as Collector>::Output>,
-    S: Strategy,
+    CO: Collector<S::Output>,
+    S: StrategyBase,
 {
-    type Item = <S::Collector as Collector>::Item;
-
     type Output = CO::Output;
 
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(mut self) -> Self::Output {
+        if let Some(inner) = self.inner {
+            // Due to this line, the outer has to be fused.
+            let _ = self.outer.collect(inner.finish());
+        }
+
+        self.outer.finish()
+    }
+
+    #[inline]
+    fn break_hint(&self) -> ControlFlow<()> {
+        self.outer.break_hint()
+    }
+}
+
+impl<CO, S, T> Collector<T> for WithStrategy<CO, S>
+where
+    CO: Collector<S::Output>,
+    S: Strategy<T>,
+{
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         let inner = if let Some(inner) = &mut self.inner {
             inner
         } else {
@@ -59,7 +77,7 @@ where
             // => goodbye optimization.
             loop {
                 let inner = self.strategy.next_collector();
-                if !inner.break_hint() {
+                if inner.break_hint().is_continue() {
                     break self.inner.insert(inner);
                 }
 
@@ -77,20 +95,6 @@ where
         } else {
             ControlFlow::Continue(())
         }
-    }
-
-    fn finish(mut self) -> Self::Output {
-        if let Some(inner) = self.inner {
-            // Due to this line, the outer has to be fused.
-            let _ = self.outer.collect(inner.finish());
-        }
-
-        self.outer.finish()
-    }
-
-    #[inline]
-    fn break_hint(&self) -> bool {
-        self.outer.break_hint()
     }
 
     // TODO: the overrides are still buggy
@@ -195,42 +199,10 @@ where
     // }
 }
 
-impl<CO, S> RefCollector for WithStrategy<CO, S>
-where
-    CO: Collector<Item = <S::Collector as Collector>::Output>,
-    S: Strategy<Collector: RefCollector>,
-{
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        let inner = if let Some(inner) = &mut self.inner {
-            inner
-        } else {
-            loop {
-                let inner = self.strategy.next_collector();
-                if !inner.break_hint() {
-                    break self.inner.insert(inner);
-                }
-
-                self.outer.collect(inner.finish())?;
-            }
-        };
-
-        if inner.collect_ref(item).is_break() {
-            self.outer.collect(
-                self.inner
-                    .take()
-                    .expect("inner collector should exist")
-                    .finish(),
-            )
-        } else {
-            ControlFlow::Continue(())
-        }
-    }
-}
-
 impl<CO, S> WithStrategy<CO, S>
 where
     CO: Debug,
-    S: Strategy<Collector: Debug>,
+    S: StrategyBase<Collector: Debug>,
 {
     pub(super) fn debug_struct(&self, debug_struct: &mut DebugStruct<'_, '_>) {
         debug_struct.field("outer", &self.outer);

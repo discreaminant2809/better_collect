@@ -1,9 +1,10 @@
 use std::fmt::{Debug, DebugStruct};
 
-use crate::collector::Collector;
+use crate::collector::{Collector, CollectorBase};
 
-pub trait Strategy {
-    type Collector: Collector;
+pub trait StrategyBase {
+    type Output;
+    type Collector: CollectorBase<Output = Self::Output>;
 
     fn next_collector(&mut self) -> Self::Collector;
 
@@ -17,6 +18,10 @@ pub trait Strategy {
     }
 }
 
+pub trait Strategy<T>: StrategyBase<Collector: Collector<T>> {}
+
+impl<S, T> Strategy<T> for S where S: StrategyBase<Collector: Collector<T>> {}
+
 #[derive(Clone)]
 pub struct CloneStrategy<C>(C);
 
@@ -27,10 +32,11 @@ impl<C> CloneStrategy<C> {
     }
 }
 
-impl<C> Strategy for CloneStrategy<C>
+impl<C> StrategyBase for CloneStrategy<C>
 where
-    C: Collector + Clone,
+    C: CollectorBase + Clone,
 {
+    type Output = C::Output;
     type Collector = C;
 
     #[inline]
@@ -47,11 +53,12 @@ where
     }
 }
 
-impl<C, F> Strategy for F
+impl<C, F> StrategyBase for F
 where
-    C: Collector,
+    C: CollectorBase,
     F: FnMut() -> C,
 {
+    type Output = C::Output;
     type Collector = C;
 
     #[inline]

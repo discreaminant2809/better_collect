@@ -1,12 +1,12 @@
 use std::ops::ControlFlow;
 
-#[cfg(feature = "unstable")]
-use super::TeeWith;
 use super::{
     Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, IntoCollector,
     IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel,
     TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
 };
+#[cfg(feature = "unstable")]
+use super::{Nest, NestExact, TeeWith};
 
 /// The base trait of a collector.
 ///
@@ -980,6 +980,104 @@ pub trait CollectorBase {
         I: IntoIterator,
     {
         assert_collector::<_, T>(FlatMap::new(self, f))
+    }
+
+    /// Creates a collector that collects all outputs produced by an inner collector.
+    ///
+    /// The inner collector collects items first until it stops accumulating,
+    /// then, the outer collector collects the output produced by the inner collector,
+    /// then repeat.
+    ///
+    /// The inner collector must implement [`Clone`]. Also, it should be finite
+    /// so that the outer can collect more, or else the outer will be stuck with
+    /// one output forever.
+    ///
+    /// This version collects the unfinished inner (the remainder), if any,
+    /// after calling [`finish()`] or [`collect_then_finish()`].
+    /// Hence, this adaptor is not "exact," similar to [`[_]::chunks()`](slice::chunks).
+    /// Use [`nest_exact()`](CollectorBase::nest_exact) if you do not care about the remainder,
+    /// since the exact verion is generally faster.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .nest(vec![].into_collector().take(3));
+    ///
+    /// assert!(collector.collect_many(1..=11).is_continue());
+    ///
+    /// assert_eq!(
+    ///     collector.finish(),
+    ///     [
+    ///         vec![1, 2, 3],
+    ///         vec![4, 5, 6],
+    ///         vec![7, 8, 9],
+    ///         vec![10, 11],
+    ///     ],
+    /// );
+    /// ```
+    ///
+    /// [`finish()`]: CollectorBase::finish
+    /// [`collect_then_finish()`]: Collector::collect_then_finish
+    #[cfg(feature = "unstable")]
+    fn nest<C>(self, inner: C) -> Nest<Self, C::IntoCollector>
+    where
+        Self: Collector<C::Output> + Sized,
+        C: IntoCollectorBase<IntoCollector: Clone>,
+    {
+        assert_collector_base(Nest::new(self, inner.into_collector()))
+    }
+
+    /// Creates a collector that collects all outputs produced by an inner collector.
+    ///
+    /// The inner collector collects items first until it stops accumulating,
+    /// then, the outer collector collects the output produced by the inner collector,
+    /// then repeat.
+    ///
+    /// The inner collector must implement [`Clone`]. Also, it should be finite
+    /// so that the outer can collect more, or else the outer will be stuck with
+    /// one output forever.
+    ///
+    /// This version will only collect all the inners that has stopped accumulating.
+    /// Any unfinished inner (the remainder) is discarded after calling
+    /// [`finish()`] or [`collect_then_finish()`].
+    /// Hence, this adaptor is "exact," similar to [`[_]::chunks_exact()`](slice::chunks_exact).
+    /// Since the implementation is simpler, this adaptor is generally faster.
+    /// Use [`nest()`](CollectorBase::nest) if you care about the remainder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .nest_exact(vec![].into_collector().take(3));
+    ///
+    /// assert!(collector.collect_many(1..=11).is_continue());
+    ///
+    /// assert_eq!(
+    ///     collector.finish(),
+    ///     [
+    ///         [1, 2, 3],
+    ///         [4, 5, 6],
+    ///         [7, 8, 9],
+    ///     ],
+    /// );
+    /// ```
+    ///
+    /// [`finish()`]: CollectorBase::finish
+    /// [`collect_then_finish()`]: Collector::collect_then_finish
+    #[cfg(feature = "unstable")]
+    fn nest_exact<C>(self, inner: C) -> NestExact<Self, C::IntoCollector>
+    where
+        Self: Collector<C::Output> + Sized,
+        C: IntoCollectorBase<IntoCollector: Clone>,
+    {
+        assert_collector_base(NestExact::new(self, inner.into_collector()))
     }
 }
 

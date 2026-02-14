@@ -4,14 +4,14 @@ use std::{
     ops::ControlFlow,
 };
 
-use crate::collector::{Collector, RefCollector};
+use crate::collector::{Collector, CollectorBase};
 
-use super::super::strategy::Strategy;
+use super::super::strategy::{Strategy, StrategyBase};
 
 #[derive(Clone)]
 pub struct WithStrategy<CO, S>
 where
-    S: Strategy,
+    S: StrategyBase,
 {
     outer: CO,
     strategy: S,
@@ -20,7 +20,7 @@ where
 
 impl<CO, S> WithStrategy<CO, S>
 where
-    S: Strategy,
+    S: StrategyBase,
 {
     pub(super) fn new(outer: CO, mut strategy: S) -> Self {
         Self {
@@ -31,18 +31,30 @@ where
     }
 }
 
-impl<CO, S> Collector for WithStrategy<CO, S>
+impl<CO, S> CollectorBase for WithStrategy<CO, S>
 where
-    CO: Collector<Item = <S::Collector as Collector>::Output>,
-    S: Strategy,
+    CO: CollectorBase,
+    S: StrategyBase,
 {
-    type Item = <S::Collector as Collector>::Item;
-
     type Output = CO::Output;
 
-    fn collect(&mut self, item: Self::Item) -> ControlFlow<()> {
+    fn finish(self) -> Self::Output {
+        self.outer.finish()
+    }
+
+    fn break_hint(&self) -> ControlFlow<()> {
+        self.outer.break_hint()
+    }
+}
+
+impl<CO, S, T> Collector<T> for WithStrategy<CO, S>
+where
+    CO: Collector<S::Output>,
+    S: Strategy<T>,
+{
+    fn collect(&mut self, item: T) -> ControlFlow<()> {
         self.outer.collect_many(iter::from_fn(|| {
-            if self.inner.break_hint() {
+            if self.inner.break_hint().is_break() {
                 let inner = mem::replace(&mut self.inner, self.strategy.next_collector());
                 Some(inner.finish())
             } else {
@@ -58,15 +70,7 @@ where
         ControlFlow::Continue(())
     }
 
-    fn finish(self) -> Self::Output {
-        self.outer.finish()
-    }
-
-    fn break_hint(&self) -> bool {
-        self.outer.break_hint()
-    }
-
-    fn collect_many(&mut self, items: impl IntoIterator<Item = Self::Item>) -> ControlFlow<()> {
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         // FIXME: specialization for the iterator.
         // It is good if we can know in advanced whether an iterator is exhausted or not.
         // For now, we trust the size hint.
@@ -79,7 +83,7 @@ where
                 return None;
             }
 
-            if self.inner.break_hint() {
+            if self.inner.break_hint().is_break() {
                 let inner = mem::replace(&mut self.inner, self.strategy.next_collector());
                 return Some(inner.finish());
             }
@@ -117,7 +121,7 @@ where
         }))
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = Self::Item>) -> Self::Output {
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
         let mut items = items.into_iter();
         let mut inner = self.inner;
 
@@ -127,7 +131,7 @@ where
                 return None;
             }
 
-            if inner.break_hint() {
+            if inner.break_hint().is_break() {
                 let inner = mem::replace(&mut inner, self.strategy.next_collector());
                 return Some(inner.finish());
             }
@@ -167,34 +171,10 @@ where
     }
 }
 
-impl<CO, S> RefCollector for WithStrategy<CO, S>
-where
-    CO: Collector<Item = <S::Collector as Collector>::Output>,
-    S: Strategy<Collector: RefCollector>,
-{
-    fn collect_ref(&mut self, item: &mut Self::Item) -> ControlFlow<()> {
-        self.outer.collect_many(iter::from_fn(|| {
-            if self.inner.break_hint() {
-                let inner = mem::replace(&mut self.inner, self.strategy.next_collector());
-                Some(inner.finish())
-            } else {
-                None
-            }
-        }))?;
-
-        if self.inner.collect_ref(item).is_break() {
-            let inner = mem::replace(&mut self.inner, self.strategy.next_collector());
-            self.outer.collect(inner.finish())?;
-        }
-
-        ControlFlow::Continue(())
-    }
-}
-
 impl<CO, S> WithStrategy<CO, S>
 where
     CO: Debug,
-    S: Strategy<Collector: Debug>,
+    S: StrategyBase<Collector: Debug>,
 {
     pub(super) fn debug_struct(&self, debug_struct: &mut DebugStruct<'_, '_>) {
         debug_struct.field("outer", &self.outer);

@@ -5,6 +5,7 @@
 ### Added
 
 - `CollectorBase::flatten()` and `CollectorBase::flat_map()`.
+- Unstable: `Collector::nest(_exact)()` (reintroduced).
 
 ## 0.4.0
 
