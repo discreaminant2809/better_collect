@@ -1,10 +1,9 @@
-use std::{
-    cmp::{Ordering, min_by},
-    fmt::Debug,
-    ops::ControlFlow,
-};
+use std::{cmp::Ordering, fmt::Debug, ops::ControlFlow};
 
-use crate::collector::{Collector, CollectorBase, assert_collector};
+use crate::{
+    collector::{Collector, CollectorBase, assert_collector},
+    iter::Fold,
+};
 
 /// A collector that computes the minimum value among the items it collects
 /// according to a comparison function.
@@ -72,26 +71,60 @@ where
 {
     #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
-        self.min = Some(match self.min.take() {
-            Some(min) => min_by(min, item, &mut self.f),
-            None => item,
-        });
+        match self.min {
+            None => self.min = Some(item),
+            Some(ref mut min) => min_assign_by(min, item, &mut self.f),
+        }
 
         ControlFlow::Continue(())
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
-        self.min = self.min.take().into_iter().chain(items).min_by(&mut self.f);
+        match self.min {
+            // If we haven't collected at all, we can avoid `chain()`'s overhead.
+            // See the below also.
+            None => self.min = items.into_iter().min_by(&mut self.f),
+            Some(ref mut min) => {
+                // We can't just `min.min(items.into_iter().min_by())`.
+                // We have to preserve the order of which is compared to which.
+                // This is basically `chain()`, which doesn't override `min_by()`!
+                items.into_iter().for_each({
+                    let mut f = &mut self.f;
+                    move |item| {
+                        min_assign_by(min, item, &mut f);
+                    }
+                });
+            }
+        };
+
         ControlFlow::Continue(())
     }
 
-    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
-        self.min.into_iter().chain(items).min_by(self.f)
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
+        match self.min {
+            None => items.into_iter().min_by(self.f),
+            // We don't use the std's `fold()` to account for large states.
+            Some(min) => Some(
+                Fold::new(min, move |min, item| min_assign_by(min, item, &mut self.f))
+                    .collect_then_finish(items),
+            ),
+        }
     }
 }
 
 impl<T: Debug, F> Debug for MinBy<T, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MinBy").field("min", &self.min).finish()
+    }
+}
+
+fn min_assign_by<T, F>(min: &mut T, value: T, compare: F)
+where
+    F: FnOnce(&T, &T) -> Ordering,
+{
+    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1704-1708
+    if compare(min, &value).is_le() {
+    } else {
+        *min = value;
     }
 }

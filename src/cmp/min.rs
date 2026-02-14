@@ -2,7 +2,10 @@ use std::{cmp::Ordering, ops::ControlFlow};
 
 use super::{MinBy, MinByKey};
 
-use crate::collector::{Collector, CollectorBase, assert_collector};
+use crate::{
+    collector::{Collector, CollectorBase, assert_collector},
+    iter::Fold,
+};
 
 /// A collector that computes the minimum value among the items it collects.
 ///
@@ -91,21 +94,46 @@ impl<T> CollectorBase for Min<T> {
 impl<T: Ord> Collector<T> for Min<T> {
     #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
-        self.min = Some(match self.min.take() {
-            Some(min) => min.min(item),
-            None => item,
-        });
+        match self.min {
+            None => self.min = Some(item),
+            Some(ref mut min) => min_assign(min, item),
+        }
 
         ControlFlow::Continue(())
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
-        self.min = self.min.take().into_iter().chain(items).min();
+        match self.min {
+            // If we haven't collected at all, we can avoid `chain()`'s overhead.
+            // See the below also.
+            None => self.min = items.into_iter().min(),
+            Some(ref mut min) => {
+                // We can't just `min.min(items.into_iter().min())`.
+                // We have to preserve the order of which is compared to which.
+                // This is basically `chain()`, which doesn't override `min()`!
+                items.into_iter().for_each(move |item| {
+                    min_assign(min, item);
+                });
+            }
+        };
+
         ControlFlow::Continue(())
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
-        self.min.into_iter().chain(items).min()
+        match self.min {
+            None => items.into_iter().min(),
+            // We don't use the std's `fold()` to account for large states.
+            Some(min) => Some(Fold::new(min, min_assign).collect_then_finish(items)),
+        }
+    }
+}
+
+fn min_assign<T: Ord>(min: &mut T, value: T) {
+    // Don't use `>=`. The `min` function does `other < self`.
+    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1064-1066
+    if value < *min {
+        *min = value
     }
 }
 

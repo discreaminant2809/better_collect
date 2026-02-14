@@ -2,7 +2,10 @@ use std::{cmp::Ordering, ops::ControlFlow};
 
 use super::{MaxBy, MaxByKey};
 
-use crate::collector::{Collector, CollectorBase, assert_collector};
+use crate::{
+    collector::{Collector, CollectorBase, assert_collector},
+    iter::Fold,
+};
 
 /// A collector that computes the maximum value among the items it collects.
 ///
@@ -91,21 +94,50 @@ impl<T> CollectorBase for Max<T> {
 impl<T: Ord> Collector<T> for Max<T> {
     #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
-        // Because it's `Max`, if `max` is a `None` then it's always smaller than a `Some`.
-        // Doesn't work on `Min`, however.
-        // Be careful to preserve the semantics of `Iterator::max` that if there are
-        // more than one maximum values, the last one is chosen.
-        self.max = self.max.take().max(Some(item));
+        // This one IS ~x27 slower (proven by benchmark)
+        // self.max = self.max.take().max(Some(item));
+
+        match self.max {
+            None => self.max = Some(item),
+            Some(ref mut max) => max_assign(max, item),
+        }
+
         ControlFlow::Continue(())
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
-        self.max = self.max.take().into_iter().chain(items).max();
+        match self.max {
+            // If we haven't collected at all, we can avoid `chain()`'s overhead.
+            // See the below also.
+            None => self.max = items.into_iter().max(),
+            Some(ref mut max) => {
+                // We can't just `max.max(items.into_iter().max())`.
+                // We have to preserve the order of which is compared to which.
+                // This is basically `chain()`, which doesn't override `max()`!
+                items.into_iter().for_each(move |item| {
+                    max_assign(max, item);
+                });
+            }
+        };
+
         ControlFlow::Continue(())
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
-        self.max.into_iter().chain(items).max()
+        match self.max {
+            None => items.into_iter().max(),
+            // We don't use the std's `fold()` to account for large states.
+            Some(max) => Some(Fold::new(max, max_assign).collect_then_finish(items)),
+        }
+    }
+}
+
+fn max_assign<T: Ord>(max: &mut T, value: T) {
+    // Don't use `>=`. The `max` function does `other < self`.
+    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1025-1027
+    if value < *max {
+    } else {
+        *max = value
     }
 }
 

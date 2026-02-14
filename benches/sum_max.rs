@@ -28,6 +28,7 @@ fn sum_max(criterion: &mut Criterion) {
     bench_fn!(two_pass);
     bench_fn!(fold_w_initial);
     bench_fn!(fold_wo_initial);
+    bench_fn!(bc_tee_with_max_unwrap);
     bench_fn!(bc_tee_with_fold);
     bench_fn!(bc_tee_with_max);
     bench_fn!(for_loop_w_initial);
@@ -68,6 +69,14 @@ fn bc_tee_with_max(nums: &[i32]) -> (i32, Option<i32>) {
     nums.iter()
         .copied()
         .feed_into(i32::adding().tee(Max::new()))
+}
+
+fn bc_tee_with_max_unwrap(nums: &[i32]) -> (i32, i32) {
+    nums.iter().copied().feed_into(
+        i32::adding()
+            .tee(Max::new())
+            .map_output(|(sum, max)| (sum, max.unwrap_or(i32::MIN))),
+    )
 }
 
 fn two_pass(nums: &[i32]) -> (i32, Option<i32>) {
