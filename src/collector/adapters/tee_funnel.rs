@@ -1,4 +1,4 @@
-use std::ops::ControlFlow;
+use std::{iter, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase};
 
@@ -139,7 +139,72 @@ where
     //     }
     // }
 
-    // The default implementations of `collect_many` and `collect_then_finish` are sufficient.
+    fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
+        self.break_hint()?;
+
+        let mut items = items.into_iter();
+
+        match items.try_for_each(|mut item| {
+            // We don't need to check like the `collect` implementation.
+            // `self.break_hint()?` has already handled it,
+            // and we trust that both underlying collectors
+            // return `Break` as soon as it can't afford more items.
+            if self.collector1.collect(&mut item).is_break() {
+                ControlFlow::Break(Which::First(item))
+            } else {
+                self.collector2.collect(item).map_break(|_| Which::Second)
+            }
+        }) {
+            ControlFlow::Break(Which::First(item)) => {
+                self.collector2.collect_many(iter::once(item).chain(items))
+            }
+            ControlFlow::Break(Which::Second) => {
+                // Sadly, we cannot use `collect_many` since we have an iterator of `T`,
+                // but the collector expects `&mut T`, and we have no way to
+                // map from `T` to `&mut T`.
+                items.try_for_each(|mut item| self.collector1.collect(&mut item))
+            }
+            ControlFlow::Continue(_) => ControlFlow::Continue(()),
+        }
+    }
+
+    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
+        if self.break_hint().is_break() {
+            return self.finish();
+        }
+
+        let mut items = items.into_iter();
+
+        match items.try_for_each(|mut item| {
+            // We don't need to check like the `collect` implementation.
+            // `self.break_hint()?` has already handled it,
+            // and we trust that both underlying collectors
+            // return `Break` as soon as it can't afford more items.
+            if self.collector1.collect(&mut item).is_break() {
+                ControlFlow::Break(Which::First(item))
+            } else {
+                self.collector2.collect(item).map_break(|_| Which::Second)
+            }
+        }) {
+            // If one of the collectors has stopped, we can avoid cloning
+            // for the rest of the items!
+            ControlFlow::Break(Which::First(item)) => (
+                self.collector1.finish(),
+                self.collector2
+                    .collect_then_finish(iter::once(item).chain(items)),
+            ),
+            ControlFlow::Break(Which::Second) => {
+                let _ = items.try_for_each(|mut item| self.collector1.collect(&mut item));
+                self.finish()
+            }
+            ControlFlow::Continue(_) => self.finish(),
+        }
+    }
+}
+
+enum Which<T> {
+    First(T),
+    Second,
 }
 
 #[cfg(all(test, feature = "std"))]
