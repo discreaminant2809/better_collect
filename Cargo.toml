@@ -34,3 +34,11 @@ harness = false
 [[bench]]
 name = "large_state"
 harness = false
+
+[[bench]]
+name = "find"
+harness = false
+
+[[bench]]
+name = "sum_find"
+harness = false
