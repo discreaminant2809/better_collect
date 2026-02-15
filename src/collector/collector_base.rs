@@ -637,23 +637,20 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, cmp::Max};
+    /// use better_collect::{prelude::*, iter::Count};
     ///
-    /// #[derive(Debug, PartialEq)]
-    /// struct Stats {
-    ///     sum: i32,
-    ///     max: i32,
-    /// }
+    /// let mut average = i32::adding()
+    ///     .tee(Count::new())
+    ///     .map_output(|(sum, count)| {
+    ///         (count != 0).then(|| sum as f64 / count as f64)
+    ///     });
     ///
-    /// let mut collector = i32::adding()
-    ///     .tee(Max::new())
-    ///     .map_output(|(sum, max)| Stats { sum, max: max.unwrap_or(i32::MIN) });
+    /// assert!(average.collect(1).is_continue());
+    /// assert!(average.collect(6).is_continue());
+    /// assert!(average.collect(4).is_continue());
+    /// assert!(average.collect(2).is_continue());
     ///
-    /// assert!(collector.collect(1).is_continue());
-    /// assert!(collector.collect(3).is_continue());
-    /// assert!(collector.collect(2).is_continue());
-    ///
-    /// assert_eq!(collector.finish(), Stats { sum: 6, max: 3 });
+    /// assert_eq!(average.finish(), Some(3.25));
     /// ```
     fn map_output<F, T>(self, f: F) -> MapOutput<Self, F>
     where
