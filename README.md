@@ -1,4 +1,4 @@
-# better_collect 0.4.1
+# better_collect 0.5.0
 
 [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
 [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)

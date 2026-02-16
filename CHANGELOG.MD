@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+### Added
+
+- `CollectorBase::by_ref()`.
+- `IntoCollector` in `crate::prelude`.
+
 ## 0.4.1
 
 ### Added

@@ -979,6 +979,53 @@ pub trait CollectorBase {
         assert_collector::<_, T>(FlatMap::new(self, f))
     }
 
+    /// Creates a "by reference" adapter for this collector.
+    ///
+    /// Used when you do not want, yet, consume the collector
+    /// and reuse it further.
+    ///
+    /// It is possible since `&mut C` implements [`Collector<T>`]
+    /// when `C` implements [`Collector<T>`].
+    ///
+    /// Due to this, function signatures and structs (using generics)
+    /// should only either expect an [`impl Collector<T>`](Collector)
+    /// or [`impl IntoCollector<T>`](super::IntoCollector)
+    /// for more flexibility, allowing callers to opt for
+    /// either ownership or borrowing.
+    ///
+    /// Also, if you do not chain adapters (before and after `by_ref()`),
+    /// consider passing a `&mut collector` instead to express the intent better.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// fn fill_one_and_two(collector: impl IntoCollector<i32>) {
+    ///     collector
+    ///         .into_collector()
+    ///         .collect_many([1, 2]);
+    /// }
+    ///
+    /// let mut collector = vec![].into_collector();
+    /// // `by_ref()` works, but this is more readable.
+    /// fill_one_and_two(&mut collector);
+    /// assert!(collector.collect(3).is_continue());
+    /// assert_eq!(collector.finish(), [1, 2, 3]);
+    ///
+    /// let mut collector = vec![].into_collector();
+    /// fill_one_and_two(collector.by_ref().filter(|&num| num % 2 == 0));
+    /// assert!(collector.collect(3).is_continue());
+    /// assert_eq!(collector.finish(), [2, 3]);
+    /// ```
+    #[inline]
+    fn by_ref(&mut self) -> &mut Self
+    where
+        Self: Sized,
+    {
+        self
+    }
+
     /// Creates a collector that collects all outputs produced by an inner collector.
     ///
     /// The inner collector collects items first until it stops accumulating,
