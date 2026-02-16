@@ -9,6 +9,8 @@
 //!
 //! [`Collector`]: crate::collector::Collector
 
+#[cfg(feature = "itertools")]
+mod all_equal;
 mod max;
 mod max_by;
 mod max_by_key;
@@ -20,6 +22,8 @@ mod value_key;
 // mod is_sorted_by;
 // mod is_sorted_by_key;
 
+#[cfg(feature = "itertools")]
+pub use all_equal::*;
 pub use max::*;
 pub use max_by::*;
 pub use max_by_key::*;

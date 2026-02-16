@@ -6,6 +6,7 @@
 
 - `CollectorBase::by_ref()`.
 - `IntoCollector` in `crate::prelude`.
+- `crate::cmp::AllEqual`.
 
 ## 0.4.1
 

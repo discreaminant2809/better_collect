@@ -11,17 +11,19 @@ categories = ["rust-patterns", "no-std", "no-std::no-alloc", "algorithms"]
 keywords = ["collector", "fold", "unzip", "composition", "iterator"]
 
 [dependencies]
+itertools = { version = "0.14.0", optional = true, default-features = false }
 
 [dev-dependencies]
 criterion = "0.8.2"
-proptest = { version = "1.9.0", default-features = false, features = ["std"] }
+proptest = { version = "1.10.0", default-features = false, features = ["std"] }
 rand = "0.10.0"
 
 [features]
 default = ["std"]
-alloc = []
-std = ["alloc"]
+alloc = ["itertools/use_alloc"]
+std = ["alloc", "itertools/use_std"]
 unstable = []
+itertools = ["dep:itertools"]
 
 [package.metadata.docs.rs]
 all-features = true
