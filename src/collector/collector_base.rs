@@ -1,5 +1,10 @@
 use std::ops::ControlFlow;
 
+#[cfg(feature = "itertools")]
+use itertools::Either;
+
+#[cfg(feature = "itertools")]
+use super::PartitionMap;
 use super::{
     Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, IntoCollector,
     IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel,
@@ -1024,6 +1029,44 @@ pub trait CollectorBase {
         Self: Sized,
     {
         self
+    }
+
+    /// Creates a collector that distributes items between two collectors based on a predicate.
+    ///
+    /// Items for which the predicate returns [`Either::Left`] go to the first collector,
+    /// and those for which it returns [`Either::Right`] go to the second collector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .partition_map(From::from, vec![]);
+    ///
+    /// assert!(collector.collect(Ok(1)).is_continue());
+    /// assert!(collector.collect(Err("Error")).is_continue());
+    /// assert!(collector.collect(Ok(2)).is_continue());
+    ///
+    /// let (errs, oks) = collector.finish();
+    ///
+    /// assert_eq!(oks, [1, 2]);
+    /// assert_eq!(errs, ["Error"]);
+    /// ```
+    #[cfg(feature = "itertools")]
+    #[inline]
+    fn partition_map<C, F, T, L, R>(
+        self,
+        pred: F,
+        collector_right: C,
+    ) -> PartitionMap<Self, C::IntoCollector, F>
+    where
+        Self: Collector<L> + Sized,
+        C: IntoCollector<R>,
+        F: FnMut(T) -> Either<L, R>,
+    {
+        PartitionMap::new(self, collector_right.into_collector(), pred)
     }
 
     /// Creates a collector that collects all outputs produced by an inner collector.

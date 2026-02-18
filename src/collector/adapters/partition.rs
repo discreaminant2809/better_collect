@@ -60,25 +60,14 @@ where
 
     #[inline]
     fn break_hint(&self) -> ControlFlow<()> {
-        // We're sure that whether this collector has finished or not is
-        // entirely based on the 2nd collector.
-        // Also, by this method being called it is assumed that
-        // this collector has not finished, which mean the 2nd collector
-        // has not finished, which means it's always sound to call here.
-        //
-        // Since the 1st collector is fused, we won't cause any unsoundness
-        // by repeatedly calling it.
-        if self.collector_if_true.break_hint().is_break()
-            && self.collector_if_false.break_hint().is_break()
-        {
-            ControlFlow::Break(())
-        } else {
-            ControlFlow::Continue(())
-        }
+        cf_and!(
+            self.collector_if_true.break_hint(),
+            self.collector_if_false.break_hint()
+        )
     }
 }
 
-impl<CT, CF, T, F> Collector<T> for Partition<CT, CF, F>
+impl<CT, CF, F, T> Collector<T> for Partition<CT, CF, F>
 where
     CT: Collector<T>,
     CF: Collector<T>,
@@ -105,19 +94,10 @@ where
         let mut items = items.into_iter();
 
         match items.try_for_each(|mut item| {
-            #[allow(clippy::collapsible_else_if)] // we want it to be mirrored.
             if (self.pred)(&mut item) {
-                if self.collector_if_true.collect(item).is_break() {
-                    ControlFlow::Break(true)
-                } else {
-                    ControlFlow::Continue(())
-                }
+                self.collector_if_true.collect(item).map_break(|_| true)
             } else {
-                if self.collector_if_false.collect(item).is_break() {
-                    ControlFlow::Break(false)
-                } else {
-                    ControlFlow::Continue(())
-                }
+                self.collector_if_false.collect(item).map_break(|_| false)
             }
         }) {
             ControlFlow::Break(true) => {

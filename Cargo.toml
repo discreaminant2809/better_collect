@@ -20,8 +20,8 @@ rand = "0.10.0"
 
 [features]
 default = ["std"]
-alloc = ["itertools/use_alloc"]
-std = ["alloc", "itertools/use_std"]
+alloc = ["itertools?/use_alloc"]
+std = ["alloc", "itertools?/use_std"]
 unstable = []
 itertools = ["dep:itertools"]
 

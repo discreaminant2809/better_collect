@@ -11,6 +11,8 @@ mod map_output;
 #[cfg(feature = "unstable")]
 mod nest_family;
 mod partition;
+#[cfg(feature = "itertools")]
+mod partition_map;
 mod skip;
 mod take;
 mod take_while;
@@ -36,6 +38,8 @@ pub use map_output::*;
 #[cfg(feature = "unstable")]
 pub use nest_family::*;
 pub use partition::*;
+#[cfg(feature = "itertools")]
+pub use partition_map::*;
 pub use skip::*;
 pub use take::*;
 pub use take_while::*;
