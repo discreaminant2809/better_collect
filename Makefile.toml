@@ -25,3 +25,11 @@ args = ["run", "nightly", "cargo", "doc", "--all-features", "--no-deps"]
 [tasks.build-feature-powerset]
 command = "cargo"
 args = ["hack", "b", "--feature-powerset"]
+
+[tasks.tree]
+command = "cargo"
+args = ["hack", "tree", "-e", "normal,features", "-f", "\"{p} {f}\"", "--feature-powerset"]
+
+[tasks.semver]
+command = "cargo"
+args = ["semver-checks", "check-release"]

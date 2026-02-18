@@ -32,7 +32,11 @@ jobs:
       - name: Install cargo-hack
         run: cargo install cargo-hack
 
-      - name: Run feature powerset tests
+      - name: Install cargo-semver-checks
+        if: matrix.rust == 'stable'
+        run: cargo install cargo-semver-checks
+
+      - name: Run tests
         # We also build benches and examples, in one command.
         run: cargo hack test --feature-powerset --all-targets
 
@@ -43,6 +47,10 @@ jobs:
         if: matrix.rust == 'stable'
         run: cargo fmt --all -- --check
 
-      - name: Run clippy
+      - name: Lint
         if: matrix.rust == 'stable'
         run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Check semver violation
+        if: matrix.rust == 'stable'
+        run: cargo semver-checks check-release
