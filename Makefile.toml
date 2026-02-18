@@ -22,9 +22,9 @@ env = { RUSTDOCFLAGS = "--cfg docsrs" }
 command = "rustup"
 args = ["run", "nightly", "cargo", "doc", "--all-features", "--no-deps"]
 
-[tasks.build-feature-powerset]
+[tasks.check]
 command = "cargo"
-args = ["hack", "b", "--feature-powerset"]
+args = ["hack", "check", "--feature-powerset"]
 
 [tasks.tree]
 command = "cargo"
@@ -33,3 +33,7 @@ args = ["hack", "tree", "-e", "normal,features", "-f", "\"{p} {f}\"", "--feature
 [tasks.semver]
 command = "cargo"
 args = ["semver-checks", "check-release"]
+
+[tasks.no_std]
+command = "cargo"
+args = []

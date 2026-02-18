@@ -223,6 +223,10 @@
 #![cfg_attr(test, deny(deprecated))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(
+    not(any(doc, all(feature = "alloc", not(feature = "std")))),
+    forbid(unused_extern_crates)
+)]
 // To make doc examples in sync (prevent accidental deprecated items usage in doc).
 #![doc(test(attr(deny(deprecated))))]
 

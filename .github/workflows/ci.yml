@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
 
     strategy:
@@ -34,16 +34,20 @@ jobs:
 
       - name: Install cargo-semver-checks
         if: matrix.rust == 'stable'
-        run: cargo install cargo-semver-checks
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-semver-checks
 
-      - name: Run tests
-        # We also build benches and examples, in one command.
-        run: cargo hack test --feature-powerset --all-targets
+      - name: Check (Compilation)
+        run: cargo hack check --feature-powerset --all-targets
 
-      - name: Run doc tests
+      - name: Run Tests
+        run: cargo hack test --feature-powerset --lib
+
+      - name: Run Doc Tests
         run: cargo test --doc --all-features
 
-      - name: Check formatting
+      - name: Check Formatting
         if: matrix.rust == 'stable'
         run: cargo fmt --all -- --check
 
@@ -51,6 +55,16 @@ jobs:
         if: matrix.rust == 'stable'
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Check semver violation
+      - name: Check SemVer Violation
         if: matrix.rust == 'stable'
         run: cargo semver-checks check-release
+
+      - name: Install thumbv7em-none-eabihf Target
+        run: rustup target add thumbv7em-none-eabihf
+
+      - name: Check no_std Compliance (Ad-Hoc for Now)
+        run: |
+          cargo hack b \
+            --feature-powerset \
+            --exclude-features std,default \
+            --target thumbv7em-none-eabihf
