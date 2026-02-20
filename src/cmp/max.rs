@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, ops::ControlFlow};
 
-use super::{MaxBy, MaxByKey};
+use super::{MaxBy, MaxByKey, max_assign};
 
 use crate::{
     collector::{Collector, CollectorBase, assert_collector},
@@ -129,15 +129,6 @@ impl<T: Ord> Collector<T> for Max<T> {
             // We don't use the std's `fold()` to account for large states.
             Some(max) => Some(Fold::new(max, max_assign).collect_then_finish(items)),
         }
-    }
-}
-
-fn max_assign<T: Ord>(max: &mut T, value: T) {
-    // Don't use `>=`. The `max` function does `other < self`.
-    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1025-1027
-    if value < *max {
-    } else {
-        *max = value
     }
 }
 

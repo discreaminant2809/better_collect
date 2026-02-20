@@ -29,6 +29,10 @@ itertools = ["dep:itertools"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
+[profile.bench]
+lto = "thin"
+codegen-units = 1
+
 [[bench]]
 name = "sum_max"
 harness = false
@@ -43,4 +47,9 @@ harness = false
 
 [[bench]]
 name = "sum_find"
+harness = false
+
+[[bench]]
+name = "min_max"
+required-features = ["itertools"]
 harness = false

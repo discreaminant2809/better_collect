@@ -17,6 +17,8 @@ mod max_by_key;
 mod min;
 mod min_by;
 mod min_by_key;
+#[cfg(feature = "itertools")]
+mod min_max;
 mod value_key;
 // mod is_sorted;
 // mod is_sorted_by;
@@ -30,11 +32,35 @@ pub use max_by_key::*;
 pub use min::*;
 pub use min_by::*;
 pub use min_by_key::*;
+#[cfg(feature = "itertools")]
+pub use min_max::*;
+
+#[inline]
+fn max_assign<T: Ord>(max: &mut T, value: T) {
+    // Don't use `>=`. The `max` function does `other < self`.
+    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1025-1027
+    if value < *max {
+    } else {
+        *max = value
+    }
+}
+
+#[inline]
+fn min_assign<T: Ord>(min: &mut T, value: T) {
+    // Don't use `>=`. The `min` function does `other < self`.
+    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1064-1066
+    if value < *min {
+        *min = value
+    }
+}
 
 #[cfg(test)]
 #[allow(dead_code)]
 mod test_utils {
     use std::cmp::Ordering;
+
+    #[cfg(feature = "itertools")]
+    use itertools::MinMaxResult;
 
     /// A struct that never compares the ID.
     /// This is crucial to test that the correct item is pertained
@@ -56,6 +82,11 @@ mod test_utils {
                 (None, None) => true,
                 _ => false,
             }
+        }
+
+        #[cfg(feature = "itertools")]
+        pub fn full_eq_minmax_res(x: MinMaxResult<Self>, y: MinMaxResult<Self>) -> bool {
+            x.into_option() == y.into_option()
         }
     }
 

@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, ops::ControlFlow};
 
-use super::{MinBy, MinByKey};
+use super::{MinBy, MinByKey, min_assign};
 
 use crate::{
     collector::{Collector, CollectorBase, assert_collector},
@@ -126,14 +126,6 @@ impl<T: Ord> Collector<T> for Min<T> {
             // We don't use the std's `fold()` to account for large states.
             Some(min) => Some(Fold::new(min, min_assign).collect_then_finish(items)),
         }
-    }
-}
-
-fn min_assign<T: Ord>(min: &mut T, value: T) {
-    // Don't use `>=`. The `min` function does `other < self`.
-    // See: https://doc.rust-lang.org/beta/src/core/cmp.rs.html#1064-1066
-    if value < *min {
-        *min = value
     }
 }
 
