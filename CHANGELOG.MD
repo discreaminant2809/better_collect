@@ -10,6 +10,10 @@
 - `crate::cmp::AllEqual`.
 - `crate::cmp::MinMax`.
 
+### Fixed
+
+- `CollectorBase::skip()` not accounting for the underlying collector while still skipping.
+
 ## 0.4.1
 
 ### Added

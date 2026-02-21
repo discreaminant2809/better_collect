@@ -48,15 +48,7 @@ where
         }
 
         self.remaining -= 1;
-
-        // There is a very edge case that we've skipped enough item,
-        // but the underlying collector has stopped from the beginning.
-        // The correct behavior in this case is to stop.
-        if self.remaining == 0 {
-            self.collector.break_hint()
-        } else {
-            ControlFlow::Continue(())
-        }
+        self.collector.break_hint()
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
