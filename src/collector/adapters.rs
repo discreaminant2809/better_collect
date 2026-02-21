@@ -6,6 +6,7 @@ mod flat_map;
 mod flatten;
 mod funnel;
 mod fuse;
+mod inspect;
 mod map;
 mod map_output;
 #[cfg(feature = "unstable")]
@@ -33,6 +34,7 @@ pub use flat_map::*;
 pub use flatten::*;
 pub use funnel::*;
 pub use fuse::*;
+pub use inspect::*;
 pub use map::*;
 pub use map_output::*;
 #[cfg(feature = "unstable")]

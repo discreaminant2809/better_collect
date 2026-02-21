@@ -4,9 +4,11 @@
 
 ### Added
 
-- `CollectorBase::by_ref()`.
 - `IntoCollector` in `crate::prelude`.
+- `CollectorBase::by_ref()`.
+- `CollectorBase::inspect()`.
 - `crate::cmp::AllEqual`.
+- `crate::cmp::MinMax`.
 
 ## 0.4.1
 

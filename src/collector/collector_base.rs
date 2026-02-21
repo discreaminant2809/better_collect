@@ -6,9 +6,9 @@ use itertools::Either;
 #[cfg(feature = "itertools")]
 use super::PartitionMap;
 use super::{
-    Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, IntoCollector,
-    IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee, TeeClone, TeeFunnel,
-    TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
+    Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, Inspect,
+    IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee,
+    TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
 };
 #[cfg(feature = "unstable")]
 use super::{Nest, NestExact, TeeWith};
@@ -1029,6 +1029,36 @@ pub trait CollectorBase {
         Self: Sized,
     {
         self
+    }
+
+    /// Creates a collector that "views" each item first before being collecting.
+    ///
+    /// It is used when you want to debug/log what happens between transformations.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .inspect(|&num| println!("After the filter: {num}"))
+    ///     .filter(|&num| num % 2 != 0)
+    ///     .inspect(|&num| println!("Before the filter: {num}"));
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(3).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [1, 3]);
+    /// ```
+    #[inline]
+    fn inspect<F, T>(self, f: F) -> Inspect<Self, F>
+    where
+        Self: Collector<T> + Sized,
+        F: FnMut(&T),
+    {
+        assert_collector::<_, T>(Inspect::new(self, f))
     }
 
     /// Creates a collector that distributes items between two collectors based on a predicate.
