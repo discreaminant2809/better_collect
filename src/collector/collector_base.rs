@@ -490,6 +490,18 @@ pub trait CollectorBase {
     ///
     /// assert_eq!(collector.finish(), [1, 2, 3]);
     /// ```
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = String::new()
+    ///     .into_collector()
+    ///     .take(0);
+    ///
+    /// // This collector stops accumulating from construction.
+    /// assert!(collector.break_hint().is_break());
+    /// assert_eq!(collector.finish(), "");
+    /// ```
     #[inline]
     fn take(self, n: usize) -> Take<Self>
     where

@@ -96,7 +96,7 @@ pub trait Collector<T>: CollectorBase {
     /// Implementors may choose a more efficient way to consume an iterator than a simple `for` loop
     /// ([`Iterator`] offers many alternative consumption methods), depending on the collector’s needs.
     ///
-    /// Unlike [`collect()`](Self::collect), callers are **note** required to check for
+    /// Unlike [`collect()`](Self::collect), callers are **not** required to check for
     /// [`break_hint()`](CollectorBase::break_hint)
     /// and the implementors should guard against empty iterators.
     /// As a result, `collector.collect_many(empty_iter)` is an alternative

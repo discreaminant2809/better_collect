@@ -100,7 +100,8 @@ mod proptests {
                 vec![]
                     .into_collector()
                     .take(take_count)
-                    .inspect(|num: &Cell<_>| num.update(|x| x + 1))
+                    // Be careful of overflowing!
+                    .inspect(|num: &Cell<_>| num.update(|x: i32| x.wrapping_add(1)))
             },
             should_break_pred: |_| nums.len() >= take_count,
             pred: |mut iter, output, remaining| {
