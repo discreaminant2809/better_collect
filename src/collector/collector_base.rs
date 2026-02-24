@@ -3,8 +3,6 @@ use std::ops::ControlFlow;
 #[cfg(feature = "itertools")]
 use itertools::Either;
 
-#[cfg(feature = "itertools")]
-use super::PartitionMap;
 #[cfg(feature = "unstable")]
 use super::{AltBreakHint, Nest, NestExact, TeeWith};
 use super::{
@@ -12,6 +10,8 @@ use super::{
     IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee,
     TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
 };
+#[cfg(feature = "itertools")]
+use super::{PartitionMap, Update};
 
 /// The base trait of a collector.
 ///
@@ -1043,7 +1043,7 @@ pub trait CollectorBase {
         self
     }
 
-    /// Creates a collector that "views" each item first before being collecting.
+    /// Creates a collector that "views" each item first before collecting.
     ///
     /// It is used when you want to debug/log what happens between transformations.
     ///
@@ -1163,6 +1163,33 @@ pub trait CollectorBase {
         F: FnMut(T) -> Either<L, R>,
     {
         PartitionMap::new(self, collector_right.into_collector(), pred)
+    }
+
+    /// Creates a collector that mutates each item first before collecting.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use better_collect::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .update(|num| *num += 1);
+    ///
+    /// assert!(collector.collect(1).is_continue());
+    /// assert!(collector.collect(2).is_continue());
+    /// assert!(collector.collect(3).is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [2, 3, 4]);
+    /// ```
+    #[cfg(feature = "itertools")]
+    #[inline]
+    fn update<F, T>(self, f: F) -> Update<Self, F>
+    where
+        Self: Collector<T> + Sized,
+        F: FnMut(&mut T),
+    {
+        Update::new(self, f)
     }
 
     /// Creates a collector that collects all outputs produced by an inner collector.

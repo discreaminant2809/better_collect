@@ -1,22 +1,24 @@
 use std::{fmt::Debug, ops::ControlFlow};
 
+use itertools::Itertools;
+
 use crate::collector::{Collector, CollectorBase};
 
 /// A collector that calls a closure on each item before collecting.
 ///
 /// This `struct` is created by [`CollectorBase::inspect()`]. See its documentation for more.
-pub struct Inspect<C, F> {
+pub struct Update<C, F> {
     collector: C,
     f: F,
 }
 
-impl<C, F> Inspect<C, F> {
+impl<C, F> Update<C, F> {
     pub(in crate::collector) fn new(collector: C, f: F) -> Self {
         Self { collector, f }
     }
 }
 
-impl<C, F> CollectorBase for Inspect<C, F>
+impl<C, F> CollectorBase for Update<C, F>
 where
     C: CollectorBase,
 {
@@ -33,30 +35,30 @@ where
     }
 }
 
-impl<C, T, F> Collector<T> for Inspect<C, F>
+impl<C, T, F> Collector<T> for Update<C, F>
 where
     C: Collector<T>,
-    F: FnMut(&T),
+    F: FnMut(&mut T),
 {
-    fn collect(&mut self, item: T) -> ControlFlow<()> {
-        (self.f)(&item);
+    fn collect(&mut self, mut item: T) -> ControlFlow<()> {
+        (self.f)(&mut item);
         self.collector.collect(item)
     }
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector
-            .collect_many(items.into_iter().inspect(&mut self.f))
+            .collect_many(items.into_iter().update(&mut self.f))
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
-            .collect_then_finish(items.into_iter().inspect(self.f))
+            .collect_then_finish(items.into_iter().update(self.f))
     }
 }
 
-impl<C: Debug, F> Debug for Inspect<C, F> {
+impl<C: Debug, F> Debug for Update<C, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Inspect")
+        f.debug_struct("Update")
             .field("collector", &self.collector)
             .field("f", &std::any::type_name::<F>())
             .finish()
@@ -65,8 +67,7 @@ impl<C: Debug, F> Debug for Inspect<C, F> {
 
 #[cfg(all(test, feature = "std"))]
 mod proptests {
-    use std::cell::Cell;
-
+    use itertools::Itertools;
     use proptest::collection::vec as propvec;
     use proptest::prelude::*;
     use proptest::test_runner::TestCaseResult;
@@ -88,19 +89,19 @@ mod proptests {
 
     fn all_collect_methods_impl(nums: Vec<i32>, take_count: usize) -> TestCaseResult {
         BasicCollectorTester {
-            iter_factory: || nums.iter().map(|&num| Cell::new(num)),
+            iter_factory: || nums.iter().copied(),
             collector_factory: || {
                 vec![]
                     .into_collector()
                     .take(take_count)
                     // Be careful of overflowing!
-                    .inspect(|num: &Cell<_>| num.update(|x: i32| x.wrapping_add(1)))
+                    .update(|num: &mut i32| *num = num.wrapping_add(1))
             },
             should_break_pred: |_| nums.len() >= take_count,
             pred: |mut iter, output, remaining| {
                 if iter
                     .by_ref()
-                    .inspect(|num| num.update(|x| x + 1))
+                    .update(|num| *num = num.wrapping_add(1))
                     .take(take_count)
                     .ne(output)
                 {

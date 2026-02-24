@@ -27,6 +27,8 @@ mod tee_mut;
 mod tee_with;
 mod unbatching;
 mod unzip;
+#[cfg(feature = "itertools")]
+mod update;
 
 #[cfg(feature = "unstable")]
 pub use alt_break_hint::*;
@@ -57,3 +59,5 @@ pub use tee_mut::*;
 pub use tee_with::*;
 pub use unbatching::*;
 pub use unzip::*;
+#[cfg(feature = "itertools")]
+pub use update::*;
