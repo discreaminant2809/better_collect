@@ -1,3 +1,5 @@
+#[cfg(feature = "unstable")]
+mod alt_break_hint;
 mod chain;
 mod cloning;
 mod copying;
@@ -26,6 +28,8 @@ mod tee_with;
 mod unbatching;
 mod unzip;
 
+#[cfg(feature = "unstable")]
+pub use alt_break_hint::*;
 pub use chain::*;
 pub use cloning::*;
 pub use copying::*;

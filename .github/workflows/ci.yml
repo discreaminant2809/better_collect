@@ -39,7 +39,7 @@ jobs:
           tool: cargo-semver-checks
 
       - name: Check (Compilation)
-        run: cargo hack check --feature-powerset --all-targets
+        run: RUSTFLAGS="-D warnings" cargo hack check --feature-powerset --all-targets
 
       - name: Run Tests
         run: cargo hack test --feature-powerset --lib
@@ -53,7 +53,7 @@ jobs:
 
       - name: Lint
         if: matrix.rust == 'stable'
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: RUSTFLAGS="-D warnings" cargo hack clippy --feature-powerset --all-targets
 
       - name: Check SemVer Violation
         if: matrix.rust == 'stable'

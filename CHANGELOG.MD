@@ -9,6 +9,7 @@
 - `CollectorBase::inspect()`.
 - `crate::cmp::AllEqual`.
 - `crate::cmp::MinMax`.
+- Unstable: `CollectorBase::alt_break_hint()`.
 
 ### Fixed
 

@@ -5,13 +5,13 @@ use itertools::Either;
 
 #[cfg(feature = "itertools")]
 use super::PartitionMap;
+#[cfg(feature = "unstable")]
+use super::{AltBreakHint, Nest, NestExact, TeeWith};
 use super::{
     Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, Inspect,
     IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee,
     TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
 };
-#[cfg(feature = "unstable")]
-use super::{Nest, NestExact, TeeWith};
 
 /// The base trait of a collector.
 ///
@@ -1071,6 +1071,60 @@ pub trait CollectorBase {
         F: FnMut(&T),
     {
         assert_collector::<_, T>(Inspect::new(self, f))
+    }
+
+    /// Creates a collector that alternates the behavior of [`break_hint()`](Self::break_hint).
+    ///
+    /// This is useful for [`unbatching()`](Self::unbatching) and
+    /// [`TryFold`](crate::iter::TryFold), when you want to configure
+    /// whether those stop accumulating on construction.
+    ///
+    /// You can leverage the fact that "after any of
+    /// [`Collector::collect()`], [`Collector::collect_many()`], or
+    /// [`CollectorBase::break_hint()`] have returned [`Break(())`] once,
+    /// behaviors of subsequent calls to any method other than
+    /// [`finish()`](CollectorBase::finish) are unspecified"
+    /// to calculate the hint before collecting only.
+    ///
+    /// [`Break(())`]: ControlFlow::Break
+    //    ///
+    //    /// # Examples
+    //    ///
+    //    /// ```
+    //    /// use std::ops::ControlFlow;
+    //    /// use better_collect::prelude::*;
+    //    ///
+    //    /// fn vec_zip(nums: impl IntoIterator<Item = i32>) -> impl Collector<i32, Output = Vec<i32>> {
+    //    ///     let mut nums = nums.into_iter();
+    //    ///     let sh = nums.size_hint();
+    //    ///
+    //    ///     vec![]
+    //    ///         .into_collector()
+    //    ///         .unbatching(move |collector, item| {
+    //    ///             if let Some(num) = nums.next() {
+    //    ///                 collector.collect(item)
+    //    ///             } else {
+    //    ///                 ControlFlow::Break(())
+    //    ///             }
+    //    ///         })
+    //    ///         .alt_break_hint(move |_| {
+    //    ///             if let (0, Some(0)) = sh {
+    //    ///                 ControlFlow::Break(())
+    //    ///             } else {
+    //    ///                 ControlFlow::Continue(())
+    //    ///             }
+    //    ///         })
+    //    /// }
+    //    /// ```
+    //    ///
+    #[cfg(feature = "unstable")]
+    #[inline]
+    fn alt_break_hint<F>(self, f: F) -> AltBreakHint<Self, F>
+    where
+        Self: Sized,
+        F: Fn(&Self) -> ControlFlow<()>,
+    {
+        assert_collector_base(AltBreakHint::new(self, f))
     }
 
     /// Creates a collector that distributes items between two collectors based on a predicate.
