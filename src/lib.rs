@@ -201,6 +201,9 @@
 //!   for [`std`]-only types (e.g., [`HashMap`]).
 //!   When this feature is disabled, the crate builds in `no_std` mode.
 //!
+//! - **`itertools`** — Enables collectors and adapters that resemble those
+//!   in the `itertools` crate.
+//!
 //! - **`unstable`** — Enables experimental and unstable features.
 //!   Items gated behind this feature do **not** follow normal semver guarantees
 //!   and may change or be removed at any time.

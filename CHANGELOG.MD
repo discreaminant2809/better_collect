@@ -4,10 +4,12 @@
 
 ### Added
 
+- `itertools` feature.
 - `IntoCollector` in `crate::prelude`.
 - `CollectorBase::by_ref()`.
 - `CollectorBase::inspect()`.
 - `CollectorBase::update()`.
+- `CollectorBase::partition_map()`.
 - `crate::cmp::AllEqual`.
 - `crate::cmp::MinMax`.
 - Unstable: `CollectorBase::alt_break_hint()`.
