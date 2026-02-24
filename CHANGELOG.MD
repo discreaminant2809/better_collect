@@ -14,6 +14,10 @@
 - `crate::cmp::MinMax`.
 - Unstable: `CollectorBase::alt_break_hint()`.
 
+### Changed
+
+- The crate's name to `komadori`.
+
 ### Fixed
 
 - `CollectorBase::skip()` not accounting for the underlying collector while still skipping.

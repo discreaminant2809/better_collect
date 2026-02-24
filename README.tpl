@@ -1,5 +1,10 @@
 # {{crate}} {{version}}
 
+⚠️ This crate has been renamed to `komadori`.
+
+Please migrate to:
+[https://crates.io/crates/komadori]
+
 {{readme}}
 
 [`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html

@@ -1,5 +1,10 @@
 # better_collect 0.5.0
 
+⚠️ This crate has been renamed to `komadori`.
+
+Please migrate to:
+[https://crates.io/crates/komadori](https://crates.io/crates/komadori)
+
 [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
 [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
 [![GitHub Repo](https://img.shields.io/badge/github-better__collect-blue?logo=github)](https://github.com/discreaminant2809/better_collect.git)
