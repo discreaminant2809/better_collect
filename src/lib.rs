@@ -1,6 +1,6 @@
 //! [![Crates.io Version](https://img.shields.io/crates/v/komadori.svg)](https://crates.io/crates/komadori)
 //! [![Docs.rs](https://img.shields.io/docsrs/komadori)](https://docs.rs/komadori)
-//! [![GitHub Repo](https://img.shields.io/badge/github-komadori-rs-blue?logo=github)](https://github.com/discreaminant2809/komadori-rs.git)
+//! [![GitHub Repo](https://img.shields.io/badge/github-komadori--rs-blue?logo=github)](https://github.com/discreaminant2809/komadori-rs.git)
 //!
 //! Provides a composable, declarative way to consume an iterator.
 //!
