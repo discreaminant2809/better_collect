@@ -17,7 +17,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Min};
+/// use komadori::{prelude::*, cmp::Min};
 ///
 /// let mut collector = Min::new();
 ///
@@ -33,7 +33,7 @@ use crate::{
 /// Its output is `None` if it has not encountered any items.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Min};
+/// use komadori::{prelude::*, cmp::Min};
 ///
 /// assert_eq!(Min::<i32>::new().finish(), None);
 /// ```

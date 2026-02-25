@@ -18,7 +18,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Max};
+/// use komadori::{prelude::*, cmp::Max};
 ///
 /// let mut collector = Max::by(f64::total_cmp);
 ///
@@ -34,7 +34,7 @@ use crate::{
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Max};
+/// use komadori::{prelude::*, cmp::Max};
 ///
 /// assert_eq!(Max::by(f64::total_cmp).finish(), None);
 /// ```

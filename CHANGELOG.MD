@@ -50,9 +50,9 @@
   - `All`, `Any`, `Count`, `Find`, `Last`, `Reduce` and `(Try)Fold`
     are moved to `iter` module.
   - `Sum` and `Product` are moved to `ops` module.
-- Renamed `better_collect` in `IteratorExt` (previously `BetterCollect`)
+- Renamed `komadori` in `IteratorExt` (previously `BetterCollect`)
   to `feed_into` and it now takes `self` instead of `&mut self`.
-- Unstable: Renamed `better_collect_with_puller` in `IteratorExt` (previously `BetterCollect`)
+- Unstable: Renamed `komadori_with_puller` in `IteratorExt` (previously `BetterCollect`)
   to `feed_into_with_puller` and it now takes `self` instead of `&mut self`.
 - `Collector::skip()`: now stops accumulating
   if the underlying collector has stopped accumulating during skipping,

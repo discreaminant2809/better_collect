@@ -140,7 +140,7 @@
 //!
 //! ```
 //! use std::{ops::ControlFlow, collections::HashMap};
-//! use better_collect::prelude::*;
+//! use komadori::prelude::*;
 //!
 //! #[derive(Default)]
 //! struct Tokenizer {

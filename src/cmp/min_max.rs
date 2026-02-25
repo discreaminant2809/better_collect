@@ -23,7 +23,7 @@ use super::{max_assign, min_assign};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::MinMax};
+/// use komadori::{prelude::*, cmp::MinMax};
 /// use itertools::MinMaxResult;
 ///
 /// assert_eq!(

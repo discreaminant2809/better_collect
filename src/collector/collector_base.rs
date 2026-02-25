@@ -49,7 +49,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let v = vec![1, 2, 3]
     ///     .into_collector()
@@ -94,7 +94,7 @@ pub trait CollectorBase {
     /// Correct usage:
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -113,7 +113,7 @@ pub trait CollectorBase {
     /// Incorrect usage:
     ///
     /// ```no_run
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -160,7 +160,7 @@ pub trait CollectorBase {
     /// Without `fuse()`:
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// // `take_while()` is one of a few collectors that do NOT fuse internally.
     /// let mut collector = vec![]
@@ -183,7 +183,7 @@ pub trait CollectorBase {
     /// With `fuse()`:
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -232,7 +232,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, cmp::Max};
+    /// use komadori::{prelude::*, cmp::Max};
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -275,7 +275,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     /// use std::rc::Rc;
     ///
     /// let mut collector = vec![]
@@ -324,7 +324,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, clb_mut};
+    /// use komadori::{prelude::*, clb_mut};
     ///
     /// let mut collector = String::new()
     ///     .into_concat()
@@ -370,7 +370,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{cmp::Max, prelude::*, clb_mut};
+    /// use komadori::{cmp::Max, prelude::*, clb_mut};
     ///
     /// let mut collector = String::new()
     ///     .into_concat()
@@ -410,7 +410,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let collector = vec![]
     ///     .into_concat()
@@ -443,7 +443,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let collector = vec![]
     ///     .into_collector()
@@ -474,7 +474,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -492,7 +492,7 @@ pub trait CollectorBase {
     /// ```
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = String::new()
     ///     .into_collector()
@@ -524,7 +524,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -560,7 +560,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// struct User {
     ///     id: u32,
@@ -617,7 +617,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -654,7 +654,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, iter::Count};
+    /// use komadori::{prelude::*, iter::Count};
     ///
     /// let mut average = i32::adding()
     ///     .tee(Count::new())
@@ -684,7 +684,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -710,7 +710,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![].into_collector().map(|num| num * num);
     ///
@@ -722,7 +722,7 @@ pub trait CollectorBase {
     /// If you have multiple collectors with different item types, this adaptor bridges them.
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let (_strings, lens) = ["a", "bcd", "ef"]
     ///     .into_iter()
@@ -755,7 +755,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -791,7 +791,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = "".to_owned()
     ///     .into_concat()
@@ -823,7 +823,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let collector = vec![]
     ///     .into_collector()
@@ -882,7 +882,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = Vec::<i32>::new()
     ///     .into_collector()
@@ -946,7 +946,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -974,7 +974,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = String::new()
     ///     .into_collector()
@@ -1016,7 +1016,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// fn fill_one_and_two(collector: impl IntoCollector<i32>) {
     ///     collector
@@ -1050,7 +1050,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -1092,7 +1092,7 @@ pub trait CollectorBase {
     //    ///
     //    /// ```
     //    /// use std::ops::ControlFlow;
-    //    /// use better_collect::prelude::*;
+    //    /// use komadori::prelude::*;
     //    ///
     //    /// fn vec_zip(nums: impl IntoIterator<Item = i32>) -> impl Collector<i32, Output = Vec<i32>> {
     //    ///     let mut nums = nums.into_iter();
@@ -1135,7 +1135,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -1170,7 +1170,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -1211,7 +1211,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()
@@ -1261,7 +1261,7 @@ pub trait CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![]
     ///     .into_collector()

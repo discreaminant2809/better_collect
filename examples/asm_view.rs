@@ -1,4 +1,4 @@
-use better_collect::{
+use komadori::{
     cmp::Max,
     iter::{Find, Fold},
     prelude::*,

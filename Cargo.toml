@@ -1,11 +1,11 @@
 [package]
-name = "better_collect"
+name = "komadori"
 version = "0.5.0"
 edition = "2024"
 authors = ["Ayabin"]
 license = "MIT OR Apache-2.0"
 description = "Provides a composable, declarative way to consume an iterator"
-repository = "https://github.com/discreaminant2809/better_collect.git"
+repository = "https://github.com/discreaminant2809/komadori.git"
 readme = "README.md"
 categories = ["rust-patterns", "no-std", "no-std::no-alloc", "algorithms"]
 keywords = ["collector", "fold", "unzip", "composition", "iterator"]

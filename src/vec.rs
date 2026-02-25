@@ -211,7 +211,7 @@ impl<T> Default for IntoCollector<T> {
 /// # Examples
 ///
 /// ```
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let matrix = [vec![1, 2], vec![3, 4, 5], vec![6]];
 ///

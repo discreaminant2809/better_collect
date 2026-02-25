@@ -15,7 +15,7 @@ use std::ops::ControlFlow;
 /// For example:
 ///
 /// ```no_run
-/// # use better_collect::prelude::*;
+/// # use komadori::prelude::*;
 /// # fn foo(_:
 /// &mut dyn Collector<i32>
 /// # ) {}
@@ -55,7 +55,7 @@ pub trait Collector<T>: CollectorBase {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![].into_collector().take(3); // only takes 3 items
     ///
@@ -74,7 +74,7 @@ pub trait Collector<T>: CollectorBase {
     /// Most collectors can accumulate indefinitely.
     ///
     /// ```
-    /// use better_collect::{prelude::*, iter::Last};
+    /// use komadori::{prelude::*, iter::Last};
     ///
     /// let mut last = Last::new();
     /// for num in 0..100 {
@@ -105,7 +105,7 @@ pub trait Collector<T>: CollectorBase {
     /// # Examples
     ///
     /// ```rust
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let mut collector = vec![1, 2].into_collector();
     /// collector.collect_many([3, 4, 5]);
@@ -139,7 +139,7 @@ pub trait Collector<T>: CollectorBase {
     /// # Examples
     ///
     /// ```rust
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let collector = vec![1, 2].into_collector();
     ///

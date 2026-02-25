@@ -1,14 +1,9 @@
 # {{crate}} {{version}}
 
-⚠️ This crate has been renamed to `komadori`.
-
-Please migrate to:
-[https://crates.io/crates/komadori]
-
 {{readme}}
 
-[`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html
-[`feed_into()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.feed_into
+[`Collector`]: https://docs.rs/{{crate}}/latest/{{crate}}/collector/trait.Collector.html
+[`feed_into()`]: https://docs.rs/{{crate}}/latest/{{crate}}/iter/trait.IteratorExt.html#method.feed_into
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
 [`Iterator::inspect()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.inspect

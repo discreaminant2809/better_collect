@@ -7,7 +7,7 @@ use crate::collector::{Collector, CollectorBase};
 /// # Examples
 ///
 /// ```no_run
-/// use better_collect::{prelude::*, mem::Dropping};
+/// use komadori::{prelude::*, mem::Dropping};
 /// use std::cell::Cell;
 ///
 /// #[derive(Clone)]

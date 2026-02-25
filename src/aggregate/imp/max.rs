@@ -8,7 +8,7 @@ use crate::aggregate::{AggregateOp, assert_op};
 ///
 /// ```
 /// use std::collections::HashMap;
-/// use better_collect::{
+/// use komadori::{
 ///     prelude::*,
 ///     aggregate::{self, GroupMap},
 /// };

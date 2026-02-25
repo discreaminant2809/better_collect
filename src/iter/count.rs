@@ -16,7 +16,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector_base};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Count};
+/// use komadori::{prelude::*, iter::Count};
 ///
 /// let mut collector = Count::new();
 ///

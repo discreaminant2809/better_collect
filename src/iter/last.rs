@@ -12,7 +12,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Last};
+/// use komadori::{prelude::*, iter::Last};
 ///
 /// let mut collector = Last::new();
 ///
@@ -24,7 +24,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// ```
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Last};
+/// use komadori::{prelude::*, iter::Last};
 ///
 /// assert_eq!(Last::<i32>::new().finish(), None);
 /// ```

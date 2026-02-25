@@ -16,7 +16,7 @@ use super::raw_all_any::RawAllAny;
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Any};
+/// use komadori::{prelude::*, iter::Any};
 ///
 /// let mut collector = Any::new(|x| x < 0);
 ///
@@ -28,7 +28,7 @@ use super::raw_all_any::RawAllAny;
 /// ```
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Any};
+/// use komadori::{prelude::*, iter::Any};
 ///
 /// let mut collector = Any::new(|x| x < 0);
 ///

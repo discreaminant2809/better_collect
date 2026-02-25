@@ -1,7 +1,7 @@
 use std::{hint::black_box, time::Duration};
 
-use better_collect::{cmp::Max, iter::Fold, prelude::*};
 use criterion::{Criterion, criterion_group, criterion_main};
+use komadori::{cmp::Max, iter::Fold, prelude::*};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 fn sum_max(criterion: &mut Criterion) {

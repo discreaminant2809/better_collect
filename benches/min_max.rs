@@ -1,11 +1,11 @@
 use std::{hint::black_box, time::Duration};
 
-use better_collect::{
+use criterion::{Criterion, criterion_group, criterion_main};
+use itertools::{Itertools, MinMaxResult};
+use komadori::{
     cmp::{Max, Min, MinMax},
     prelude::*,
 };
-use criterion::{Criterion, criterion_group, criterion_main};
-use itertools::{Itertools, MinMaxResult};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 fn min_max(criterion: &mut Criterion) {

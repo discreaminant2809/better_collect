@@ -6,7 +6,7 @@
 //! # Example
 //!
 //! ```
-//! use better_collect::prelude::*;
+//! use komadori::prelude::*;
 //! ```
 
 pub use crate::{

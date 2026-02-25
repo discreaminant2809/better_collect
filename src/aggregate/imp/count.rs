@@ -19,7 +19,7 @@ use crate::aggregate::{AggregateOp, RefAggregateOp, assert_ref_op};
 ///
 /// ```
 /// use std::collections::HashMap;
-/// use better_collect::{
+/// use komadori::{
 ///     prelude::*,
 ///     aggregate::{self, GroupMap},
 /// };

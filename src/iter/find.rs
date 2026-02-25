@@ -13,7 +13,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Find};
+/// use komadori::{prelude::*, iter::Find};
 ///
 /// let mut collector = Find::new(|&x| x % 3 == 0);
 ///
@@ -27,7 +27,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// ```
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Find};
+/// use komadori::{prelude::*, iter::Find};
 ///
 /// let mut collector = Find::new(|&x| x % 3 == 0);
 ///

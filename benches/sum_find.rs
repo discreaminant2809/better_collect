@@ -1,7 +1,7 @@
 use std::{hint::black_box, time::Duration};
 
-use better_collect::{iter::Find, prelude::*};
 use criterion::{Criterion, criterion_group, criterion_main};
+use komadori::{iter::Find, prelude::*};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 fn sum_find(criterion: &mut Criterion) {

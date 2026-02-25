@@ -20,7 +20,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let mut sum = i32::adding();
 ///
@@ -44,7 +44,7 @@ pub struct Adding<Num>(Num);
 /// # Examples
 ///
 /// ```
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let mut product = i32::muling();
 ///

@@ -15,7 +15,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::TryFold};
+/// use komadori::{prelude::*, iter::TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let mut collector = TryFold::new(0_i8, |sum, num| {
@@ -38,7 +38,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// Short-circuiting:
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::TryFold};
+/// use komadori::{prelude::*, iter::TryFold};
 /// use std::ops::ControlFlow;
 ///
 /// let mut collector = TryFold::new(0_i8, |sum, num| {

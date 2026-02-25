@@ -25,7 +25,7 @@ use crate::collector::CollectorBase;
 ///
 /// ```
 /// use std::{thread, sync::{mpsc, Mutex, Condvar}};
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let (tx, rx) = mpsc::channel();
 /// let hung = Mutex::new(false);
@@ -74,7 +74,7 @@ pub struct IntoCollector<T>(Sender<T>);
 ///
 /// ```
 /// use std::{thread, sync::{mpsc, Mutex, Condvar}};
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let (tx, rx) = mpsc::channel();
 /// let hung = Mutex::new(false);
@@ -123,7 +123,7 @@ pub struct Collector<'a, T>(&'a Sender<T>);
 ///
 /// ```
 /// use std::{thread, sync::{mpsc, Mutex, Condvar}};
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
 /// let hung = Mutex::new(false);
@@ -172,7 +172,7 @@ pub struct IntoSyncCollector<T>(SyncSender<T>);
 ///
 /// ```
 /// use std::{thread, sync::{mpsc, Mutex, Condvar}};
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let (tx, rx) = mpsc::sync_channel(1);
 /// let hung = Mutex::new(false);

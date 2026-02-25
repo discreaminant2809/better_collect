@@ -13,7 +13,7 @@
 //!
 //! ```
 //! use std::collections::BinaryHeap;
-//! use better_collect::prelude::*;
+//! use komadori::prelude::*;
 //!
 //! let mut collector = vec![]
 //!     .into_collector()

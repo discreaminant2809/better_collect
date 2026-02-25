@@ -17,7 +17,7 @@ use super::{Min, value_key::ValueKey};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Min};
+/// use komadori::{prelude::*, cmp::Min};
 ///
 /// let mut collector = Min::by_key(|s: &&str| s.len());
 ///
@@ -33,7 +33,7 @@ use super::{Min, value_key::ValueKey};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Min};
+/// use komadori::{prelude::*, cmp::Min};
 ///
 /// assert_eq!(Min::by_key(|s: &&str| s.len()).finish(), None);
 /// ```

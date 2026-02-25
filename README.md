@@ -1,13 +1,8 @@
-# better_collect 0.5.0
+# komadori 0.5.0
 
-⚠️ This crate has been renamed to `komadori`.
-
-Please migrate to:
-[https://crates.io/crates/komadori](https://crates.io/crates/komadori)
-
-[![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
-[![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
-[![GitHub Repo](https://img.shields.io/badge/github-better__collect-blue?logo=github)](https://github.com/discreaminant2809/better_collect.git)
+[![Crates.io Version](https://img.shields.io/crates/v/komadori.svg)](https://crates.io/crates/komadori)
+[![Docs.rs](https://img.shields.io/docsrs/komadori)](https://docs.rs/komadori)
+[![GitHub Repo](https://img.shields.io/badge/github-komadori-rs-blue?logo=github)](https://github.com/discreaminant2809/komadori-rs.git)
 
 Provides a composable, declarative way to consume an iterator.
 
@@ -87,7 +82,7 @@ assert_eq!(max, 3);
 This crate proposes a one-pass, declarative approach:
 
 ```rust
-use better_collect::{prelude::*, cmp::Max};
+use komadori::{prelude::*, cmp::Max};
 
 let nums = [1, 3, 2];
 let (sum, max) = nums
@@ -131,7 +126,7 @@ for data in socket_stream() {
 let expected = (byte_read, received, last_seen);
 
 // This crate's way:
-use better_collect::{prelude::*, iter::Last, clb_mut};
+use komadori::{prelude::*, iter::Last, clb_mut};
 
 let ((byte_read, received), last_seen) = socket_stream()
     .feed_into(
@@ -154,7 +149,7 @@ Consider this example:
 
 ```rust
 use std::collections::HashSet;
-use better_collect::{prelude::*, clb_mut};
+use komadori::{prelude::*, clb_mut};
 
 // Suppose we open a connection...
 fn socket_stream() -> impl Iterator<Item = String> {
@@ -220,8 +215,8 @@ if you want to delve into how collectors work.
   discouraged to use them until their designs are finalized and not
   under this flag anymore.
 
-[`Collector`]: https://docs.rs/better_collect/latest/better_collect/collector/trait.Collector.html
-[`feed_into()`]: https://docs.rs/better_collect/latest/better_collect/iter/trait.IteratorExt.html#method.feed_into
+[`Collector`]: https://docs.rs/komadori/latest/komadori/collector/trait.Collector.html
+[`feed_into()`]: https://docs.rs/komadori/latest/komadori/iter/trait.IteratorExt.html#method.feed_into
 [`Iterator`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html
 [`Iterator::fold()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.fold
 [`Iterator::inspect()`]: https://doc.rust-lang.org/1.90.0/std/iter/trait.Iterator.html#method.inspect

@@ -10,7 +10,7 @@ use crate::collector::{Collector, CollectorBase, assert_collector};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, iter::Fold};
+/// use komadori::{prelude::*, iter::Fold};
 ///
 /// let mut collector = Fold::new(0, |sum, num| *sum += num);
 ///

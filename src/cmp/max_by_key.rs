@@ -17,7 +17,7 @@ use super::{Max, value_key::ValueKey};
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Max};
+/// use komadori::{prelude::*, cmp::Max};
 ///
 /// let mut collector = Max::by_key(|s: &&str| s.len());
 ///
@@ -33,7 +33,7 @@ use super::{Max, value_key::ValueKey};
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Max};
+/// use komadori::{prelude::*, cmp::Max};
 ///
 /// assert_eq!(Max::by_key(|s: &&str| s.len()).finish(), None);
 /// ```

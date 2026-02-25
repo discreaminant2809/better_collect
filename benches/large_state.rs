@@ -1,7 +1,7 @@
 use std::{hint::black_box, time::Duration};
 
-use better_collect::{iter::Fold, prelude::*};
 use criterion::{Criterion, criterion_group, criterion_main};
+use komadori::{iter::Fold, prelude::*};
 use rand::{RngExt, SeedableRng, rngs::StdRng};
 
 fn large_state(criterion: &mut Criterion) {

@@ -1,6 +1,6 @@
-//! [![Crates.io Version](https://img.shields.io/crates/v/better_collect.svg)](https://crates.io/crates/better_collect)
-//! [![Docs.rs](https://img.shields.io/docsrs/better_collect)](https://docs.rs/better_collect)
-//! [![GitHub Repo](https://img.shields.io/badge/github-better__collect-blue?logo=github)](https://github.com/discreaminant2809/better_collect.git)
+//! [![Crates.io Version](https://img.shields.io/crates/v/komadori.svg)](https://crates.io/crates/komadori)
+//! [![Docs.rs](https://img.shields.io/docsrs/komadori)](https://docs.rs/komadori)
+//! [![GitHub Repo](https://img.shields.io/badge/github-komadori-rs-blue?logo=github)](https://github.com/discreaminant2809/komadori-rs.git)
 //!
 //! Provides a composable, declarative way to consume an iterator.
 //!
@@ -80,7 +80,7 @@
 //! This crate proposes a one-pass, declarative approach:
 //!
 //! ```
-//! use better_collect::{prelude::*, cmp::Max};
+//! use komadori::{prelude::*, cmp::Max};
 //!
 //! let nums = [1, 3, 2];
 //! let (sum, max) = nums
@@ -124,7 +124,7 @@
 //! let expected = (byte_read, received, last_seen);
 //!
 //! // This crate's way:
-//! use better_collect::{prelude::*, iter::Last, clb_mut};
+//! use komadori::{prelude::*, iter::Last, clb_mut};
 //!
 //! let ((byte_read, received), last_seen) = socket_stream()
 //!     .feed_into(
@@ -147,7 +147,7 @@
 //!
 //! ```
 //! use std::collections::HashSet;
-//! use better_collect::{prelude::*, clb_mut};
+//! use komadori::{prelude::*, clb_mut};
 //!
 //! // Suppose we open a connection...
 //! fn socket_stream() -> impl Iterator<Item = String> {
@@ -273,7 +273,7 @@ mod test_utils;
 /// # Examples
 ///
 /// ```
-/// use better_collect::clb_once;
+/// use komadori::clb_once;
 ///
 /// # fn foo<'b, T: 'b>() {
 /// clb_once!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x });
@@ -337,7 +337,7 @@ macro_rules! clb_once {
 /// # Examples
 ///
 /// ```
-/// use better_collect::clb_mut;
+/// use komadori::clb_mut;
 ///
 /// # fn foo<'b, T: 'b>() {
 /// clb_mut!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x });
@@ -401,7 +401,7 @@ macro_rules! clb_mut {
 /// # Examples
 ///
 /// ```
-/// use better_collect::clb;
+/// use komadori::clb;
 ///
 /// # fn foo<'b, T: 'b>() {
 /// clb!(use<'b, T> for<'a> |x: &'a i32, _y: &'b T| -> &'a i32 { x });

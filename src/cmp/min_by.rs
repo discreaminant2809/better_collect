@@ -18,7 +18,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Min};
+/// use komadori::{prelude::*, cmp::Min};
 ///
 /// let mut collector = Min::by(f64::total_cmp);
 ///
@@ -34,7 +34,7 @@ use crate::{
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Min};
+/// use komadori::{prelude::*, cmp::Min};
 ///
 /// assert_eq!(Min::by(f64::total_cmp).finish(), None);
 /// ```

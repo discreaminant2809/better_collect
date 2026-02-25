@@ -205,7 +205,7 @@ impl<'a, 'c> Collector<&'c mut char> for CollectorMut<'a> {
 /// # Examples
 ///
 /// ```
-/// use better_collect::prelude::*;
+/// use komadori::prelude::*;
 ///
 /// let s = "abc de fghi j";
 ///

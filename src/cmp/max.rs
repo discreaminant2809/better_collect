@@ -17,7 +17,7 @@ use crate::{
 /// # Examples
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Max};
+/// use komadori::{prelude::*, cmp::Max};
 ///
 /// let mut collector = Max::new();
 ///
@@ -33,7 +33,7 @@ use crate::{
 /// The output is `None` if no items were collected.
 ///
 /// ```
-/// use better_collect::{prelude::*, cmp::Max};
+/// use komadori::{prelude::*, cmp::Max};
 ///
 /// assert_eq!(Max::<i32>::new().finish(), None);
 /// ```

@@ -12,7 +12,7 @@ pub trait IteratorExt: Iterator {
     /// Use [`feed_into()`](IteratorExt::feed_into).
     #[deprecated(since = "0.4.0", note = "Use `feed_into()`")]
     #[inline]
-    fn better_collect<C>(&mut self, collector: C) -> C::Output
+    fn komadori<C>(&mut self, collector: C) -> C::Output
     where
         C: IntoCollector<Self::Item>,
     {
@@ -32,7 +32,7 @@ pub trait IteratorExt: Iterator {
     /// # Examples
     ///
     /// ```
-    /// use better_collect::{prelude::*, cmp::Max};
+    /// use komadori::{prelude::*, cmp::Max};
     ///
     /// let (max, nums) = [4, 2, 6, 3]
     ///     .into_iter()
@@ -72,7 +72,7 @@ pub trait IteratorExt: Iterator {
     /// # Examples
     ///
     /// ```rust
-    /// use better_collect::prelude::*;
+    /// use komadori::prelude::*;
     ///
     /// let (s_no_ws, len_no_ws) = "the noble and the singer"
     ///     .split_whitespace()
