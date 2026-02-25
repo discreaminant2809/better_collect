@@ -1,10 +1,10 @@
-use std::ops::ControlFlow;
+use std::{fmt::Debug, ops::ControlFlow};
 
 use itertools::MinMaxResult;
 
 use crate::collector::{Collector, CollectorBase};
 
-use super::{max_assign, min_assign};
+use super::{MinMaxBase, OrdComparator};
 
 /// A collector that computes the minimum and maximum values among the items it collects.
 ///
@@ -39,16 +39,9 @@ use super::{max_assign, min_assign};
 ///     MinMaxResult::MinMax(1, 3),
 /// );
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MinMax<T> {
-    state: State<T>,
-}
-
-#[derive(Debug, Clone)]
-enum State<T> {
-    NoElements,
-    OneElement(T),
-    MinMax { min: T, max: T, prev: Option<T> },
+    base: MinMaxBase<T, OrdComparator>,
 }
 
 impl<T> MinMax<T>
@@ -59,7 +52,7 @@ where
     #[inline]
     pub const fn new() -> Self {
         Self {
-            state: State::NoElements,
+            base: MinMaxBase::new(OrdComparator),
         }
     }
 }
@@ -70,22 +63,9 @@ where
 {
     type Output = MinMaxResult<T>;
 
+    #[inline]
     fn finish(self) -> Self::Output {
-        match self.state {
-            State::NoElements => MinMaxResult::NoElements,
-            State::OneElement(item) => MinMaxResult::OneElement(item),
-            State::MinMax {
-                min,
-                max,
-                prev: Some(prev),
-            } if prev < min => MinMaxResult::MinMax(prev, max),
-            State::MinMax {
-                min,
-                max,
-                prev: Some(prev),
-            } if max <= prev => MinMaxResult::MinMax(min, prev),
-            State::MinMax { min, max, .. } => MinMaxResult::MinMax(min, max),
-        }
+        self.base.finish()
     }
 }
 
@@ -95,203 +75,16 @@ where
 {
     #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
-        match &mut self.state {
-            State::NoElements => self.state = State::OneElement(item),
-            State::OneElement(_) => {
-                let State::OneElement(prev) = std::mem::take(self).state else {
-                    unreachable!("the state is somehow incorrect");
-                };
-
-                if item < prev {
-                    self.state = State::MinMax {
-                        min: item,
-                        max: prev,
-                        prev: None,
-                    }
-                } else {
-                    self.state = State::MinMax {
-                        min: prev,
-                        max: item,
-                        prev: None,
-                    }
-                }
-            }
-            State::MinMax { min, max, prev } => {
-                let Some(prev) = prev.take() else {
-                    *prev = Some(item);
-                    return ControlFlow::Continue(());
-                };
-
-                if item < prev {
-                    min_assign(min, item);
-                    max_assign(max, prev);
-                } else {
-                    min_assign(min, prev);
-                    max_assign(max, item);
-                }
-            }
-        }
-
-        ControlFlow::Continue(())
+        self.base.collect(item)
     }
 
     #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
-        let mut items = items.into_iter();
-
-        'outer: loop {
-            match &mut self.state {
-                State::NoElements => {
-                    self.state = {
-                        let Some(item) = items.next() else {
-                            break;
-                        };
-                        State::OneElement(item)
-                    }
-                }
-                State::OneElement(_) => {
-                    let Some(item) = items.next() else {
-                        break;
-                    };
-
-                    let State::OneElement(prev) = std::mem::take(self).state else {
-                        unreachable!("the state is somehow incorrect");
-                    };
-
-                    if item < prev {
-                        self.state = State::MinMax {
-                            min: item,
-                            max: prev,
-                            prev: None,
-                        }
-                    } else {
-                        self.state = State::MinMax {
-                            min: prev,
-                            max: item,
-                            prev: None,
-                        }
-                    }
-                }
-                State::MinMax { min, max, prev } => {
-                    let Some(mut first) = prev.take().or_else(|| items.next()) else {
-                        break;
-                    };
-
-                    let Some(mut second) = items.next() else {
-                        *prev = Some(first);
-                        break;
-                    };
-
-                    loop {
-                        if second < first {
-                            min_assign(min, second);
-                            max_assign(max, first);
-                        } else {
-                            min_assign(min, first);
-                            max_assign(max, second);
-                        }
-
-                        match items.next() {
-                            Some(item) => first = item,
-                            None => break 'outer,
-                        }
-
-                        match items.next() {
-                            Some(item) => second = item,
-                            None => {
-                                *prev = Some(first);
-                                break 'outer;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        ControlFlow::Continue(())
+        self.base.collect_many(items)
     }
 
-    fn collect_then_finish(mut self, items: impl IntoIterator<Item = T>) -> Self::Output {
-        let mut items = items.into_iter();
-
-        'outer: loop {
-            match self.state {
-                State::NoElements => {
-                    self.state = {
-                        let Some(item) = items.next() else {
-                            break MinMaxResult::NoElements;
-                        };
-                        State::OneElement(item)
-                    }
-                }
-                State::OneElement(prev) => {
-                    let Some(item) = items.next() else {
-                        break MinMaxResult::OneElement(prev);
-                    };
-
-                    if item < prev {
-                        self.state = State::MinMax {
-                            min: item,
-                            max: prev,
-                            prev: None,
-                        }
-                    } else {
-                        self.state = State::MinMax {
-                            min: prev,
-                            max: item,
-                            prev: None,
-                        }
-                    }
-                }
-                State::MinMax {
-                    mut min,
-                    mut max,
-                    prev,
-                } => {
-                    let Some(mut first) = prev.or_else(|| items.next()) else {
-                        break MinMaxResult::MinMax(min, max);
-                    };
-
-                    let Some(mut second) = items.next() else {
-                        break if first < min {
-                            MinMaxResult::MinMax(first, max)
-                        } else if max <= first {
-                            MinMaxResult::MinMax(min, first)
-                        } else {
-                            MinMaxResult::MinMax(min, max)
-                        };
-                    };
-
-                    loop {
-                        if second < first {
-                            min_assign(&mut min, second);
-                            max_assign(&mut max, first);
-                        } else {
-                            min_assign(&mut min, first);
-                            max_assign(&mut max, second);
-                        }
-
-                        match items.next() {
-                            Some(item) => first = item,
-                            None => break 'outer MinMaxResult::MinMax(min, max),
-                        }
-
-                        match items.next() {
-                            Some(item) => second = item,
-                            None => {
-                                break 'outer if first < min {
-                                    MinMaxResult::MinMax(first, max)
-                                } else if max <= first {
-                                    MinMaxResult::MinMax(min, first)
-                                } else {
-                                    MinMaxResult::MinMax(min, max)
-                                };
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
+        self.base.collect_then_finish(items)
     }
 }
 
@@ -302,6 +95,17 @@ where
     #[inline]
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<T> Debug for MinMax<T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MinMax")
+            .field("state", self.base.debug_state())
+            .finish()
     }
 }
 

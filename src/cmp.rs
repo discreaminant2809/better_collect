@@ -11,6 +11,7 @@
 
 #[cfg(feature = "itertools")]
 mod all_equal;
+mod comparator;
 mod max;
 mod max_by;
 mod max_by_key;
@@ -19,6 +20,8 @@ mod min_by;
 mod min_by_key;
 #[cfg(feature = "itertools")]
 mod min_max;
+#[cfg(feature = "itertools")]
+mod min_max_base;
 mod value_key;
 // mod is_sorted;
 // mod is_sorted_by;
@@ -26,6 +29,7 @@ mod value_key;
 
 #[cfg(feature = "itertools")]
 pub use all_equal::*;
+use comparator::*;
 pub use max::*;
 pub use max_by::*;
 pub use max_by_key::*;
@@ -34,6 +38,8 @@ pub use min_by::*;
 pub use min_by_key::*;
 #[cfg(feature = "itertools")]
 pub use min_max::*;
+#[cfg(feature = "itertools")]
+use min_max_base::*;
 
 #[inline]
 fn max_assign<T: Ord>(max: &mut T, value: T) {

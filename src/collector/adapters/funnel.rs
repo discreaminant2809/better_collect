@@ -8,6 +8,7 @@ use crate::collector::{Collector, CollectorBase};
 ///
 /// This `struct` is created by [`CollectorBase::funnel()`].
 /// See its documentation for more.
+#[derive(Debug, Clone)]
 pub struct Funnel<C>(C);
 
 impl<C> Funnel<C> {

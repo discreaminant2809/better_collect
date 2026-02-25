@@ -223,6 +223,7 @@
 //! [`BTreeSet`]: std::collections::BTreeSet
 
 #![forbid(missing_docs)]
+#![deny(missing_debug_implementations)]
 #![cfg_attr(test, deny(deprecated))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]

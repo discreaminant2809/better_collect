@@ -1,4 +1,4 @@
-use std::{iter, ops::ControlFlow};
+use std::{fmt::Debug, iter, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, Fuse};
 
@@ -6,6 +6,7 @@ use crate::collector::{Collector, CollectorBase, Fuse};
 ///
 /// This `struct` is created by [`CollectorBase::tee_with()`].
 /// See its documentation for more.
+#[derive(Clone)]
 pub struct TeeWith<C1, C2, F> {
     collector1: Fuse<C1>,
     collector2: Fuse<C2>,
@@ -127,6 +128,20 @@ where
             ),
             ControlFlow::Continue(_) => self.finish(),
         }
+    }
+}
+
+impl<C1, C2, F> Debug for TeeWith<C1, C2, F>
+where
+    C1: Debug,
+    C2: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TeeWith")
+            .field("collector1", &self.collector1)
+            .field("collector2", &self.collector2)
+            .field("f", &std::any::type_name::<F>())
+            .finish()
     }
 }
 
