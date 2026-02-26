@@ -25,6 +25,8 @@ mod min_max;
 mod min_max_base;
 #[cfg(feature = "itertools")]
 mod min_max_by;
+#[cfg(feature = "itertools")]
+mod min_max_by_key;
 mod value_key;
 // mod is_sorted;
 // mod is_sorted_by;
@@ -46,6 +48,9 @@ pub use min_max::*;
 use min_max_base::*;
 #[cfg(feature = "itertools")]
 pub use min_max_by::*;
+#[cfg(feature = "itertools")]
+pub use min_max_by_key::*;
+use value_key::*;
 
 #[inline]
 fn max_assign<T: Ord>(max: &mut T, value: T) {

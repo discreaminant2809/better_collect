@@ -4,9 +4,10 @@ use itertools::MinMaxResult;
 
 use crate::collector::{Collector, CollectorBase};
 
-use super::{MinMaxBase, OrdComparator};
+use super::{MinMax, ValueKey};
 
-/// A collector that computes the minimum and maximum values among the items it collects.
+/// A collector that computes the minimum and maximum values among the items it collects
+/// according to a key-extraction function.
 ///
 /// Its [`Output`](CollectorBase::Output) is:
 ///
@@ -18,7 +19,9 @@ use super::{MinMaxBase, OrdComparator};
 ///   If there are multiple equally minimum items, the first one collected is returned.
 ///   If there are multiple equally maximum items, the last one collected is returned.
 ///
-/// This collector corresponds to [`Itertools::minmax()`](itertools::Itertools::minmax).
+/// This collector is constructed by [`MinMax::by_key()`](MinMax::by_key).
+///
+/// This collector corresponds to [`Itertools::minmax_by_key()`](itertools::Itertools::minmax_by_key).
 ///
 /// # Examples
 ///
@@ -27,91 +30,100 @@ use super::{MinMaxBase, OrdComparator};
 /// use itertools::MinMaxResult;
 ///
 /// assert_eq!(
-///     [].into_iter().feed_into(MinMax::<i32>::new()),
+///     [].into_iter().feed_into(MinMax::by_key(|s: &&str| s.len())),
 ///     MinMaxResult::NoElements,
 /// );
 /// assert_eq!(
-///     [1].into_iter().feed_into(MinMax::new()),
-///     MinMaxResult::OneElement(1),
+///     [""].into_iter().feed_into(MinMax::by_key(|s: &&str| s.len())),
+///     MinMaxResult::OneElement(""),
 /// );
 /// assert_eq!(
-///     [1, 3, 2].into_iter().feed_into(MinMax::new()),
-///     MinMaxResult::MinMax(1, 3),
+///     ["noble", "and", "singer"]
+///         .into_iter()
+///         .feed_into(MinMax::by_key(|s: &&str| s.len())),
+///     MinMaxResult::MinMax("and", "singer"),
 /// );
 /// ```
-#[derive(Clone)]
-pub struct MinMax<T> {
-    base: MinMaxBase<T, OrdComparator>,
+pub struct MinMaxByKey<T, K, F> {
+    base: MinMax<ValueKey<T, K>>,
+    f: F,
 }
 
 impl<T> MinMax<T> {
-    /// Creates a new instance of this collector.
+    /// Creates a new instance of [`MinMaxByKey`] with a given key-extraction function.
     #[inline]
-    pub const fn new() -> Self
+    pub const fn by_key<K, F>(f: F) -> MinMaxByKey<T, K, F>
     where
-        T: Ord,
+        F: FnMut(&T) -> K,
+        K: Ord,
     {
-        Self {
-            base: MinMaxBase::new(OrdComparator),
+        MinMaxByKey {
+            base: MinMax::new(),
+            f,
         }
-    }
-
-    pub(super) fn debug_state(&self) -> &impl Debug
-    where
-        T: Debug,
-    {
-        self.base.debug_state()
     }
 }
 
-impl<T> CollectorBase for MinMax<T>
+impl<T, K, F> CollectorBase for MinMaxByKey<T, K, F>
 where
-    T: Ord,
+    K: Ord,
 {
     type Output = MinMaxResult<T>;
 
-    #[inline]
     fn finish(self) -> Self::Output {
-        self.base.finish()
+        let res = self.base.finish();
+        unwrap_min_max_res(res)
     }
 }
 
-impl<T> Collector<T> for MinMax<T>
+impl<T, K, F> Collector<T> for MinMaxByKey<T, K, F>
 where
-    T: Ord,
+    F: FnMut(&T) -> K,
+    K: Ord,
 {
     #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
-        self.base.collect(item)
+        self.base.collect(ValueKey::new(item, &mut self.f))
     }
 
-    #[inline]
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
-        self.base.collect_many(items)
+        self.base.collect_many(
+            items
+                .into_iter()
+                .map(|item| ValueKey::new(item, &mut self.f)),
+        )
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
-        self.base.collect_then_finish(items)
+        let Self { base, mut f } = self;
+
+        let res = base.collect_then_finish(
+            items
+                .into_iter()
+                .map(move |item| ValueKey::new(item, &mut f)),
+        );
+
+        unwrap_min_max_res(res)
     }
 }
 
-impl<T> Default for MinMax<T>
-where
-    T: Ord,
-{
-    #[inline]
-    fn default() -> Self {
-        Self::new()
+fn unwrap_min_max_res<T, K>(res: MinMaxResult<ValueKey<T, K>>) -> MinMaxResult<T> {
+    match res {
+        MinMaxResult::NoElements => MinMaxResult::NoElements,
+        MinMaxResult::OneElement(item) => MinMaxResult::OneElement(item.into_value()),
+        MinMaxResult::MinMax(min, max) => MinMaxResult::MinMax(min.into_value(), max.into_value()),
     }
 }
 
-impl<T> Debug for MinMax<T>
+impl<T, K, F> Debug for MinMaxByKey<T, K, F>
 where
     T: Debug,
+    K: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MinMax")
+        f.debug_struct("MinMaxByKey")
             .field("state", self.base.debug_state())
+            .field("f", &std::any::type_name::<F>())
             .finish()
     }
 }
@@ -140,10 +152,14 @@ mod proptests {
     }
 
     fn all_collect_methods_impl(nums: Vec<i32>, starting_nums: Vec<i32>) -> TestCaseResult {
+        fn key_extractor(Id { num, .. }: &Id) -> i32 {
+            num.wrapping_add(i32::MAX / 2)
+        }
+
         BasicCollectorTester {
             iter_factory: || nums.iter().enumerate().map(|(id, &num)| Id { id, num }),
             collector_factory: || {
-                let mut collector = MinMax::new();
+                let mut collector = MinMax::by_key(key_extractor);
                 let _ = collector.collect_many(
                     starting_nums
                         .iter()
@@ -160,7 +176,7 @@ mod proptests {
                     .map(|(&num, id)| Id { id, num })
                     .chain(iter);
 
-                if !Id::full_eq_minmax_res(iter.minmax(), output) {
+                if !Id::full_eq_minmax_res(iter.minmax_by_key(key_extractor), output) {
                     Err(PredError::IncorrectOutput)
                 } else if remaining.next().is_some() {
                     Err(PredError::IncorrectIterConsumption)

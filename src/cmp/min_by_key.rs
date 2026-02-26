@@ -2,7 +2,7 @@ use std::{fmt::Debug, ops::ControlFlow};
 
 use crate::collector::{Collector, CollectorBase, assert_collector};
 
-use super::{Min, value_key::ValueKey};
+use super::{Min, ValueKey};
 
 /// A collector that computes the item among the items it collects
 /// that gives the minimum value from a key-extraction function.
