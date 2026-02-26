@@ -34,11 +34,6 @@ impl<T, Cmp> MinMaxBase<T, Cmp> {
     {
         &self.state
     }
-
-    #[allow(dead_code)]
-    pub fn cmp(&self) -> &Cmp {
-        &self.cmp
-    }
 }
 
 impl<T, Cmp> CollectorBase for MinMaxBase<T, Cmp>
