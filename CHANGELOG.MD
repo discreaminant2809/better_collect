@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1
+
+### Added
+
+- `crate::cmp::MinMaxBy`.
+- `crate::cmp::MinMaxByKey`.
+
 ## 0.5.0
 
 ### Added
