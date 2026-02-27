@@ -6,7 +6,7 @@ use itertools::Either;
 #[cfg(feature = "unstable")]
 use super::{AltBreakHint, Nest, NestExact, TeeWith};
 use super::{
-    Chain, Cloning, Collector, Copying, Filter, FlatMap, Flatten, Funnel, Fuse, Inspect,
+    Chain, Cloning, Collector, Copying, Enumerate, Filter, FlatMap, Flatten, Funnel, Fuse, Inspect,
     IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee,
     TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
 };
@@ -1071,6 +1071,42 @@ pub trait CollectorBase {
         F: FnMut(&T),
     {
         assert_collector::<_, T>(Inspect::new(self, f))
+    }
+
+    /// Creates a collector that feeds the underlying collector with the current index
+    /// alongside with the item.
+    ///
+    /// The underlying collector must implement [`Collector<(usize, T)>`],
+    /// where the first element of the tuple is the current index, starting at `0`
+    /// for the first item and incremented for each subsequent item.
+    ///
+    /// # Overflow behavior
+    ///
+    /// The method does no guarding against overflows, so collecting more than
+    /// [`usize::MAX`] items either produces the wrong result or panics.
+    /// If overflow checks are enabled, a panic is guaranteed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use komadori::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .enumerate();
+    ///
+    /// assert!(collector.collect('a').is_continue());
+    /// assert!(collector.collect('b').is_continue());
+    /// assert!(collector.collect('c').is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [(0, 'a'), (1, 'b'), (2, 'c')]);
+    /// ```
+    #[inline]
+    fn enumerate(self) -> Enumerate<Self>
+    where
+        Self: Sized,
+    {
+        Enumerate::new(self)
     }
 
     /// Creates a collector that alternates the behavior of [`break_hint()`](Self::break_hint).

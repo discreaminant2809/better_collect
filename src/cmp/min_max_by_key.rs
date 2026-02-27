@@ -44,6 +44,7 @@ use super::{MinMax, ValueKey};
 ///     MinMaxResult::MinMax("and", "singer"),
 /// );
 /// ```
+#[derive(Clone)]
 pub struct MinMaxByKey<T, K, F> {
     base: MinMax<ValueKey<T, K>>,
     f: F,
