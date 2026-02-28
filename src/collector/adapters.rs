@@ -13,6 +13,7 @@ mod fuse;
 mod inspect;
 mod map;
 mod map_output;
+mod map_while;
 #[cfg(feature = "unstable")]
 mod nest_family;
 mod partition;
@@ -47,6 +48,7 @@ pub use fuse::*;
 pub use inspect::*;
 pub use map::*;
 pub use map_output::*;
+pub use map_while::*;
 #[cfg(feature = "unstable")]
 pub use nest_family::*;
 pub use partition::*;

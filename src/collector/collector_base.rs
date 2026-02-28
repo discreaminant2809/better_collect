@@ -7,8 +7,8 @@ use itertools::Either;
 use super::{AltBreakHint, Nest, NestExact, TeeWith};
 use super::{
     Chain, Cloning, Collector, Copying, Enumerate, Filter, FilterMap, FlatMap, Flatten, Funnel,
-    Fuse, Inspect, IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take,
-    TakeWhile, Tee, TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector,
+    Fuse, Inspect, IntoCollector, IntoCollectorBase, Map, MapOutput, MapWhile, Partition, Skip,
+    Take, TakeWhile, Tee, TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector,
     assert_collector_base,
 };
 #[cfg(feature = "itertools")]
@@ -784,7 +784,7 @@ pub trait CollectorBase {
 
     /// Creates a collector that accumulates items as long as a predicate returns `true`.
     ///
-    /// `take_while()` collects items until it encounters one for which the predicate returns `false`.
+    /// `take_while()` accumulates items until it encounters one for which the predicate returns `false`.
     /// Conceptually, that item and all subsequent ones will **not** be accumulated.
     /// However, you should ensure that you do not feed more items after it has signaled
     /// a stop.
@@ -1119,6 +1119,8 @@ pub trait CollectorBase {
     ///
     /// Note that even if an item is not accumulated, this adaptor will still return
     /// [`Continue(())`] as long as the underlying collector does.
+    /// If you want the collector to stop after the first `false`,
+    /// consider using [`map_while()`](CollectorBase::map_while) instead.
     ///
     /// # Examples
     ///
@@ -1145,6 +1147,40 @@ pub trait CollectorBase {
         P: FnMut(T) -> Option<R>,
     {
         assert_collector::<_, T>(FilterMap::new(self, pred))
+    }
+
+    /// Creates a collector that accumulates items as long as a predicate returns [`Some`].
+    ///
+    /// `map_while()` accumulates `value`s when the closure returns [`Some(value)`](Some),
+    /// until it encounters one for which the predicate returns [`None`].
+    /// Conceptually, that item and all subsequent ones will **not** be accumulated.
+    /// However, you should ensure that you do not feed more items after it has signaled
+    /// a stop.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use komadori::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .map_while(|s: &str| s.parse::<i32>().ok());
+    ///
+    /// assert!(collector.collect("1").is_continue());
+    /// assert!(collector.collect("2").is_continue());
+    ///
+    /// // Immediately stops after a string that cannot be parsed into an integer.
+    /// assert!(collector.collect("three").is_break());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2]);
+    /// ```
+    #[inline]
+    fn map_while<P, T, R>(self, pred: P) -> MapWhile<Self, P>
+    where
+        Self: Collector<R> + Sized,
+        P: FnMut(T) -> Option<R>,
+    {
+        assert_collector::<_, T>(MapWhile::new(self, pred))
     }
 
     /// Creates a collector that alternates the behavior of [`break_hint()`](Self::break_hint).
