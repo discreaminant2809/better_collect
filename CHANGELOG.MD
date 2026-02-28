@@ -7,6 +7,7 @@
 - `crate::cmp::MinMaxBy`.
 - `crate::cmp::MinMaxByKey`.
 - `CollectorBase::enumerate()`.
+- `CollectorBase::filter_map()`.
 
 ## 0.5.0
 

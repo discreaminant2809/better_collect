@@ -1,23 +1,23 @@
-use crate::collector::{Collector, CollectorBase};
-
 use std::{fmt::Debug, ops::ControlFlow};
 
-/// A collector that uses a closure to determine whether an item should be collected.
+use crate::collector::{Collector, CollectorBase};
+
+/// A collector that both filters and maps each item before collecting.
 ///
-/// This `struct` is created by [`CollectorBase::filter()`]. See its documentation for more.
-#[derive(Clone)]
-pub struct Filter<C, F> {
+/// This `struct` is created by [`CollectorBase::filter_map()`].
+/// See its documentation for more.
+pub struct FilterMap<C, P> {
     collector: C,
-    pred: F,
+    pred: P,
 }
 
-impl<C, F> Filter<C, F> {
-    pub(in crate::collector) fn new(collector: C, pred: F) -> Self {
+impl<C, P> FilterMap<C, P> {
+    pub(in crate::collector) fn new(collector: C, pred: P) -> Self {
         Self { collector, pred }
     }
 }
 
-impl<C, F> CollectorBase for Filter<C, F>
+impl<C, P> CollectorBase for FilterMap<C, P>
 where
     C: CollectorBase,
 {
@@ -34,14 +34,13 @@ where
     }
 }
 
-impl<C, F, T> Collector<T> for Filter<C, F>
+impl<C, T, P, R> Collector<T> for FilterMap<C, P>
 where
-    C: Collector<T>,
-    F: FnMut(&T) -> bool,
+    C: Collector<R>,
+    P: FnMut(T) -> Option<R>,
 {
-    #[inline]
     fn collect(&mut self, item: T) -> ControlFlow<()> {
-        if (self.pred)(&item) {
+        if let Some(item) = (self.pred)(item) {
             self.collector.collect(item)
         } else {
             self.collector.break_hint()
@@ -50,19 +49,23 @@ where
 
     fn collect_many(&mut self, items: impl IntoIterator<Item = T>) -> ControlFlow<()> {
         self.collector
-            .collect_many(items.into_iter().filter(&mut self.pred))
+            .collect_many(items.into_iter().filter_map(&mut self.pred))
     }
 
     fn collect_then_finish(self, items: impl IntoIterator<Item = T>) -> Self::Output {
         self.collector
-            .collect_then_finish(items.into_iter().filter(self.pred))
+            .collect_then_finish(items.into_iter().filter_map(self.pred))
     }
 }
 
-impl<C: Debug, F> Debug for Filter<C, F> {
+impl<C, P> Debug for FilterMap<C, P>
+where
+    C: Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Filter")
+        f.debug_struct("FilterMap")
             .field("collector", &self.collector)
+            .field("pred", &std::any::type_name::<P>())
             .finish()
     }
 }
@@ -96,11 +99,16 @@ mod proptests {
                 vec![]
                     .into_collector()
                     .take(take_count)
-                    .filter(|&num| num >= 0)
+                    .filter_map(|num: i32| num.checked_add(i32::MAX / 2))
             },
-            should_break_pred: |iter| iter.filter(|&num| num >= 0).count() >= take_count,
+            should_break_pred: |iter| {
+                iter.filter_map(|num| num.checked_add(i32::MAX / 2)).count() >= take_count
+            },
             pred: |mut iter, output, remaining| {
-                let expected = iter.by_ref().filter(|&num| num >= 0).take(take_count);
+                let expected = iter
+                    .by_ref()
+                    .filter_map(|num| num.checked_add(i32::MAX / 2))
+                    .take(take_count);
 
                 if expected.ne(output) {
                     Err(PredError::IncorrectOutput)

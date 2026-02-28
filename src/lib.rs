@@ -71,7 +71,7 @@
 //!   we cannot escape.
 //!
 //! - The state is kept outside. Now the iterator cannot go anywhere else
-//!   (e.g. sending to another thread, sending through a channel).
+//!   (e.g. returning from a function).
 //!
 //! - Very unintuitive and hack-y (hard to reason about).
 //!

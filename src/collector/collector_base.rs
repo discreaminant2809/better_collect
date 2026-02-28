@@ -6,9 +6,10 @@ use itertools::Either;
 #[cfg(feature = "unstable")]
 use super::{AltBreakHint, Nest, NestExact, TeeWith};
 use super::{
-    Chain, Cloning, Collector, Copying, Enumerate, Filter, FlatMap, Flatten, Funnel, Fuse, Inspect,
-    IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take, TakeWhile, Tee,
-    TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector, assert_collector_base,
+    Chain, Cloning, Collector, Copying, Enumerate, Filter, FilterMap, FlatMap, Flatten, Funnel,
+    Fuse, Inspect, IntoCollector, IntoCollectorBase, Map, MapOutput, Partition, Skip, Take,
+    TakeWhile, Tee, TeeClone, TeeFunnel, TeeMut, Unbatching, Unzip, assert_collector,
+    assert_collector_base,
 };
 #[cfg(feature = "itertools")]
 use super::{PartitionMap, Update};
@@ -748,8 +749,8 @@ pub trait CollectorBase {
     ///
     /// The underlying collector only collects items for which the given predicate returns `true`.
     ///
-    /// Note that even if an item is not collected, this adaptor will still return
-    /// [`Continue`] as long as the underlying collector does. If you want the collector to stop
+    /// Note that even if an item is not accumulated, this adaptor will still return
+    /// [`Continue(())`] as long as the underlying collector does. If you want the collector to stop
     /// after the first `false`, consider using [`take_while()`](CollectorBase::take_while) instead.
     ///
     /// # Examples
@@ -771,7 +772,7 @@ pub trait CollectorBase {
     /// assert_eq!(collector.finish(), [2, 4, 0]);
     /// ```
     ///
-    /// [`Continue`]: ControlFlow::Continue
+    /// [`Continue(())`]: ControlFlow::Continue
     #[inline]
     fn filter<F, T>(self, pred: F) -> Filter<Self, F>
     where
@@ -1107,6 +1108,43 @@ pub trait CollectorBase {
         Self: Sized,
     {
         Enumerate::new(self)
+    }
+
+    /// Creates a collector that both filters and maps each item before collecting.
+    ///
+    /// The underlying collector only collects `value`s that the closure returns `Some(value)`.
+    ///
+    /// If you find yourself using `map()` and `filter()` consecutively, consider using
+    /// `filter_map()` to be more concise.
+    ///
+    /// Note that even if an item is not accumulated, this adaptor will still return
+    /// [`Continue(())`] as long as the underlying collector does.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use komadori::prelude::*;
+    ///
+    /// let mut collector = vec![]
+    ///     .into_collector()
+    ///     .filter_map(|s: &str| s.parse::<i32>().ok());
+    ///
+    /// assert!(collector.collect("1").is_continue());
+    /// assert!(collector.collect("2").is_continue());
+    /// assert!(collector.collect("three").is_continue());
+    /// assert!(collector.collect("4").is_continue());
+    ///
+    /// assert_eq!(collector.finish(), [1, 2, 4]);
+    /// ```
+    ///
+    /// [`Continue(())`]: ControlFlow::Continue
+    #[inline]
+    fn filter_map<P, T, R>(self, pred: P) -> FilterMap<Self, P>
+    where
+        Self: Collector<R> + Sized,
+        P: FnMut(T) -> Option<R>,
+    {
+        assert_collector::<_, T>(FilterMap::new(self, pred))
     }
 
     /// Creates a collector that alternates the behavior of [`break_hint()`](Self::break_hint).
